@@ -234,3 +234,6 @@ export SHOPIFY_ACCESS_TOKEN=shpat_95dd...
 3. Implement customer analytics features
 4. Add webhook support for real-time updates
 5. Improve error recovery mechanisms
+## Additional Documentation
+For installation troubleshooting, operational guidelines, detailed API reference, and architecture diagrams see [enhanced_documentation.md](./enhanced_documentation.md).
+

@@ -3,6 +3,7 @@ mcp>=1.9.0              # Model Context Protocol
 requests>=2.31.0        # HTTP client
 pandas>=2.0.0           # Data processing
 matplotlib>=3.7.0       # Data visualization
+numpy>=1.24.0           # Numerical operations for testing
 python-dotenv>=1.0.0    # Environment variable management
 urllib3>=2.0.0          # URL parsing and SSL handling
 gql>=3.5.0              # GraphQL client

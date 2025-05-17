@@ -24,3 +24,4 @@ This directory contains technical documentation for the Shopify MCP Server proje
 - [Main README](../README.md)
 - [Setup Guide](../README.md#quick-start)
 - [License](../LICENSE)
+- [Enhanced Documentation](../enhanced_documentation.md)
