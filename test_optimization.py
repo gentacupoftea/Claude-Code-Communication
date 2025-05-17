@@ -63,6 +63,11 @@ async def test_optimization():
         print(f"Second API call (cached): {second_call_time:.2f} seconds")
         print(f"Cache speedup: {first_call_time / second_call_time:.1f}x faster")
         
+        from utils import cache_manager
+        stats = cache_manager.get_stats()
+        print(f"Cache hit rate: {stats.hit_rate:.2%}")
+        print(f"Cache memory usage: {stats.memory_usage_mb:.2f} MB")
+        
         clear_cache()
         
         print("\nTesting memory optimization...")
