@@ -11,7 +11,8 @@ shopify_mcp_venv*/
 
 # Environment
 .env
-.env.*
+.env.local
+.env.*.local
 
 # IDE
 .vscode/
