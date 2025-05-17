@@ -1,0 +1,27 @@
+version: '3.9'
+
+services:
+  dev:
+    build: .
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+      - docker/dev.env
+    command: python shopify-mcp-server.py
+
+  test:
+    build: .
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+      - docker/test.env
+    command: ./setup_test_env.sh
+
+  prod:
+    build: .
+    env_file:
+      - .env
+      - docker/prod.env
+    command: python shopify-mcp-server.py

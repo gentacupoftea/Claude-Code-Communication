@@ -43,4 +43,8 @@ htmlcov/
 # Distribution / packaging
 dist/
 build/
-*.egg-info/
+*.egg-info
+test_env/
+
+# Local Python wheels
+vendor/
