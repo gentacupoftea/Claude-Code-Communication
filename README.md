@@ -2,6 +2,9 @@
 
 Model Context Protocol (MCP) server for integrating Shopify API with Claude Desktop for real-time e-commerce analytics and data visualization.
 
+**Version**: v0.1.0 (MVP Release)  
+**Status**: Development Ready
+
 ## Features
 
 - 🛍️ Real-time order data aggregation
