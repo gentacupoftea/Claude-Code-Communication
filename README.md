@@ -33,8 +33,19 @@ pip install -r requirements.txt
 
 4. Configure environment variables:
 ```bash
+# Option 1: Use the setup script (recommended)
+./env_setup.sh
+
+# Option 2: Manual setup
 cp .env.example .env
 # Edit .env with your Shopify API credentials
+
+# Option 3: Export directly
+export SHOPIFY_SHOP_NAME="your-shop-name"
+export SHOPIFY_API_VERSION="2024-01"
+export SHOPIFY_ACCESS_TOKEN="your-access-token"
+export SHOPIFY_API_KEY="your-api-key"
+export SHOPIFY_API_SECRET_KEY="your-secret-key"
 ```
 
 5. Run the server:
@@ -63,6 +74,20 @@ Add to your Claude Desktop configuration file (`~/Library/Application Support/Cl
 ```
 
 ## Project Overview
+
+## Environment Variables
+
+The following environment variables are required:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| SHOPIFY_SHOP_NAME | Your Shopify store domain name | mystore |
+| SHOPIFY_API_VERSION | Shopify API version | 2024-01 |
+| SHOPIFY_ACCESS_TOKEN | Shopify private app access token | shpat_xxx... |
+| SHOPIFY_API_KEY | Shopify API key | f3xxx... |
+| SHOPIFY_API_SECRET_KEY | Shopify API secret key | shpss_xxx... |
+
+Use `./env_setup.sh` to automatically configure these variables with 1Password integration.
 
 ## Technical Stack
 - **Language**: Python 3.12
