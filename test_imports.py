@@ -18,7 +18,8 @@ dependencies = [
     'matplotlib.pyplot',
     'dotenv',
     'asyncio',
-    'urllib3'
+    'urllib3',
+    'numpy'
 ]
 
 def test_imports():
