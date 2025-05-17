@@ -1,0 +1,7 @@
+# Extended dependencies - for full feature set
+-r requirements-base.txt
+pandas==2.0.0
+matplotlib==3.7.0
+gql==3.5.0
+requests-toolbelt~=1.0.0
+requests-ratelimiter==0.7.0

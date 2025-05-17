@@ -2,28 +2,148 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
+    branches: [ main ]
+
+env:
+  # Default network settings for CI
+  INSTALL_RETRY: 5
+  INSTALL_TIMEOUT: 180
+  PIP_TIMEOUT: 180
+  PIP_RETRIES: 3
 
 jobs:
   test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        dependency-level: ['core', 'extended', 'full']
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pip
+          ~/Library/Caches/pip
+          ~/.local/share/pip
+          vendor/
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ matrix.dependency-level }}-${{ hashFiles('requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ matrix.dependency-level }}-
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+    
+    - name: Configure environment
+      run: |
+        echo "Setting up environment for ${{ matrix.dependency-level }} dependencies"
+        if [ "${{ matrix.dependency-level }}" = "core" ]; then
+          echo "INSTALL_OPTIONAL=0" >> $GITHUB_ENV
+          echo "INSTALL_DEV=0" >> $GITHUB_ENV
+        elif [ "${{ matrix.dependency-level }}" = "extended" ]; then
+          echo "INSTALL_OPTIONAL=0" >> $GITHUB_ENV
+          echo "INSTALL_DEV=1" >> $GITHUB_ENV
+        else
+          echo "INSTALL_OPTIONAL=1" >> $GITHUB_ENV
+          echo "INSTALL_DEV=1" >> $GITHUB_ENV
+        fi
+      shell: bash
+    
+    - name: Download offline packages (fallback)
+      if: failure()
+      run: |
+        mkdir -p vendor
+        echo "Attempting to download packages for offline mode..."
+        pip download -r requirements-base.txt -d vendor/ || true
+        pip download -r requirements-extended.txt -d vendor/ || true
+      continue-on-error: true
+    
+    - name: Run setup script
+      run: |
+        chmod +x setup_test_env.sh
+        ./setup_test_env.sh
+      shell: bash
+      env:
+        INSTALL_RETRY_DISABLED: ${{ matrix.os == 'windows-latest' && '1' || '0' }}
+    
+    - name: Verify imports
+      run: |
+        source test_env/bin/activate || . test_env\\Scripts\\activate
+        python test_imports.py
+      shell: bash
+    
+    - name: Run adaptive tests
+      run: |
+        source test_env/bin/activate || . test_env\\Scripts\\activate
+        python run_adaptive_tests.py
+      shell: bash
+    
+    - name: Generate test report
+      if: always()
+      run: |
+        echo "## Test Results - ${{ matrix.os }} - Python ${{ matrix.python-version }} - ${{ matrix.dependency-level }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ -f test_report.json ]; then
+          echo "✅ Tests completed" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Tests failed or incomplete" >> $GITHUB_STEP_SUMMARY
+        fi
+      shell: bash
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.dependency-level }}
+        path: |
+          test_report.json
+          environment_report.json
+          htmlcov/
+        retention-days: 7
+
+  validate-network-resilience:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
-      - name: Run tests with coverage
-        run: |
-          ./setup_test_env.sh
-          coverage xml
-      - name: Upload coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage-report
-          path: coverage.xml
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Test offline mode
+      run: |
+        # Create a limited environment to test offline mode
+        python -m venv test_env
+        source test_env/bin/activate
+        
+        # Download packages first
+        mkdir -p vendor
+        pip download -r requirements-base.txt -d vendor/
+        
+        # Test offline installation
+        OFFLINE_MODE=1 ./setup_test_env.sh
+    
+    - name: Test with network interruption simulation
+      run: |
+        # Test with very short timeout to simulate network issues
+        INSTALL_TIMEOUT=1 INSTALL_RETRY=1 ./setup_test_env.sh || echo "Expected failure"
+        
+        # Verify proper error messages are shown
+        INSTALL_TIMEOUT=1 ./setup_test_env.sh 2>&1 | grep -q "Troubleshooting suggestions" || exit 1
+    
+    - name: Validate error messaging
+      run: |
+        # Test import error messages
+        python test_imports.py || true
+        python test_imports.py 2>&1 | grep -q "Installation Instructions" || exit 1
