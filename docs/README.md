@@ -1,27 +1,59 @@
 # Shopify MCP Server Documentation
 
-This directory contains technical documentation for the Shopify MCP Server project.
+Welcome to the Shopify MCP Server documentation. This guide provides comprehensive information for users, developers, and contributors.
 
-## Documentation Index
+## Documentation Structure
 
-1. **[Architecture](./ARCHITECTURE.md)**
-   - System architecture overview
-   - Component descriptions
-   - Data flow diagrams
+### 📚 [User Guide](user-guide/README.md)
+For users who want to install and use Shopify MCP Server
+- [Getting Started](user-guide/getting-started.md)
+- [Basic Usage](user-guide/basic-usage.md)
+- [GraphQL vs REST Guide](user-guide/graphql-vs-rest.md)
+- [Common Use Cases](user-guide/use-cases.md)
 
-2. **[API Specification](./API_SPECIFICATION.md)**
-   - Tool definitions
-   - Request/response formats
-   - Error handling
+### 🔧 [Developer Guide](developer-guide/README.md)
+For developers who want to extend or modify the server
+- [Architecture Overview](developer-guide/architecture.md)
+- [Development Setup](developer-guide/setup.md)
+- [Testing Guide](developer-guide/testing.md)
+- [Performance Optimization](developer-guide/performance.md)
 
-3. **[Technical Stack](./TECHNICAL_STACK.md)**
-   - Technology choices
-   - Dependencies
-   - Version requirements
+### 📖 [API Reference](api-reference/README.md)
+Complete API documentation
+- [REST API](api-reference/rest-api.md)
+- [GraphQL API](api-reference/graphql-api.md)
+- [MCP Tools](api-reference/mcp-tools.md)
+
+### ⚙️ [Configuration](configuration/README.md)
+Configuration and deployment guides
+- [Environment Setup](configuration/environment.md)
+- [Docker Configuration](configuration/docker.md)
+- [Dependency Management](configuration/dependencies.md)
+- [CI/CD Setup](configuration/ci-cd.md)
+
+### 🤝 [Contributing](contributing/README.md)
+Guidelines for contributors
+- [Code of Conduct](contributing/code-of-conduct.md)
+- [Development Workflow](contributing/workflow.md)
+- [Pull Request Guide](contributing/pull-requests.md)
+- [Release Process](contributing/release-process.md)
 
 ## Quick Links
 
 - [Main README](../README.md)
-- [Setup Guide](../README.md#quick-start)
-- [License](../LICENSE)
-- [Enhanced Documentation](../enhanced_documentation.md)
+- [Changelog](../CHANGELOG.md)
+- [Latest Release Notes](../RELEASE_NOTES_v0.2.0.md)
+- [GitHub Repository](https://github.com/gentacupoftea/shopify-mcp-server)
+
+## Search Documentation
+
+Use the following keywords to find relevant documentation:
+- **Installation**: See [Getting Started](user-guide/getting-started.md)
+- **GraphQL**: See [GraphQL API](api-reference/graphql-api.md) and [GraphQL vs REST](user-guide/graphql-vs-rest.md)
+- **Testing**: See [Testing Guide](developer-guide/testing.md)
+- **Docker**: See [Docker Configuration](configuration/docker.md)
+- **Performance**: See [Performance Optimization](developer-guide/performance.md)
+
+## Version
+
+This documentation is for Shopify MCP Server v0.2.0 (GraphQL Edition).
