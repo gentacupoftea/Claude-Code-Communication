@@ -17,6 +17,8 @@ import matplotlib.pyplot as plt
 import io
 import base64
 import asyncio
+from typing import Optional
+from utils import memoize, optimize_dataframe_dtypes  # 新しいユーティリティをインポート
 
 # Force correct LOG_LEVEL format before any MCP initialization
 os.environ["LOG_LEVEL"] = "INFO"
@@ -50,8 +52,9 @@ class ShopifyAPI:
             "Content-Type": "application/json"
         }
     
+    @memoize(ttl=300)  # 5分間キャッシュ
     def get_orders(self, start_date=None, end_date=None):
-        """Fetch orders from Shopify"""
+        """Fetch orders from Shopify with caching"""
         url = f"{self.base_url}/orders.json"
         params = {"status": "any", "limit": 250}
         
@@ -67,8 +70,9 @@ class ShopifyAPI:
             logging.error(f"Failed to fetch orders: {response.text}")
             return []
     
+    @memoize(ttl=3600)  # 1時間キャッシュ
     def get_products(self):
-        """Fetch products from Shopify"""
+        """Fetch products from Shopify with caching"""
         url = f"{self.base_url}/products.json"
         params = {"limit": 250}
         
@@ -79,8 +83,9 @@ class ShopifyAPI:
             logging.error(f"Failed to fetch products: {response.text}")
             return []
     
+    @memoize(ttl=3600)  # 1時間キャッシュ
     def get_customers(self):
-        """Fetch customers from Shopify"""
+        """Fetch customers from Shopify with caching"""
         url = f"{self.base_url}/customers.json"
         params = {"limit": 250}
         
@@ -95,7 +100,7 @@ class ShopifyAPI:
 shopify_api = ShopifyAPI()
 
 @mcp.tool(description="Get orders summary with visualization")
-async def get_orders_summary(start_date: str = None, end_date: str = None, visualization: str = "both") -> str:
+async def get_orders_summary(start_date: Optional[str] = None, end_date: Optional[str] = None, visualization: str = "both") -> str:
     """
     Fetch orders summary from Shopify and visualize the data
     
@@ -109,17 +114,22 @@ async def get_orders_summary(start_date: str = None, end_date: str = None, visua
     if not orders:
         return "No orders found for the specified period."
     
-    # Create DataFrame
-    df = pd.DataFrame(orders)
+    needed_columns = ['id', 'name', 'created_at', 'total_price', 'financial_status']
+    orders_filtered = [{k: order.get(k) for k in needed_columns if k in order} for order in orders]
+    
+    # Create DataFrame with optimized dtypes
+    df = pd.DataFrame(orders_filtered)
     df['created_at'] = pd.to_datetime(df['created_at'])
-    df['total_price'] = df['total_price'].astype(float)
+    df['total_price'] = df['total_price'].astype('float32')  # float32で十分な精度
+    
+    df = optimize_dataframe_dtypes(df)
     
     # Calculate summary statistics
     total_orders = len(df)
     total_revenue = df['total_price'].sum()
     avg_order_value = df['total_price'].mean()
     
-    # Create daily sales chart
+    # Create daily sales chart - 効率的な集計
     daily_sales = df.groupby(df['created_at'].dt.date)['total_price'].sum()
     
     result = f"""# Orders Summary
@@ -152,7 +162,7 @@ async def get_orders_summary(start_date: str = None, end_date: str = None, visua
         result += f"\n![Daily Sales Chart](data:image/png;base64,{img_base64})\n"
     
     if visualization in ["table", "both"]:
-        # Add recent orders table
+        # Add recent orders table - 効率的な選択
         recent_orders = df.nlargest(10, 'created_at')[['name', 'created_at', 'total_price', 'financial_status']]
         recent_orders['created_at'] = recent_orders['created_at'].dt.strftime('%Y-%m-%d %H:%M')
         
@@ -181,9 +191,14 @@ async def get_sales_analytics(period: str = "daily", days: int = 30) -> str:
     if not orders:
         return "No orders found for the specified period."
     
-    df = pd.DataFrame(orders)
+    needed_columns = ['id', 'created_at', 'total_price']
+    orders_filtered = [{k: order.get(k) for k in needed_columns if k in order} for order in orders]
+    
+    df = pd.DataFrame(orders_filtered)
     df['created_at'] = pd.to_datetime(df['created_at'])
-    df['total_price'] = df['total_price'].astype(float)
+    df['total_price'] = df['total_price'].astype('float32')  # float32で十分な精度
+    
+    df = optimize_dataframe_dtypes(df)
     
     # Aggregate by period
     if period == "daily":
@@ -253,7 +268,6 @@ async def get_product_performance(limit: int = 10) -> str:
     if not products or not orders:
         return "Unable to fetch product or order data."
     
-    # Extract line items from orders
     line_items = []
     for order in orders:
         for item in order.get('line_items', []):
@@ -268,8 +282,13 @@ async def get_product_performance(limit: int = 10) -> str:
     if not line_items:
         return "No product sales data found."
     
-    # Create DataFrame and analyze
+    # Create DataFrame with optimized dtypes
     df = pd.DataFrame(line_items)
+    
+    df['quantity'] = df['quantity'].astype('int32')
+    df['price'] = df['price'].astype('float32')
+    df['total'] = df['total'].astype('float32')
+    
     product_performance = df.groupby(['product_id', 'product_title']).agg({
         'quantity': 'sum',
         'total': 'sum'
@@ -312,8 +331,8 @@ async def get_product_performance(limit: int = 10) -> str:
 ## Details
 """
     
-    for (product_id, product_title), row in product_performance.iterrows():
-        result += f"\n### {product_title}\n"
+    for idx, row in product_performance.reset_index().iterrows():
+        result += f"\n### {row['product_title']}\n"
         result += f"- Revenue: ${row['total']:,.2f}\n"
         result += f"- Units Sold: {row['quantity']}\n"
         result += f"- Average Price: ${row['total']/row['quantity']:.2f}\n"
@@ -333,12 +352,23 @@ async def get_customer_analytics() -> str:
     if not customers or not orders:
         return "Unable to fetch customer or order data."
     
-    # Create DataFrames
-    customers_df = pd.DataFrame(customers)
-    orders_df = pd.DataFrame(orders)
+    customer_fields = ['id', 'created_at']
+    customers_filtered = [{k: c.get(k) for k in customer_fields if k in c} for c in customers]
     
-    # Customer registration trend
+    order_fields = ['customer', 'total_price']
+    orders_filtered = [{k: o.get(k) for k in order_fields if k in o} for o in orders]
+    
+    # Create DataFrames with optimized memory usage
+    customers_df = pd.DataFrame(customers_filtered)
     customers_df['created_at'] = pd.to_datetime(customers_df['created_at'])
+    
+    orders_df = pd.DataFrame(orders_filtered)
+    orders_df['total_price'] = orders_df['total_price'].astype('float32')
+    
+    customers_df = optimize_dataframe_dtypes(customers_df)
+    orders_df = optimize_dataframe_dtypes(orders_df)
+    
+    # Customer registration trend - 効率的な集計
     monthly_registrations = customers_df.groupby(customers_df['created_at'].dt.to_period('M')).size()
     
     # Customer order analysis
@@ -407,35 +437,57 @@ async def get_customer_analytics() -> str:
     return result
 
 @mcp.tool(description="商品ごとの注文・売上・返品を集計")
-async def get_product_order_sales_refunds(start_date: str = None, end_date: str = None) -> str:
+async def get_product_order_sales_refunds(start_date: Optional[str] = None, end_date: Optional[str] = None) -> str:
     orders = shopify_api.get_orders(start_date, end_date)
     if not orders:
         return "No orders found."
-    product_stats = {}
+    
+    items_data = []
+    refunds_data = []
+    
     for order in orders:
         for item in order.get('line_items', []):
-            pid = item['product_id']
-            if pid not in product_stats:
-                product_stats[pid] = {
-                    'title': item['title'],
-                    'orders': 0,
-                    'sales': 0.0,
-                    'refunds': 0.0
-                }
-            product_stats[pid]['orders'] += 1
-            product_stats[pid]['sales'] += float(item['price']) * item['quantity']
+            items_data.append({
+                'product_id': item['product_id'],
+                'title': item['title'],
+                'price': float(item['price']),
+                'quantity': item['quantity']
+            })
+        
         for refund in order.get('refunds', []):
             for ritem in refund.get('refund_line_items', []):
-                pid = ritem['line_item']['product_id']
-                if pid in product_stats:
-                    product_stats[pid]['refunds'] += float(ritem.get('subtotal', 0))
-    result = "| 商品 | 注文数 | 売上 | 返品 |\n|---|---|---|---|\n"
-    for stat in product_stats.values():
-        result += f"| {stat['title']} | {stat['orders']} | ¥{stat['sales']:.0f} | ¥{stat['refunds']:.0f} |\n"
-    return result
+                refunds_data.append({
+                    'product_id': ritem['line_item']['product_id'],
+                    'subtotal': float(ritem.get('subtotal', 0))
+                })
+    
+    if items_data:
+        items_df = pd.DataFrame(items_data)
+        items_df['sales'] = items_df['price'] * items_df['quantity']
+        
+        product_stats = items_df.groupby(['product_id', 'title']).agg({
+            'product_id': 'count',  # 注文数
+            'sales': 'sum'  # 売上
+        }).rename(columns={'product_id': 'orders'})
+        
+        if refunds_data:
+            refunds_df = pd.DataFrame(refunds_data)
+            refunds_summary = refunds_df.groupby('product_id')['subtotal'].sum()
+            
+            product_stats = product_stats.join(refunds_summary.rename('refunds'), on='product_id', how='left')
+            product_stats['refunds'] = product_stats['refunds'].fillna(0)
+        else:
+            product_stats['refunds'] = 0
+        
+        result = "| 商品 | 注文数 | 売上 | 返品 |\n|---|---|---|---|\n"
+        for idx, row in product_stats.reset_index().iterrows():
+            result += f"| {row['title']} | {row['orders']} | ¥{row['sales']:.0f} | ¥{row['refunds']:.0f} |\n"
+        return result
+    
+    return "No product data found."
 
 @mcp.tool(description="参照元ごとの注文・売上・返品を集計")
-async def get_referrer_order_sales_refunds(start_date: str = None, end_date: str = None) -> str:
+async def get_referrer_order_sales_refunds(start_date: Optional[str] = None, end_date: Optional[str] = None) -> str:
     orders = shopify_api.get_orders(start_date, end_date)
     if not orders:
         return "No orders found."
@@ -455,7 +507,7 @@ async def get_referrer_order_sales_refunds(start_date: str = None, end_date: str
     return result
 
 @mcp.tool(description="全体の注文・売上・返品を集計")
-async def get_total_order_sales_refunds(start_date: str = None, end_date: str = None) -> str:
+async def get_total_order_sales_refunds(start_date: Optional[str] = None, end_date: Optional[str] = None) -> str:
     orders = shopify_api.get_orders(start_date, end_date)
     if not orders:
         return "No orders found."
@@ -470,7 +522,7 @@ async def get_total_order_sales_refunds(start_date: str = None, end_date: str = 
     return f"全体集計\n- 注文数: {total_orders}\n- 売上: ¥{total_sales:.0f}\n- 返品: ¥{total_refunds:.0f}"
 
 @mcp.tool(description="ページごとの注文・売上・返品を集計")
-async def get_page_order_sales_refunds(start_date: str = None, end_date: str = None) -> str:
+async def get_page_order_sales_refunds(start_date: Optional[str] = None, end_date: Optional[str] = None) -> str:
     orders = shopify_api.get_orders(start_date, end_date)
     if not orders:
         return "No orders found."
