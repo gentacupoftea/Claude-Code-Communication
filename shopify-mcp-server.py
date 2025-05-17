@@ -45,6 +45,10 @@ SHOPIFY_ACCESS_TOKEN = os.getenv("SHOPIFY_ACCESS_TOKEN")
 SHOPIFY_SHOP_NAME = os.getenv("SHOPIFY_SHOP_NAME")
 
 class ShopifyAPI:
+    """
+    Shopify API client for interacting with the Shopify Admin API.
+    Supports both REST and GraphQL (coming soon) API calls.
+    """
     def __init__(self):
         self.base_url = f"https://{SHOPIFY_SHOP_NAME}.myshopify.com/admin/api/{SHOPIFY_API_VERSION}"
         self.headers = {
@@ -52,10 +56,58 @@ class ShopifyAPI:
             "Content-Type": "application/json"
         }
     
+    def _make_request(self, method, endpoint, params=None, data=None):
+        """
+        Make a request to the Shopify API with error handling.
+        
+        Args:
+            method (str): HTTP method (GET, POST, etc.)
+            endpoint (str): API endpoint to call
+            params (dict): Query parameters
+            data (dict): Request body for POST/PUT requests
+            
+        Returns:
+            dict: Response data or empty dict on error
+        """
+        url = f"{self.base_url}/{endpoint}"
+        try:
+            response = requests.request(
+                method=method,
+                url=url,
+                headers=self.headers,
+                params=params,
+                json=data
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as e:
+            logging.error(f"HTTP error: {e}")
+            return {}
+        except requests.exceptions.ConnectionError as e:
+            logging.error(f"Connection error: {e}")
+            return {}
+        except requests.exceptions.Timeout as e:
+            logging.error(f"Timeout error: {e}")
+            return {}
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Request error: {e}")
+            return {}
+        except ValueError as e:
+            logging.error(f"JSON decode error: {e}")
+            return {}
+    
     @memoize(ttl=300)  # 5分間キャッシュ
     def get_orders(self, start_date=None, end_date=None):
-        """Fetch orders from Shopify with caching"""
-        url = f"{self.base_url}/orders.json"
+        """
+        Fetch orders from Shopify with caching
+        
+        Args:
+            start_date (str): Start date in YYYY-MM-DD format
+            end_date (str): End date in YYYY-MM-DD format
+            
+        Returns:
+            list: List of order objects
+        """
         params = {"status": "any", "limit": 250}
         
         if start_date:
@@ -63,38 +115,32 @@ class ShopifyAPI:
         if end_date:
             params["created_at_max"] = end_date
         
-        response = requests.get(url, headers=self.headers, params=params)
-        if response.status_code == 200:
-            return response.json()["orders"]
-        else:
-            logging.error(f"Failed to fetch orders: {response.text}")
-            return []
+        response = self._make_request("GET", "orders.json", params=params)
+        return response.get("orders", [])
     
     @memoize(ttl=3600)  # 1時間キャッシュ
     def get_products(self):
-        """Fetch products from Shopify with caching"""
-        url = f"{self.base_url}/products.json"
-        params = {"limit": 250}
+        """
+        Fetch products from Shopify with caching
         
-        response = requests.get(url, headers=self.headers, params=params)
-        if response.status_code == 200:
-            return response.json()["products"]
-        else:
-            logging.error(f"Failed to fetch products: {response.text}")
-            return []
+        Returns:
+            list: List of product objects
+        """
+        params = {"limit": 250}
+        response = self._make_request("GET", "products.json", params=params)
+        return response.get("products", [])
     
     @memoize(ttl=3600)  # 1時間キャッシュ
     def get_customers(self):
-        """Fetch customers from Shopify with caching"""
-        url = f"{self.base_url}/customers.json"
-        params = {"limit": 250}
+        """
+        Fetch customers from Shopify with caching
         
-        response = requests.get(url, headers=self.headers, params=params)
-        if response.status_code == 200:
-            return response.json()["customers"]
-        else:
-            logging.error(f"Failed to fetch customers: {response.text}")
-            return []
+        Returns:
+            list: List of customer objects
+        """
+        params = {"limit": 250}
+        response = self._make_request("GET", "customers.json", params=params)
+        return response.get("customers", [])
 
 # Initialize Shopify API client
 shopify_api = ShopifyAPI()

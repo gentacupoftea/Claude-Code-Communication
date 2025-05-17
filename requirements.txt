@@ -5,6 +5,9 @@ pandas>=2.0.0           # Data processing
 matplotlib>=3.7.0       # Data visualization
 python-dotenv>=1.0.0    # Environment variable management
 urllib3>=2.0.0          # URL parsing and SSL handling
+gql>=3.5.0              # GraphQL client
+requests-ratelimiter>=0.7.0  # API rate limiting
+backoff>=2.2.1          # Retry with backoff
 
 # Optional dependencies for development
 # pytest>=7.4.0         # Testing framework
