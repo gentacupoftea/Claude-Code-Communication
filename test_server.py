@@ -7,6 +7,10 @@ import asyncio
 import sys
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -34,7 +38,15 @@ async def test_server():
     
     # Import server after env check
     try:
-        from shopify_mcp_server import mcp
+        # Import the server module directly
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "shopify_mcp_server", 
+            "shopify-mcp-server.py"
+        )
+        shopify_mcp_server = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(shopify_mcp_server)
+        mcp = shopify_mcp_server.mcp
         print("✓ Server imported successfully")
         
         # List available tools
