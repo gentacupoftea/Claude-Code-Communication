@@ -3,30 +3,50 @@ import { User, LoginCredentials, SignupData, AuthTokens } from '../types/auth';
 
 class AuthService {
   async login(credentials: LoginCredentials): Promise<{ user: User; tokens: AuthTokens }> {
-    // The auth API expects form data for OAuth2PasswordRequestForm
-    const formData = new URLSearchParams();
-    formData.append('username', credentials.email);
-    formData.append('password', credentials.password);
+    try {
+      // The auth API expects form data for OAuth2PasswordRequestForm
+      const formData = new URLSearchParams();
+      formData.append('username', credentials.email);
+      formData.append('password', credentials.password);
 
-    console.log('Attempting login with:', { email: credentials.email });
+      console.log('Attempting login with:', { email: credentials.email });
+      console.log('Login URL:', '/api/v1/auth/login');
 
-    // Get tokens
-    const tokenResponse = await api.post<AuthTokens>('/api/v1/auth/login', formData, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    });
+      // Get tokens
+      const tokenResponse = await api.post<AuthTokens>('/api/v1/auth/login', formData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      });
 
-    // Store tokens
-    this.storeTokens(tokenResponse.data);
+      console.log('Login response:', tokenResponse.data);
 
-    // Get user profile
-    const userResponse = await api.get<User>('/api/v1/auth/me');
+      // Store tokens (this is important for the interceptor to work)
+      this.storeTokens(tokenResponse.data);
+      
+      // Small delay to ensure localStorage is updated
+      await new Promise(resolve => setTimeout(resolve, 10));
 
-    return {
-      user: userResponse.data,
-      tokens: tokenResponse.data,
-    };
+      console.log('Fetching user profile...');
+      
+      // Get user profile (the interceptor will add the Authorization header)
+      const userResponse = await api.get<User>('/api/v1/auth/me');
+      
+      console.log('User profile response:', userResponse.data);
+
+      return {
+        user: userResponse.data,
+        tokens: tokenResponse.data,
+      };
+    } catch (error: any) {
+      console.error('Login error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        headers: error.response?.headers,
+      });
+      throw error;
+    }
   }
 
   async signup(data: SignupData): Promise<User> {

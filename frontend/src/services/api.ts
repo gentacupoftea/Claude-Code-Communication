@@ -6,8 +6,11 @@ class ApiService {
   private refreshTokenPromise: Promise<AuthTokens> | null = null;
 
   constructor() {
+    const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+    console.log('API baseURL:', baseURL);
+    
     this.instance = axios.create({
-      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000',
+      baseURL,
       timeout: 10000,
     });
 
@@ -19,8 +22,8 @@ class ApiService {
     this.instance.interceptors.request.use(
       (config) => {
         const tokens = this.getStoredTokens();
-        if (tokens?.accessToken) {
-          config.headers.Authorization = `Bearer ${tokens.accessToken}`;
+        if (tokens?.access_token) {
+          config.headers.Authorization = `Bearer ${tokens.access_token}`;
         }
         return config;
       },
@@ -47,7 +50,7 @@ class ApiService {
             this.refreshTokenPromise = null;
 
             // Update the original request with new token
-            originalRequest.headers.Authorization = `Bearer ${newTokens.accessToken}`;
+            originalRequest.headers.Authorization = `Bearer ${newTokens.access_token}`;
             return this.instance(originalRequest);
           } catch (refreshError) {
             // Refresh failed, redirect to login
@@ -64,12 +67,12 @@ class ApiService {
 
   private async refreshAccessToken(): Promise<AuthTokens> {
     const tokens = this.getStoredTokens();
-    if (!tokens?.refreshToken) {
+    if (!tokens?.refresh_token) {
       throw new Error('No refresh token available');
     }
 
     const response = await this.instance.post<AuthTokens>('/api/v1/auth/refresh', {
-      refresh_token: tokens.refreshToken,
+      refresh_token: tokens.refresh_token,
     });
 
     this.storeTokens(response.data);

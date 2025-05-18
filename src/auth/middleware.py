@@ -157,10 +157,12 @@ def setup_middleware(app):
     # Add rate limiting
     app.add_middleware(RateLimitMiddleware, calls=100, period=60)
     
-    # Add CORS support
+    # Use Starlette's built-in CORS middleware instead of custom one
+    from starlette.middleware.cors import CORSMiddleware as StarletteCORSMiddleware
     app.add_middleware(
-        CORSMiddleware,
-        allowed_origins=["http://localhost:3000", "http://localhost:3001", "https://shopify-mcp.com"],
-        allowed_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowed_headers=["*"]
+        StarletteCORSMiddleware,
+        allow_origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"]
     )

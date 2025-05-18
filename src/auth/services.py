@@ -89,11 +89,18 @@ class AuthService:
             if not user_id:
                 return None
             
+            # Convert string to UUID if necessary
+            if isinstance(user_id, str):
+                from uuid import UUID
+                user_id = UUID(user_id)
+            
             user = self.db.query(User).filter(User.id == user_id).first()
             return user if user and user.is_active else None
             
         except Exception as e:
-            logger.error(f"Error getting current user: {str(e)}")
+            logger.error(f"Error getting current user: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             return None
 
 
