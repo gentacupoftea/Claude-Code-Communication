@@ -4,7 +4,7 @@ import {
   CurrencyDollarIcon,
   ShoppingCartIcon,
   UserGroupIcon,
-  TrendingUpIcon,
+  ArrowTrendingUpIcon,
 } from '@heroicons/react/24/outline';
 import KpiCard from '../components/dashboard/KpiCard';
 import api from '../services/api';
@@ -87,7 +87,7 @@ const DashboardPage: React.FC = () => {
           title="Conversion Rate"
           value={dashboardData?.conversionRate || 0}
           change={3.2}
-          icon={<TrendingUpIcon className="h-10 w-10" />}
+          icon={<ArrowTrendingUpIcon className="h-10 w-10" />}
           loading={isLoading}
           valueFormat="percentage"
         />

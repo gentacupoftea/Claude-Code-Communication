@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shopify-integration-api
+  namespace: shopify-integration
+  labels:
+    app: shopify-integration
+    component: api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: shopify-integration
+      component: api
+  template:
+    metadata:
+      labels:
+        app: shopify-integration
+        component: api
+    spec:
+      containers:
+      - name: api
+        image: shopify-integration:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: SHOPIFY_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: shopify-credentials
+              key: api-key
+        - name: SHOPIFY_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: shopify-credentials
+              key: api-secret
+        - name: SHOPIFY_STORE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: shopify-config
+              key: store-url
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: database-credentials
+              key: url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: redis-credentials
+              key: url
+        - name: APP_ENV
+          value: "production"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+      volumes:
+      - name: logs
+        persistentVolumeClaim:
+          claimName: integration-logs-pvc
+      imagePullSecrets:
+      - name: registry-credentials

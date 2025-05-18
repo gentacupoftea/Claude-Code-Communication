@@ -5,7 +5,7 @@ import logging
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from slowapi import Limiter
@@ -40,7 +40,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/hour")
 async def register_user(
-    request,  # Required for rate limiting
+    request: Request,  # Required for rate limiting
     user_data: UserCreate,
     db: Session = Depends(get_db)
 ):
@@ -88,7 +88,7 @@ async def register_user(
 @router.post("/login", response_model=TokenResponse)
 @limiter.limit("10/minute")
 async def login(
-    request,  # Required for rate limiting
+    request: Request,  # Required for rate limiting
     form_data: OAuth2PasswordRequestForm = Depends(),
     auth_service: AuthService = Depends(get_auth_service)
 ):

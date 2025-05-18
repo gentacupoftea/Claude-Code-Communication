@@ -8,7 +8,7 @@ from typing import Optional, Dict
 
 from passlib.context import CryptContext
 import jwt
-from jwt import JWTError
+from jwt.exceptions import PyJWTError as JWTError
 
 
 class PasswordManager:

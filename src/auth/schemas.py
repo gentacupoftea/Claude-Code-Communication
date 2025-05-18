@@ -45,7 +45,7 @@ class UserResponse(UserBase):
     is_superuser: bool
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # Authentication Schemas
@@ -90,19 +90,19 @@ class OrganizationResponse(OrganizationBase):
     created_at: datetime
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # Membership Schemas
 class MembershipCreate(BaseModel):
     """Schema for adding organization members"""
     user_email: EmailStr
-    role: str = Field(..., regex="^(owner|admin|member|viewer)$")
+    role: str = Field(..., pattern="^(owner|admin|member|viewer)$")
 
 
 class MembershipUpdate(BaseModel):
     """Schema for updating membership"""
-    role: str = Field(..., regex="^(owner|admin|member|viewer)$")
+    role: str = Field(..., pattern="^(owner|admin|member|viewer)$")
 
 
 class MembershipResponse(BaseModel):
@@ -115,7 +115,7 @@ class MembershipResponse(BaseModel):
     user: UserResponse
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # API Token Schemas
@@ -136,7 +136,7 @@ class APITokenResponse(BaseModel):
     last_used_at: Optional[datetime]
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class APITokenCreateResponse(APITokenResponse):
@@ -172,4 +172,4 @@ class ShopifyStoreResponse(BaseModel):
     updated_at: datetime
     
     class Config:
-        orm_mode = True
+        from_attributes = True

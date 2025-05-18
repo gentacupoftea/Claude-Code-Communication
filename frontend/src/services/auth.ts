@@ -8,8 +8,10 @@ class AuthService {
     formData.append('username', credentials.email);
     formData.append('password', credentials.password);
 
+    console.log('Attempting login with:', { email: credentials.email });
+
     // Get tokens
-    const tokenResponse = await api.post<AuthTokens>('/auth/login', formData, {
+    const tokenResponse = await api.post<AuthTokens>('/api/v1/auth/login', formData, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
@@ -19,7 +21,7 @@ class AuthService {
     this.storeTokens(tokenResponse.data);
 
     // Get user profile
-    const userResponse = await api.get<User>('/auth/me');
+    const userResponse = await api.get<User>('/api/v1/auth/me');
 
     return {
       user: userResponse.data,
@@ -28,12 +30,12 @@ class AuthService {
   }
 
   async signup(data: SignupData): Promise<User> {
-    const response = await api.post<User>('/auth/register', data);
+    const response = await api.post<User>('/api/v1/auth/register', data);
     return response.data;
   }
 
   async getCurrentUser(): Promise<User> {
-    const response = await api.get<User>('/auth/me');
+    const response = await api.get<User>('/api/v1/auth/me');
     return response.data;
   }
 
@@ -43,7 +45,7 @@ class AuthService {
       throw new Error('No refresh token available');
     }
 
-    const response = await api.post<AuthTokens>('/auth/refresh', {
+    const response = await api.post<AuthTokens>('/api/v1/auth/refresh', {
       refresh_token: tokens.refreshToken,
     });
 

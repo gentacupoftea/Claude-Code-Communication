@@ -33,7 +33,7 @@ const OrdersPage: React.FC = () => {
   });
 
   const getStatusBadge = (status: string) => {
-    const statusStyles = {
+    const statusStyles: { [key: string]: string } = {
       paid: 'bg-green-100 text-green-800',
       pending: 'bg-yellow-100 text-yellow-800',
       cancelled: 'bg-red-100 text-red-800',
@@ -41,10 +41,11 @@ const OrdersPage: React.FC = () => {
       unfulfilled: 'bg-gray-100 text-gray-800',
     };
 
+    const lowerStatus = status.toLowerCase();
+    const className = statusStyles[lowerStatus] || statusStyles.unfulfilled;
+
     return (
-      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-        statusStyles[status.toLowerCase()] || statusStyles.unfulfilled
-      }`}>
+      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${className}`}>
         {status}
       </span>
     );

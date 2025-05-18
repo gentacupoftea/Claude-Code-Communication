@@ -1,12 +1,11 @@
-"""
-データ統合サービスパッケージ
-"""
-from .integration_service import DataIntegrationService
-from .mapping_service import DataMappingService
-from .analytics_service import AnalyticsService
+"""Data integration services."""
+
+from src.data_integration.services.shopify_service import ShopifyService
+from src.data_integration.services.analytics_service import AnalyticsService
+from src.data_integration.services.email_service import EmailService
 
 __all__ = [
-    'DataIntegrationService',
-    'DataMappingService',
-    'AnalyticsService'
+    "ShopifyService",
+    "AnalyticsService",
+    "EmailService",
 ]

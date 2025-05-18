@@ -1,0 +1,112 @@
+# Multi-stage build for optimized image size
+FROM python:3.9-slim AS base
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    wget \
+    git \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Playwright dependencies for E2E tests
+RUN apt-get update && apt-get install -y \
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libdbus-1-3 \
+    libatspi2.0-0 \
+    libx11-6 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libxcb1 \
+    libxkbcommon0 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libgdk-pixbuf2.0-0 \
+    libasound2 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements files
+COPY requirements*.txt ./
+COPY requirements-dev.txt ./
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements-dev.txt
+
+# Install Playwright browsers
+RUN pip install playwright && playwright install chromium
+
+# Copy application code
+COPY . .
+
+# Create test user
+RUN useradd -m -s /bin/bash testuser
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV PYTHON_UNBUFFERED=1
+ENV TEST_ENVIRONMENT=docker
+
+# Create entrypoint script
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+# Wait for services\n\
+/app/docker-test/scripts/wait-for-it.sh test-db:5432 -- echo "Database is ready"\n\
+/app/docker-test/scripts/wait-for-it.sh test-redis:6379 -- echo "Redis is ready"\n\
+/app/docker-test/scripts/wait-for-it.sh mock-shopify:8080 -- echo "Mock Shopify is ready"\n\
+/app/docker-test/scripts/wait-for-it.sh mock-ga:8081 -- echo "Mock GA is ready"\n\
+\n\
+# Setup database\n\
+/app/docker-test/scripts/setup_test_db.sh\n\
+\n\
+# Run tests based on argument\n\
+TEST_TYPE=${1:-all}\n\
+\n\
+case $TEST_TYPE in\n\
+  unit)\n\
+    echo "Running unit tests..."\n\
+    pytest tests/ -v -k "not integration and not e2e"\n\
+    ;;\n\
+  integration)\n\
+    echo "Running integration tests..."\n\
+    pytest tests/ -v -k "integration"\n\
+    ;;\n\
+  e2e)\n\
+    echo "Running E2E tests..."\n\
+    pytest tests/ -v -k "e2e"\n\
+    ;;\n\
+  all)\n\
+    echo "Running all tests..."\n\
+    pytest tests/ -v\n\
+    ;;\n\
+  *)\n\
+    echo "Unknown test type: $TEST_TYPE"\n\
+    echo "Usage: docker-compose run test-app [unit|integration|e2e|all]"\n\
+    exit 1\n\
+    ;;\n\
+esac\n' > /app/docker-test/scripts/run_tests.sh
+
+RUN chmod +x /app/docker-test/scripts/run_tests.sh
+
+# Switch to non-root user
+USER testuser
+
+# Set entrypoint
+ENTRYPOINT ["/app/docker-test/scripts/run_tests.sh"]
+
+# Default command (run all tests)
+CMD ["all"]

@@ -1,0 +1,175 @@
+{
+  "version": 1,
+  "uid": "shopify-integration",
+  "title": "Shopify Integration Dashboard",
+  "tags": ["shopify", "integration", "api"],
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "API Request Rate",
+      "type": "graph",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total[5m])",
+          "legendFormat": "{{method}} {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Response Time Percentiles",
+      "type": "graph",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Error Rate",
+      "type": "graph",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{status=~\"5..\"}[5m])",
+          "legendFormat": "5xx errors"
+        },
+        {
+          "expr": "rate(http_requests_total{status=~\"4..\"}[5m])",
+          "legendFormat": "4xx errors"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Resource Usage",
+      "type": "graph",
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "container_memory_usage_bytes{name=\"shopify-integration-api\"}",
+          "legendFormat": "Memory Usage"
+        },
+        {
+          "expr": "rate(container_cpu_usage_seconds_total{name=\"shopify-integration-api\"}[5m])",
+          "legendFormat": "CPU Usage"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Database Connections",
+      "type": "graph",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "pg_stat_database_numbackends{datname=\"shopify_integration\"}",
+          "legendFormat": "Active Connections"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Cache Performance",
+      "type": "graph",
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "rate(redis_hits_total[5m])",
+          "legendFormat": "Cache Hits"
+        },
+        {
+          "expr": "rate(redis_misses_total[5m])",
+          "legendFormat": "Cache Misses"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Shopify API Rate Limits",
+      "type": "graph",
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "shopify_api_rate_limit_remaining",
+          "legendFormat": "Remaining Calls"
+        },
+        {
+          "expr": "rate(shopify_api_rate_limit_exceeded_total[5m])",
+          "legendFormat": "Rate Limit Exceeded"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Batch Processing Status",
+      "type": "table",
+      "gridPos": {
+        "x": 12,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "shopify_batch_processing_jobs_total",
+          "format": "table",
+          "instant": true
+        }
+      ]
+    }
+  ],
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "refresh": "10s"
+}

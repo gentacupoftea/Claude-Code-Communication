@@ -3,7 +3,8 @@ Authentication configuration settings
 """
 import os
 from typing import Optional
-from pydantic import BaseSettings, Field
+from pydantic_settings import BaseSettings
+from pydantic import Field
 
 
 class AuthSettings(BaseSettings):
@@ -27,10 +28,12 @@ class AuthSettings(BaseSettings):
     # Organization Settings
     default_org_name: str = Field(default="Default Organization", env="DEFAULT_ORG_NAME")
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": False,
+        "extra": "ignore"
+    }
 
 
 def get_auth_settings() -> AuthSettings:

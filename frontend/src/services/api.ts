@@ -7,7 +7,7 @@ class ApiService {
 
   constructor() {
     this.instance = axios.create({
-      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1',
+      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000',
       timeout: 10000,
     });
 
@@ -68,7 +68,7 @@ class ApiService {
       throw new Error('No refresh token available');
     }
 
-    const response = await this.instance.post<AuthTokens>('/auth/refresh', {
+    const response = await this.instance.post<AuthTokens>('/api/v1/auth/refresh', {
       refresh_token: tokens.refreshToken,
     });
 
@@ -90,20 +90,20 @@ class ApiService {
   }
 
   // Public methods
-  public get(url: string, config?: any) {
-    return this.instance.get(url, config);
+  public get<T = any>(url: string, config?: any) {
+    return this.instance.get<T>(url, config);
   }
 
-  public post(url: string, data?: any, config?: any) {
-    return this.instance.post(url, data, config);
+  public post<T = any>(url: string, data?: any, config?: any) {
+    return this.instance.post<T>(url, data, config);
   }
 
-  public put(url: string, data?: any, config?: any) {
-    return this.instance.put(url, data, config);
+  public put<T = any>(url: string, data?: any, config?: any) {
+    return this.instance.put<T>(url, data, config);
   }
 
-  public delete(url: string, config?: any) {
-    return this.instance.delete(url, config);
+  public delete<T = any>(url: string, config?: any) {
+    return this.instance.delete<T>(url, config);
   }
 }
 

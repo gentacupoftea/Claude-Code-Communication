@@ -10,6 +10,7 @@ from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.cors import CORSMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +160,7 @@ def setup_middleware(app):
     # Add CORS support
     app.add_middleware(
         CORSMiddleware,
-        allowed_origins=["http://localhost:3000", "https://shopify-mcp.com"],
+        allowed_origins=["http://localhost:3000", "http://localhost:3001", "https://shopify-mcp.com"],
         allowed_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowed_headers=["*"]
     )
