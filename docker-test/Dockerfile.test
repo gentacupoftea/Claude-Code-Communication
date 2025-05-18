@@ -41,6 +41,7 @@ WORKDIR /app
 # Copy requirements files
 COPY requirements*.txt ./
 COPY requirements-dev.txt ./
+COPY docker-test/requirements-test.txt ./
 
 # Install Python dependencies
 ARG USE_VENDOR=0
@@ -59,11 +60,19 @@ RUN pip install --no-cache-dir \
     pytest==7.4.3 \
     pytest-playwright==0.4.3
 
-# Install Playwright browsers
+# Install test-specific dependencies
+RUN pip install --no-cache-dir -r requirements-test.txt
+
+# Install Playwright and browsers
+RUN pip install --no-cache-dir playwright
 RUN playwright install chromium --with-deps
 
 # Copy application code
 COPY . .
+
+# Copy test runner script
+COPY docker-test/run_e2e_tests.py /app/
+RUN chmod +x /app/run_e2e_tests.py
 
 # Create test user
 RUN useradd -m -s /bin/bash testuser
@@ -86,32 +95,8 @@ set -e\n\
 # Setup database\n\
 /app/docker-test/scripts/setup_test_db.sh\n\
 \n\
-# Run tests based on argument\n\
-TEST_TYPE=${1:-all}\n\
-\n\
-case $TEST_TYPE in\n\
-  unit)\n\
-    echo "Running unit tests..."\n\
-    pytest tests/ -v -k "not integration and not e2e"\n\
-    ;;\n\
-  integration)\n\
-    echo "Running integration tests..."\n\
-    pytest tests/ -v -k "integration"\n\
-    ;;\n\
-  e2e)\n\
-    echo "Running E2E tests..."\n\
-    pytest tests/ -v -k "e2e"\n\
-    ;;\n\
-  all)\n\
-    echo "Running all tests..."\n\
-    pytest tests/ -v\n\
-    ;;\n\
-  *)\n\
-    echo "Unknown test type: $TEST_TYPE"\n\
-    echo "Usage: docker-compose run test-app [unit|integration|e2e|all]"\n\
-    exit 1\n\
-    ;;\n\
-esac\n' > /app/docker-test/scripts/run_tests.sh
+# Use the new Python test runner for better error handling\n\
+python /app/run_e2e_tests.py "$@"\n' > /app/docker-test/scripts/run_tests.sh
 
 RUN chmod +x /app/docker-test/scripts/run_tests.sh
 
