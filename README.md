@@ -148,6 +148,14 @@ python -m pytest test_graphql_client.py
 python test_imports.py
 ```
 
+To run the end-to-end tests with Playwright:
+
+```bash
+export E2E_BASE_URL=http://localhost:8000
+python run_e2e_tests.py
+python scripts/generate_mock_data.py  # optional deterministic test DB
+```
+
 ## 🔧 Troubleshooting
 
 ### Network Issues
