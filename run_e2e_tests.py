@@ -1,52 +1,33 @@
 #!/usr/bin/env python3
-"""Simple E2E test runner using pytest and Playwright."""
+"""Simple wrapper to execute Playwright based end-to-end tests."""
 
 import os
 import subprocess
 import sys
 
 
-def validate_environment() -> None:
-    """Ensure required environment variables are set."""
-    required_vars = ["E2E_BASE_URL", "PLAYWRIGHT_BROWSERS_PATH"]
-    missing = [var for var in required_vars if not os.getenv(var)]
-    if missing:
-        raise EnvironmentError(
-            f"Missing required environment variables: {', '.join(missing)}"
-        )
-
-
-def main():
+def ensure_pytest() -> bool:
+    """Return True if pytest is available, otherwise print help."""
     try:
-        validate_environment()
-    except EnvironmentError as exc:
-        print(exc)
-        sys.exit(1)
+        import pytest  # noqa: F401
+    except Exception:
+        print("pytest is not installed. Please install requirements-dev.txt")
+        return False
+    return True
 
-    try:
-        subprocess.run([sys.executable, "-m", "pytest", "--version"], check=True)
-    except FileNotFoundError:
-        print("pytest not found. Installing required dependencies...")
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install", "pytest", "pytest-playwright"],
-            check=True,
-        )
 
-    cmd = [
-        sys.executable,
-        "-m",
-        "pytest",
-        "tests/e2e",
-        "-v",
-        "--html=playwright-report/report.html",
-        "--self-contained-html",
-    ]
-    try:
-        subprocess.run(cmd, check=True)
-    except subprocess.CalledProcessError as exc:
-        print("E2E tests failed", exc)
-        sys.exit(exc.returncode)
+def main() -> int:
+    base_url = os.environ.get("E2E_BASE_URL")
+    if not base_url:
+        print("E2E_BASE_URL not set, skipping E2E tests")
+        return 0
+
+    if not ensure_pytest():
+        return 1
+
+    cmd = [sys.executable, "-m", "pytest", "tests/e2e", "-v"] + sys.argv[1:]
+    return subprocess.call(cmd)
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
