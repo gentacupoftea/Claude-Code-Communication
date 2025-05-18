@@ -1,0 +1,25 @@
+name: Basic Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Setup test environment
+        run: |
+          cp .env.test.example .env.test
+          chmod +x setup_test_env.sh
+          ./setup_test_env.sh
+      - name: Run pytest
+        run: |
+          source test_venv/bin/activate
+          pytest -v
+
