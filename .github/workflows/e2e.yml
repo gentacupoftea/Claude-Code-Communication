@@ -22,9 +22,24 @@ jobs:
         playwright install --with-deps
     - name: Run E2E tests
       env:
-        E2E_BASE_URL: ${{ secrets.E2E_BASE_URL }}
+        E2E_BASE_URL: ${{ vars.E2E_BASE_URL || 'http://localhost:8000' }}
       run: |
-        python -m pytest tests/e2e -v --html=e2e-report.html || true
+        # Start the application in background if running locally
+        if [ -z "${{ vars.E2E_BASE_URL }}" ]; then
+          python -m src.main &
+          APP_PID=$!
+          # Wait for app to start
+          sleep 10
+        fi
+        
+        python -m pytest tests/e2e -v --html=e2e-report.html || EXIT_CODE=$?
+        
+        # Stop the application if we started it
+        if [ -n "$APP_PID" ]; then
+          kill $APP_PID || true
+        fi
+        
+        exit ${EXIT_CODE:-0}
     - name: Upload E2E report
       uses: actions/upload-artifact@v3
       with:

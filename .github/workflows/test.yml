@@ -9,10 +9,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
+          
+      - name: Cache pip packages
+        uses: actions/cache@v3
+        id: cache-pip
+        with:
+          path: |
+            ~/.cache/pip
+            test_venv
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+            
+      - name: Cache test results
+        uses: actions/cache@v3
+        with:
+          path: |
+            .pytest_cache
+            .coverage
+          key: ${{ runner.os }}-test-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-test-
+            
       - name: Setup test environment
         run: |
           cp .env.test.example .env.test
