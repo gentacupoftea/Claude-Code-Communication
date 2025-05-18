@@ -67,10 +67,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         error: null,
       });
     } catch (error: any) {
+      console.error('Login error:', error);
+      console.error('Error response:', error.response);
       setState((prev) => ({
         ...prev,
         isLoading: false,
-        error: error.response?.data?.detail || 'Login failed',
+        error: error.response?.data?.detail || error.message || 'Login failed',
       }));
       throw error;
     }

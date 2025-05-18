@@ -41,12 +41,12 @@ class AuthService {
 
   async refreshToken(): Promise<AuthTokens> {
     const tokens = this.getStoredTokens();
-    if (!tokens?.refreshToken) {
+    if (!tokens?.refresh_token) {
       throw new Error('No refresh token available');
     }
 
     const response = await api.post<AuthTokens>('/api/v1/auth/refresh', {
-      refresh_token: tokens.refreshToken,
+      refresh_token: tokens.refresh_token,
     });
 
     this.storeTokens(response.data);
@@ -74,7 +74,7 @@ class AuthService {
 
   isAuthenticated(): boolean {
     const tokens = this.getStoredTokens();
-    return !!tokens?.accessToken;
+    return !!tokens?.access_token;
   }
 }
 

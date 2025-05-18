@@ -1,11 +1,11 @@
 export interface User {
   id: string;
   email: string;
-  fullName: string;
-  isActive: boolean;
-  isSuperuser: boolean;
-  createdAt: string;
-  lastLogin?: string;
+  full_name: string;
+  is_active: boolean;
+  is_superuser: boolean;
+  created_at: string;
+  last_login?: string;
 }
 
 export interface Organization {
@@ -27,9 +27,9 @@ export interface SignupData {
 }
 
 export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-  tokenType: string;
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
 }
 
 export interface AuthState {
