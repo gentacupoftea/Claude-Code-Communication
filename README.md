@@ -132,9 +132,14 @@ See [GraphQL vs REST Guide](docs/user-guide/graphql-vs-rest.md) for detailed com
 
 ## 🧪 Testing
 
-Run the comprehensive test suite:
+Prepare the test environment and run the suite:
 
 ```bash
+# Copy example variables for testing
+cp .env.test.example .env.test
+# Install dependencies in a virtualenv
+./setup_test_env.sh
+
 # Run all tests with automatic dependency detection
 python run_adaptive_tests.py
 
