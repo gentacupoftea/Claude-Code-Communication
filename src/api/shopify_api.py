@@ -1,19 +1,23 @@
 """
 Enhanced Shopify API client with GraphQL support
 Based on PR #7 compatibility approach - extends existing API to support both REST and GraphQL
+Includes data validation and GA4 integration
 """
 
 import asyncio
 import logging
 import os
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
 import requests
+import pandas as pd
 from functools import lru_cache
 from datetime import datetime
 
 from .shopify_graphql import ShopifyGraphQLAPI
 # from .errors import ShopifyRESTError, handle_rest_error
 # from ..utils import memoize, optimize_dataframe_dtypes
+from ..data_integration.validation.data_validator import DataValidator, ValidationError
+from ..data_integration.ga4.ga4_mapper import GA4Mapper
 
 # 一時的なモック
 class ShopifyRESTError(Exception):
@@ -475,3 +479,143 @@ class ShopifyAPI:
     def is_graphql_enabled(self) -> bool:
         """Check if GraphQL mode is enabled"""
         return self.use_graphql and self._graphql_client is not None
+        
+    
+    def validate_order(self, order: Dict[str, Any], strict: bool = False) -> bool:
+        """
+        Validate an order against the common data model.
+        
+        Args:
+            order: The order data to validate.
+            strict: If True, validation failures will raise exceptions.
+                   If False, validation failures will be logged as warnings.
+                   
+        Returns:
+            True if the order is valid, False otherwise.
+            
+        Raises:
+            ValidationError: If strict mode is enabled and validation fails.
+        """
+        validator = DataValidator(strict=strict)
+        return validator.validate_order(order)
+    
+    def validate_orders(self, orders: List[Dict[str, Any]], strict: bool = False) -> List[Dict[str, Any]]:
+        """
+        Validate multiple orders against the common data model.
+        
+        Args:
+            orders: The list of order data to validate.
+            strict: If True, validation failures will raise exceptions.
+                   If False, validation failures will be logged as warnings.
+                   
+        Returns:
+            List of valid orders.
+        """
+        validator = DataValidator(strict=strict)
+        valid_orders = []
+        
+        for order in orders:
+            if validator.validate_order(order):
+                valid_orders.append(order)
+        
+        return valid_orders
+    
+    def validate_product(self, product: Dict[str, Any], strict: bool = False) -> bool:
+        """
+        Validate a product against the common data model.
+        
+        Args:
+            product: The product data to validate.
+            strict: If True, validation failures will raise exceptions.
+                   If False, validation failures will be logged as warnings.
+                   
+        Returns:
+            True if the product is valid, False otherwise.
+            
+        Raises:
+            ValidationError: If strict mode is enabled and validation fails.
+        """
+        validator = DataValidator(strict=strict)
+        return validator.validate_product(product)
+    
+    def validate_products(self, products: List[Dict[str, Any]], strict: bool = False) -> List[Dict[str, Any]]:
+        """
+        Validate multiple products against the common data model.
+        
+        Args:
+            products: The list of product data to validate.
+            strict: If True, validation failures will raise exceptions.
+                   If False, validation failures will be logged as warnings.
+                   
+        Returns:
+            List of valid products.
+        """
+        validator = DataValidator(strict=strict)
+        valid_products = []
+        
+        for product in products:
+            if validator.validate_product(product):
+                valid_products.append(product)
+        
+        return valid_products
+    
+    
+    def map_order_to_ga4(self, order: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Map a Shopify order to GA4 format.
+        
+        Args:
+            order: The Shopify order data.
+            
+        Returns:
+            The order data in GA4 format.
+        """
+        return GA4Mapper.map_order_to_ga4(order)
+    
+    def map_orders_to_ga4(self, orders: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Map multiple Shopify orders to GA4 format.
+        
+        Args:
+            orders: The list of Shopify order data.
+            
+        Returns:
+            The list of order data in GA4 format.
+        """
+        return GA4Mapper.map_orders_to_ga4(orders)
+    
+    def orders_to_ga4_dataframe(self, orders: List[Dict[str, Any]]) -> pd.DataFrame:
+        """
+        Convert Shopify orders to a GA4 format DataFrame.
+        
+        Args:
+            orders: The list of Shopify order data.
+            
+        Returns:
+            DataFrame with orders in GA4 format.
+        """
+        return GA4Mapper.orders_to_ga4_dataframe(orders)
+    
+    def map_product_to_ga4(self, product: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Map a Shopify product to GA4 format.
+        
+        Args:
+            product: The Shopify product data.
+            
+        Returns:
+            The product data in GA4 format.
+        """
+        return GA4Mapper.map_product_to_ga4(product)
+    
+    def map_products_to_ga4(self, products: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Map multiple Shopify products to GA4 format.
+        
+        Args:
+            products: The list of Shopify product data.
+            
+        Returns:
+            The list of product data in GA4 format.
+        """
+        return GA4Mapper.map_products_to_ga4(products)
