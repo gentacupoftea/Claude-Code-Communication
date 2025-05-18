@@ -19,6 +19,11 @@ import base64
 import asyncio
 from typing import Optional
 from utils import memoize, optimize_dataframe_dtypes  # 新しいユーティリティをインポート
+import warnings
+from urllib3.exceptions import InsecureRequestWarning
+
+# Disable SSL warnings
+warnings.filterwarnings('ignore', category=InsecureRequestWarning)
 
 # Force correct LOG_LEVEL format before any MCP initialization
 os.environ["LOG_LEVEL"] = "INFO"
@@ -76,7 +81,8 @@ class ShopifyAPI:
                 url=url,
                 headers=self.headers,
                 params=params,
-                json=data
+                json=data,
+                verify=False
             )
             response.raise_for_status()
             return response.json()

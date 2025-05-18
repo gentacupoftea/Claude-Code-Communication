@@ -2,12 +2,18 @@
 
 Model Context Protocol (MCP) server for integrating Shopify API with Claude Desktop for real-time e-commerce analytics and data visualization.
 
-**Version**: v0.2.0 (GraphQL Edition)  
+**Version**: v0.3.0 (Analytics Edition)  
 **Status**: Production Ready  
 **Documentation**: [Full Documentation](docs/README.md)
 
-## 🚀 What's New in v0.2.0
+## 🚀 What's New in v0.3.0
 
+- **Google Analytics Integration**: Comprehensive GA4 API support with real-time data
+- **Advanced Analytics**: Conversion funnels, user segments, and custom metrics
+- **Intelligent Caching**: Redis-based caching for improved performance
+- **Extended API Support**: Both REST and GraphQL endpoints for analytics
+
+### Previous Updates (v0.2.0)
 - **GraphQL API Support**: Efficient data fetching with up to 70% fewer API calls
 - **Enhanced Testing**: Comprehensive test suite with coverage reporting
 - **Flexible Dependencies**: Better compatibility with version ranges
@@ -22,6 +28,7 @@ Model Context Protocol (MCP) server for integrating Shopify API with Claude Desk
 - 🔒 Secure API integration
 - 📈 Product performance tracking
 - 🌐 GraphQL and REST API support
+- 📊 Google Analytics integration (NEW in v0.3.0)
 
 ### Technical Features
 - 🚄 High-performance caching
@@ -30,6 +37,7 @@ Model Context Protocol (MCP) server for integrating Shopify API with Claude Desk
 - 📝 Extensive documentation
 - 🔄 CI/CD ready
 - 🛡️ Network resilient installation
+- 🔐 Redis-based caching for Google Analytics
 
 ## 📚 Quick Start
 
@@ -116,6 +124,12 @@ See [Environment Setup Guide](docs/configuration/environment.md) for detailed in
 - `get_products_graphql`: Efficient product data fetching  
 - `get_inventory_levels_graphql`: Location-aware inventory tracking
 
+### Google Analytics API Tools (v0.3.0+)
+- `run_ga_report`: Execute Google Analytics reports
+- `get_realtime_data`: Real-time visitor analytics
+- `get_conversion_funnel`: Analyze conversion paths
+- `get_user_segments`: Compare user segments
+
 ### When to Use Which?
 
 **Use GraphQL for:**
@@ -178,6 +192,34 @@ docker-compose -f docker-compose.prod.yml up
 ```
 
 See [Docker Configuration](docs/configuration/docker.md) for details.
+
+## 📊 Google Analytics Integration
+
+### Setup
+1. Configure GA credentials in `.env`:
+```bash
+GA_CREDENTIALS_PATH=/path/to/service-account.json
+GA_PROPERTY_ID=123456789
+```
+
+2. Start Redis for caching:
+```bash
+docker-compose -f docker-compose.ga.yml up redis
+```
+
+3. Run the GA server:
+```bash
+python -m src.google_analytics.main
+```
+
+### Features
+- Real-time visitor tracking
+- Custom report generation
+- Conversion funnel analysis
+- Multi-property support
+- Intelligent caching with Redis
+
+See [Google Analytics Guide](docs/GOOGLE_ANALYTICS_GUIDE.md) for detailed documentation.
 
 ## 🤝 Contributing
 

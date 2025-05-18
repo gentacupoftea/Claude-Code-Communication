@@ -1,0 +1,29 @@
+# Google Analytics integration requirements
+google-analytics-data>=0.18.0
+google-auth>=2.16.0
+google-auth-oauthlib>=1.0.0
+google-auth-httplib2>=0.1.0
+
+# Redis for caching
+redis>=4.5.0
+
+# API framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# HTTP client
+httpx>=0.24.0
+
+# Testing
+pytest>=7.3.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.0
+
+# Utilities
+python-dotenv>=1.0.0
+python-multipart>=0.0.6
+pendulum>=2.1.0
+ujson>=5.8.0

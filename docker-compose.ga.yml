@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: ga-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  google-analytics:
+    build:
+      context: .
+      dockerfile: Dockerfile.ga
+    container_name: ga-mcp-server
+    ports:
+      - "8000:8000"
+    environment:
+      - GA_CREDENTIALS_PATH=/app/credentials/ga-service-account.json
+      - GA_PROPERTY_ID=${GA_PROPERTY_ID}
+      - REDIS_URL=redis://redis:6379/0
+      - GA_LOG_LEVEL=INFO
+    volumes:
+      - ./credentials:/app/credentials:ro
+      - ./.env:/app/.env:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  redis_data:
+
+networks:
+  default:
+    name: ga-network
