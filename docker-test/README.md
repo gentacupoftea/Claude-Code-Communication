@@ -40,6 +40,12 @@ docker-compose run test-app e2e
 
 # すべてのテスト
 docker-compose run test-app all
+
+# 並列実行（高速化）
+docker-compose run test-app all --parallel
+
+# 依存関係のインストールをスキップ
+docker-compose run test-app all --skip-install
 ```
 
 ### クリーンアップ
@@ -47,6 +53,20 @@ docker-compose run test-app all
 ```bash
 docker-compose down -v
 ```
+
+### トラブルシューティング
+
+#### pip install pytest が失敗する場合
+
+新しいテストランナーは自動的に依存関係をインストールします。手動でインストールする必要がある場合：
+
+```bash
+docker-compose run test-app pip install -r requirements-test.txt
+```
+
+#### 環境変数エラーが発生する場合
+
+run_e2e_tests.py は自動的にデフォルト値を設定しますが、カスタム値が必要な場合は docker-compose.yml で設定してください。
 
 ## ファイル構造
 
