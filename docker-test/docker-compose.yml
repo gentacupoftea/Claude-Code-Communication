@@ -72,6 +72,8 @@ services:
       - JWT_SECRET_KEY=test_jwt_secret_key_for_testing
       - PYTHONPATH=/app
       - TEST_ENVIRONMENT=docker
+      - E2E_BASE_URL=http://localhost:8000
+      - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
     depends_on:
       test-db:
         condition: service_healthy
@@ -84,7 +86,13 @@ services:
     volumes:
       - ../tests:/app/tests
       - ../src:/app/src
-      - test-results:/app/test-results
+      - ./test-results:/app/test-results
+      - ./playwright-report:/app/playwright-report
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - test-network
     stdin_open: true
@@ -92,7 +100,6 @@ services:
 
 volumes:
   postgres_data:
-  test-results:
 
 networks:
   test-network:

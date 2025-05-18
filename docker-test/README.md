@@ -18,7 +18,16 @@
 cp .env.example .env
 ```
 
-必要に応じて`.env`ファイルを編集してください。
+必要に応じて`.env`ファイルを編集してください。また、オフライン環境でビルドする場合は、
+`vendor/` ディレクトリに事前にダウンロードしたパッケージを配置し、ビルド時に
+`--build-arg USE_VENDOR=1` を指定します。
+
+`.env` には次のE2Eテスト用変数も設定できます。
+
+```env
+E2E_BASE_URL=http://localhost:8000
+PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+```
 
 ### 全テストの実行
 

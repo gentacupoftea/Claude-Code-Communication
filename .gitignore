@@ -49,6 +49,7 @@ test_env/
 
 # Local Python wheels
 vendor/
+!vendor/.gitkeep
 
 # Database
 *.db

@@ -43,11 +43,24 @@ COPY requirements*.txt ./
 COPY requirements-dev.txt ./
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir -r requirements-dev.txt
+ARG USE_VENDOR=0
+COPY vendor ./vendor
+RUN if [ "$USE_VENDOR" = "1" ] && ls vendor >/dev/null 2>&1; then \
+        pip install --no-index --find-links=vendor -r requirements.txt && \
+        pip install --no-index --find-links=vendor -r requirements-dev.txt; \
+    else \
+        pip install --no-cache-dir -r requirements.txt && \
+        pip install --no-cache-dir -r requirements-dev.txt; \
+    fi
+
+# Pre-cache test dependencies
+RUN pip install --no-cache-dir \
+    playwright==1.40.0 \
+    pytest==7.4.3 \
+    pytest-playwright==0.4.3
 
 # Install Playwright browsers
-RUN pip install playwright && playwright install chromium
+RUN playwright install chromium --with-deps
 
 # Copy application code
 COPY . .
