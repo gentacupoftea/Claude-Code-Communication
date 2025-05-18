@@ -10,6 +10,7 @@ For users who want to install and use Shopify MCP Server
 - [Basic Usage](user-guide/basic-usage.md)
 - [GraphQL vs REST Guide](user-guide/graphql-vs-rest.md)
 - [Common Use Cases](user-guide/use-cases.md)
+- [Data Visualization Guide](user-guide/data-visualization-guide.md)
 
 ### 🔧 [Developer Guide](developer-guide/README.md)
 For developers who want to extend or modify the server

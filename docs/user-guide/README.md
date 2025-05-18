@@ -27,6 +27,7 @@ Welcome to the Shopify MCP Server User Guide. This section covers everything you
 - Inventory management  
 - Customer insights
 - Report generation
+- [Data Visualization Guide](data-visualization-guide.md)
 
 ## Quick Start
 

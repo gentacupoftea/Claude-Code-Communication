@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/DashboardPage';
 import OrdersPage from './pages/OrdersPage';
+import AnalyticsDashboard from './pages/AnalyticsDashboard';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -35,6 +36,7 @@ const App: React.FC = () => {
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/orders" element={<OrdersPage />} />
+                <Route path="/analytics" element={<AnalyticsDashboard />} />
                 {/* Add more protected routes here */}
               </Route>
             </Route>

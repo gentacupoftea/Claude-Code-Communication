@@ -24,6 +24,7 @@ Model Context Protocol (MCP) server for integrating Shopify API with Claude Desk
 ### Core Capabilities
 - 🛍️ Real-time order data aggregation
 - 📊 Sales analytics and visualization
+- 📈 Interactive analytics dashboard
 - 💰 Currency-aware reporting (Multi-currency support)
 - 🔒 Secure API integration
 - 📈 Product performance tracking
