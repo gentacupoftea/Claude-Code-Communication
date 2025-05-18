@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="shopify-mcp-server",
-    version="0.2.1",
+    version="0.2.2",
     author="Mourigenta",
     description="A MCP server for Shopify API integration with Claude Desktop",
     long_description=long_description,
@@ -18,7 +18,7 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.10",
+    python_requires=">=3.12",
     install_requires=[
         "mcp>=1.9.0",
         "requests",

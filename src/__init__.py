@@ -2,7 +2,7 @@
 Shopify MCP Server - A Model Context Protocol server for Shopify API integration
 """
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 __author__ = "Mourigenta"
 __license__ = "MIT"
 
