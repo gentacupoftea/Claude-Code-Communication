@@ -21,7 +21,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { MoreVert, Download, Visibility } from '@mui/icons-material';
-import { Card } from '@/atoms';
+import { Card } from '../../atoms';
 
 export interface Column<T = any> {
   id: string;

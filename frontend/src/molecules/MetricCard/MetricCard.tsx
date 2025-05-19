@@ -5,8 +5,8 @@
 import React from 'react';
 import { Typography, Box, IconButton, Tooltip } from '@mui/material';
 import { TrendingUp, TrendingDown, TrendingFlat, Info } from '@mui/icons-material';
-import { Card } from '@/atoms';
-import { formatNumber, formatPercent } from '@/utils/format';
+import { Card } from '../../atoms';
+import { formatNumber, formatPercent } from '../../utils/format';
 
 export interface MetricCardProps {
   title: string;

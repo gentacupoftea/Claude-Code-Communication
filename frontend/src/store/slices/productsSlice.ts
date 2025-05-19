@@ -2,8 +2,8 @@
  * 商品状態管理スライス
  */
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { Product, PaginationParams, FilterParams } from '@/types';
-import productsService from '@/services/productsService';
+import { Product, PaginationParams, FilterParams } from '../../types';
+import productsService from '../../services/productsService';
 
 interface ProductsState {
   items: Product[];

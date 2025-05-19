@@ -5,9 +5,9 @@
 import React, { useState } from 'react';
 import { Box, IconButton, Menu, MenuItem, Chip, Popover, Fade, Typography, Checkbox } from '@mui/material';
 import { Search, FilterList, Clear } from '@mui/icons-material';
-import { Input, Button } from '@/atoms';
-import { useDebounce } from '@/hooks';
-import { ECPlatform } from '@/types';
+import { Input, Button } from '../../atoms';
+import { useDebounce } from '../../hooks';
+import { ECPlatform } from '../../types';
 
 export interface SearchBarProps {
   placeholder?: string;

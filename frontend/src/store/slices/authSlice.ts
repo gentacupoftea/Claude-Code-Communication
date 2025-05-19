@@ -2,8 +2,8 @@
  * 認証状態管理スライス
  */
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { User } from '@/types';
-import authService from '@/services/authService';
+import { User } from '../../types';
+import authService from '../../services/authService';
 
 interface AuthState {
   user: User | null;
