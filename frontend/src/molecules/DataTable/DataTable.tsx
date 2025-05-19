@@ -47,6 +47,7 @@ export interface DataTableProps<T = any> {
   onExport?: () => void;
   loading?: boolean;
   emptyMessage?: string;
+  dense?: boolean;
   maxHeight?: number | string;
 }
 

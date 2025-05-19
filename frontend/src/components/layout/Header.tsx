@@ -58,7 +58,7 @@ const Header: React.FC = () => {
         <Menu as="div" className="relative">
           <Menu.Button className="flex items-center space-x-2 text-sm focus:outline-none">
             <UserCircleIcon className="w-8 h-8 text-gray-500 dark:text-gray-400" />
-            <span className="text-gray-700 dark:text-gray-300">{user?.full_name || user?.email}</span>
+            <span className="text-gray-700 dark:text-gray-300">{user?.name || user?.email}</span>
           </Menu.Button>
 
           <Menu.Items className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50">

@@ -3,7 +3,7 @@
  */
 
 // ECプラットフォーム種別
-export type ECPlatform = 'shopify' | 'rakuten' | 'amazon';
+export type ECPlatform = 'shopify' | 'rakuten' | 'amazon' | 'yahoo' | 'base' | 'mercari';
 
 // ユーザー認証
 export interface User {

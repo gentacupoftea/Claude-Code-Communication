@@ -28,12 +28,13 @@ import { RootState, AppDispatch } from '@/store';
 import { setDateRange, setLoading } from '@/store/slices/dashboardSlice';
 import { MetricCard, DataTable, SearchBar } from '@/molecules';
 import { Card, Button } from '@/atoms';
+import { Order } from '@/types';
 import { SalesChart } from './components/SalesChart';
 import { TopProducts } from './components/TopProducts';
 import { RecentOrders } from './components/RecentOrders';
 import { PlatformSync } from './components/PlatformSync';
 import { DateRangeSelector } from './components/DateRangeSelector';
-import { formatCurrency, formatPercent } from '@/utils';
+import { formatCurrency, formatPercent } from '@/utils/format';
 
 interface DashboardProps {}
 
@@ -48,6 +49,38 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   );
   
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  
+  // サンプルデータ（実際はAPIから取得）
+  const topProducts = [
+    { id: '1', name: '商品A', sales: 100, revenue: 10000 },
+    { id: '2', name: '商品B', sales: 80, revenue: 8000 },
+    { id: '3', name: '商品C', sales: 60, revenue: 6000 },
+  ];
+  
+  const recentOrders: Order[] = [
+    { 
+      id: '1', 
+      orderNumber: '1001', 
+      platform: 'shopify',
+      customer: {
+        name: '田中太郎',
+        email: 'tanaka@example.com',
+        address: {
+          line1: '東京都渋谷区',
+          city: '渋谷',
+          state: '東京都',
+          postalCode: '150-0001',
+          country: 'JP',
+        },
+      },
+      createdAt: new Date(),
+      status: 'delivered',
+      totalAmount: 5000,
+      items: [],
+      currency: 'JPY',
+      updatedAt: new Date(),
+    },
+  ];
 
   // ダッシュボードデータの取得
   useEffect(() => {
@@ -68,8 +101,8 @@ export const Dashboard: React.FC<DashboardProps> = () => {
     }
   };
 
-  const handleDateRangeChange = (newRange: { start: Date; end: Date }) => {
-    dispatch(setDateRange(newRange));
+  const handleDateRangeChange = (startDate: Date, endDate: Date) => {
+    dispatch(setDateRange({ start: startDate, end: endDate }));
   };
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -134,7 +167,14 @@ export const Dashboard: React.FC<DashboardProps> = () => {
 
       {/* プラットフォーム同期状態 */}
       <Box sx={{ mb: 3 }}>
-        <PlatformSync />
+        <PlatformSync 
+          platforms={[
+            { platform: 'shopify', lastSync: new Date(), status: 'synced' },
+            { platform: 'rakuten', lastSync: new Date(), status: 'pending' },
+            { platform: 'amazon', lastSync: new Date(), status: 'error' },
+          ]}
+          onSync={(platform) => console.log('Sync', platform)}
+        />
       </Box>
 
       {/* メトリクスカード */}
@@ -217,7 +257,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
             {loading ? (
               <Skeleton variant="rectangular" height={400} />
             ) : (
-              <SalesChart data={chartData.salesChart} />
+              <SalesChart data={chartData?.salesChart || []} />
             )}
           </Card>
         </Grid>
@@ -227,7 +267,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
             {loading ? (
               <Skeleton variant="rectangular" height={400} />
             ) : (
-              <TopProducts />
+              <TopProducts products={topProducts || []} />
             )}
           </Card>
         </Grid>
@@ -237,7 +277,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
             {loading ? (
               <Skeleton variant="rectangular" height={300} />
             ) : (
-              <RecentOrders />
+              <RecentOrders orders={recentOrders || []} />
             )}
           </Card>
         </Grid>

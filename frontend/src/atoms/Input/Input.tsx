@@ -1,70 +1,81 @@
 /**
  * カスタム入力フィールドコンポーネント
- * Material-UIのTextFieldをラップし、統一されたスタイリングを提供
+ * MUIのTextFieldをラップして独自のスタイリングを適用
  */
 import React from 'react';
 import { TextField, TextFieldProps, InputAdornment } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
-export interface InputProps extends Omit<TextFieldProps, 'variant'> {
-  variant?: 'standard' | 'filled' | 'outlined';
+export interface InputProps extends Omit<TextFieldProps, 'size'> {
+  size?: 'small' | 'medium';
+  icon?: React.ReactNode;
+  iconPosition?: 'start' | 'end';
+  rounded?: boolean;
+  fullWidth?: boolean;
   startIcon?: React.ReactNode;
   endIcon?: React.ReactNode;
+  onKeyPress?: (e: React.KeyboardEvent) => void;
 }
 
-const StyledTextField = styled(TextField)(({ theme }) => ({
+const StyledTextField = styled(TextField)<{ rounded?: boolean }>(({ theme, rounded }) => ({
   '& .MuiInputBase-root': {
-    borderRadius: theme.shape.borderRadius,
-    transition: theme.transitions.create(['border-color', 'box-shadow'], {
-      duration: theme.transitions.duration.short,
-    }),
-  },
-  '& .MuiOutlinedInput-root': {
-    '&:hover .MuiOutlinedInput-notchedOutline': {
-      borderColor: theme.palette.primary.main,
+    borderRadius: rounded ? '50px' : theme.shape.borderRadius,
+    transition: 'all 0.2s ease-in-out',
+    
+    '&:hover': {
+      transform: 'translateY(-1px)',
     },
-    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-      borderWidth: 2,
-    },
-  },
-  '& .MuiFilledInput-root': {
-    borderRadius: theme.shape.borderRadius,
-    '&:before': {
-      borderBottom: `1px solid ${theme.palette.divider}`,
-    },
-    '&:hover:before': {
-      borderBottom: `2px solid ${theme.palette.primary.main}`,
-    },
+    
     '&.Mui-focused': {
-      backgroundColor: theme.palette.action.hover,
+      transform: 'translateY(-1px)',
+      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
     },
+  },
+  
+  '& .MuiOutlinedInput-notchedOutline': {
+    transition: 'border-color 0.2s ease-in-out',
   },
 }));
 
-export const Input: React.FC<InputProps> = React.forwardRef(
-  ({ variant = 'outlined', startIcon, endIcon, InputProps = {}, ...props }, ref) => {
-    const inputProps = {
-      ...InputProps,
-      startAdornment: startIcon ? (
-        <InputAdornment position="start">{startIcon}</InputAdornment>
-      ) : InputProps.startAdornment,
-      endAdornment: endIcon ? (
-        <InputAdornment position="end">{endIcon}</InputAdornment>
-      ) : InputProps.endAdornment,
-    };
+const Input = React.forwardRef<HTMLDivElement, InputProps>(({
+  size = 'medium',
+  icon,
+  iconPosition = 'start',
+  rounded = false,
+  fullWidth = true,
+  startIcon,
+  endIcon,
+  InputProps,
+  ...props
+}, ref) => {
+  const adornments = {
+    ...InputProps,
+    ...(icon && {
+      [iconPosition === 'start' ? 'startAdornment' : 'endAdornment']: (
+        <InputAdornment position={iconPosition}>{icon}</InputAdornment>
+      ),
+    }),
+    ...(startIcon && {
+      startAdornment: <InputAdornment position="start">{startIcon}</InputAdornment>,
+    }),
+    ...(endIcon && {
+      endAdornment: <InputAdornment position="end">{endIcon}</InputAdornment>,
+    }),
+  };
 
-    return (
-      <StyledTextField
-        ref={ref}
-        variant={variant}
-        fullWidth
-        InputProps={inputProps}
-        {...props}
-      />
-    );
-  }
-);
+  return (
+    <StyledTextField
+      ref={ref}
+      size={size}
+      fullWidth={fullWidth}
+      rounded={rounded}
+      InputProps={adornments}
+      {...props}
+    />
+  );
+});
 
 Input.displayName = 'Input';
 
+export { Input };
 export default Input;

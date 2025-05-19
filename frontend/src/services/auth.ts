@@ -19,10 +19,10 @@ class AuthService {
         },
       });
 
-      console.log('Login response:', tokenResponse.data);
+      console.log('Login response:', tokenResponse);
 
       // Store tokens (this is important for the interceptor to work)
-      this.storeTokens(tokenResponse.data);
+      this.storeTokens(tokenResponse);
       
       // Small delay to ensure localStorage is updated
       await new Promise(resolve => setTimeout(resolve, 10));
@@ -32,11 +32,11 @@ class AuthService {
       // Get user profile (the interceptor will add the Authorization header)
       const userResponse = await api.get<User>('/api/v1/auth/me');
       
-      console.log('User profile response:', userResponse.data);
+      console.log('User profile response:', userResponse);
 
       return {
-        user: userResponse.data,
-        tokens: tokenResponse.data,
+        user: userResponse,
+        tokens: tokenResponse,
       };
     } catch (error: any) {
       console.error('Login error details:', {
@@ -51,12 +51,12 @@ class AuthService {
 
   async signup(data: SignupData): Promise<User> {
     const response = await api.post<User>('/api/v1/auth/register', data);
-    return response.data;
+    return response;
   }
 
   async getCurrentUser(): Promise<User> {
     const response = await api.get<User>('/api/v1/auth/me');
-    return response.data;
+    return response;
   }
 
   async refreshToken(): Promise<AuthTokens> {
@@ -69,8 +69,8 @@ class AuthService {
       refresh_token: tokens.refresh_token,
     });
 
-    this.storeTokens(response.data);
-    return response.data;
+    this.storeTokens(response);
+    return response;
   }
 
   logout() {

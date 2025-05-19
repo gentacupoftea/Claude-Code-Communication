@@ -93,20 +93,29 @@ class ApiService {
   }
 
   // Public methods
-  public get<T = any>(url: string, config?: any) {
-    return this.instance.get<T>(url, config);
+  public async get<T = any>(url: string, config?: any): Promise<T> {
+    const response = await this.instance.get<T>(url, config);
+    return response.data;
   }
 
-  public post<T = any>(url: string, data?: any, config?: any) {
-    return this.instance.post<T>(url, data, config);
+  public async post<T = any>(url: string, data?: any, config?: any): Promise<T> {
+    const response = await this.instance.post<T>(url, data, config);
+    return response.data;
   }
 
-  public put<T = any>(url: string, data?: any, config?: any) {
-    return this.instance.put<T>(url, data, config);
+  public async put<T = any>(url: string, data?: any, config?: any): Promise<T> {
+    const response = await this.instance.put<T>(url, data, config);
+    return response.data;
   }
 
-  public delete<T = any>(url: string, config?: any) {
-    return this.instance.delete<T>(url, config);
+  public async delete<T = any>(url: string, config?: any): Promise<T> {
+    const response = await this.instance.delete<T>(url, config);
+    return response.data;
+  }
+
+  public async patch<T = any>(url: string, data?: any, config?: any): Promise<T> {
+    const response = await this.instance.patch<T>(url, data, config);
+    return response.data;
   }
 }
 

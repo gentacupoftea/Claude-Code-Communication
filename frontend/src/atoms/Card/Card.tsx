@@ -1,92 +1,120 @@
 /**
  * カスタムカードコンポーネント
- * ダッシュボードで使用する統一されたカードデザイン
+ * MUIのCardをラップして独自のスタイリングを適用
  */
 import React from 'react';
-import { Card as MuiCard, CardProps as MuiCardProps, CardContent, CardHeader, CardActions } from '@mui/material';
+import { Card as MuiCard, CardContent, CardHeader, Typography, Box } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
-export interface CardProps extends Omit<MuiCardProps, 'children'> {
-  title?: React.ReactNode;
-  subtitle?: React.ReactNode;
+export interface CardProps {
+  title?: string;
+  subtitle?: string;
+  variant?: 'outlined' | 'elevated' | 'filled';
+  children?: React.ReactNode;
+  className?: string;
+  shadow?: 'small' | 'medium' | 'large';
+  onClick?: () => void;
+  fullHeight?: boolean;
+  padding?: 'small' | 'medium' | 'large';
+  interactive?: boolean;
+  sx?: any;
   actions?: React.ReactNode;
-  children: React.ReactNode;
-  variant?: 'elevated' | 'outlined' | 'filled';
-  padding?: 'none' | 'small' | 'medium' | 'large';
 }
 
-const StyledCard = styled(MuiCard, {
-  shouldForwardProp: (prop) => prop !== 'variant' && prop !== 'padding',
-})<Pick<CardProps, 'variant' | 'padding'>>(({ theme, variant = 'elevated', padding = 'medium' }) => {
-  const variants = {
-    elevated: {
-      boxShadow: theme.shadows[2],
-      '&:hover': {
-        boxShadow: theme.shadows[4],
-      },
-    },
-    outlined: {
-      border: `1px solid ${theme.palette.divider}`,
-      boxShadow: 'none',
-    },
-    filled: {
-      backgroundColor: theme.palette.background.default,
-      boxShadow: 'none',
-    },
+interface StyledCardProps {
+  variant?: 'outlined' | 'elevated' | 'filled';
+  shadow?: 'small' | 'medium' | 'large';
+  fullHeight?: boolean;
+  padding?: 'small' | 'medium' | 'large';
+  interactive?: boolean;
+}
+
+const StyledCard = styled(MuiCard)<StyledCardProps>(({ theme, variant, shadow, fullHeight, padding, interactive }) => {
+  const currentVariant: string = variant || 'outlined';
+  const styles: any = {
+    position: 'relative',
+    transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+    height: fullHeight ? '100%' : 'auto',
+    cursor: interactive ? 'pointer' : 'default',
   };
 
-  const paddings = {
-    none: 0,
-    small: theme.spacing(1),
-    medium: theme.spacing(2),
-    large: theme.spacing(3),
-  };
+  if (padding === 'small') {
+    styles['& .MuiCardContent-root'] = {
+      padding: theme.spacing(1.5),
+    };
+  }
 
-  return {
-    borderRadius: theme.shape.borderRadius * 2,
-    transition: theme.transitions.create(['box-shadow', 'transform'], {
-      duration: theme.transitions.duration.short,
-    }),
-    ...variants[variant],
-    '& .MuiCardContent-root': {
-      padding: paddings[padding],
-      '&:last-child': {
-        paddingBottom: paddings[padding],
-      },
-    },
-  };
+  if (padding === 'large') {
+    styles['& .MuiCardContent-root'] = {
+      padding: theme.spacing(3),
+    };
+  }
+
+  if (interactive) {
+    styles['&:hover'] = {
+      transform: 'translateY(-2px)',
+    };
+  }
+
+  if (shadow === 'small') {
+    styles.boxShadow = theme.shadows[1];
+  }
+
+  if (shadow === 'medium') {
+    styles.boxShadow = theme.shadows[3];
+  }
+
+  if (shadow === 'large') {
+    styles.boxShadow = theme.shadows[6];
+  }
+
+  if (currentVariant === 'filled') {
+    styles.backgroundColor = theme.palette.background.default;
+  }
+
+  return styles;
 });
 
 export const Card: React.FC<CardProps> = ({
   title,
   subtitle,
-  actions,
+  variant = 'outlined',
   children,
-  variant = 'elevated',
+  className,
+  shadow = 'medium',
+  onClick,
+  fullHeight = false,
   padding = 'medium',
-  ...props
+  interactive = false,
+  sx,
+  actions,
 }) => {
   return (
-    <StyledCard variant={variant} padding={padding} {...props}>
-      {(title || subtitle || actions) && (
+    <StyledCard
+      className={className}
+      sx={sx}
+      elevation={variant === 'elevated' ? 3 : variant === 'filled' ? 0 : 1}
+      onClick={onClick}
+      fullHeight={fullHeight}
+      interactive={interactive}
+      shadow={shadow}
+      padding={padding}
+    >
+      {title && (
         <CardHeader
-          title={title}
+          title={
+            <Typography variant="h6" component="h3">
+              {title}
+            </Typography>
+          }
           subheader={subtitle}
           action={actions}
-          sx={{
-            '& .MuiCardHeader-title': {
-              fontSize: '1.25rem',
-              fontWeight: 600,
-            },
-            '& .MuiCardHeader-subheader': {
-              fontSize: '0.875rem',
-              opacity: 0.7,
-            },
-          }}
+          sx={{ pb: 0 }}
         />
       )}
-      <CardContent>{children}</CardContent>
-      {actions && <CardActions>{actions}</CardActions>}
+      <CardContent>
+        {children}
+      </CardContent>
     </StyledCard>
   );
 };

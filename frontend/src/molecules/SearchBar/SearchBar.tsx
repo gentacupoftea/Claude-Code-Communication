@@ -3,7 +3,7 @@
  * フィルターオプション付きの高度な検索UI
  */
 import React, { useState } from 'react';
-import { Box, IconButton, Menu, MenuItem, Chip, Popover, Fade } from '@mui/material';
+import { Box, IconButton, Menu, MenuItem, Chip, Popover, Fade, Typography, Checkbox } from '@mui/material';
 import { Search, FilterList, Clear } from '@mui/icons-material';
 import { Input, Button } from '@/atoms';
 import { useDebounce } from '@/hooks';
@@ -27,6 +27,9 @@ const platformLabels: Record<ECPlatform, string> = {
   shopify: 'Shopify',
   rakuten: '楽天',
   amazon: 'Amazon',
+  yahoo: 'Yahoo!',
+  base: 'BASE',
+  mercari: 'メルカリ',
 };
 
 export const SearchBar: React.FC<SearchBarProps> = ({
@@ -90,7 +93,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       {showFilters && (
         <>
           <Button
-            variant="ghost"
+            variant="text"
             startIcon={<FilterList />}
             onClick={(e) => setFilterAnchor(e.currentTarget)}
             sx={{ minWidth: 100 }}

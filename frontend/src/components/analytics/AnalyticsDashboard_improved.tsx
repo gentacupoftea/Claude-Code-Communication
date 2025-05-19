@@ -15,7 +15,7 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorBoundary from '../common/ErrorBoundary';
 import api from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
-import { showToast } from '../../utils/toast';
+import { toast } from '../../utils/toast';
 
 interface DateRange {
   startDate: Date;
@@ -33,7 +33,7 @@ interface SummaryData {
 const AnalyticsDashboard: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
   
   const [dateRange, setDateRange] = useState<DateRange>({
     startDate: subDays(new Date(), 30),
@@ -72,7 +72,7 @@ const AnalyticsDashboard: React.FC = () => {
     enabled: isValidDateRange && !!user,
     onError: (error: any) => {
       console.error('Query error:', error);
-      showToast('error', t('analytics.error.fetch_failed'));
+      toast.error(t('analytics.error.fetch_failed'));
     },
   };
 
@@ -140,7 +140,7 @@ const AnalyticsDashboard: React.FC = () => {
 
   const handleExport = useCallback(async (dataType: string) => {
     if (!user?.permissions?.includes('analytics:export')) {
-      showToast('error', t('analytics.error.no_export_permission'));
+      toast.error(t('analytics.error.no_export_permission'));
       return;
     }
 
@@ -173,10 +173,10 @@ const AnalyticsDashboard: React.FC = () => {
       link.remove();
       
       window.URL.revokeObjectURL(url);
-      showToast('success', t('analytics.export.success'));
+      toast.success(t('analytics.export.success'));
     } catch (error) {
       console.error('Export failed:', error);
-      showToast('error', t('analytics.export.failed'));
+      toast.error(t('analytics.export.failed'));
     } finally {
       setIsExporting(false);
     }
@@ -221,8 +221,6 @@ const AnalyticsDashboard: React.FC = () => {
               startDate={dateRange.startDate}
               endDate={dateRange.endDate}
               onChange={debouncedDateChange}
-              maxDate={new Date()}
-              minDate={subDays(new Date(), 365)}
             />
             <select
               value={groupBy}

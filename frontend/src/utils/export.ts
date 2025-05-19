@@ -2,9 +2,25 @@
  * エクスポートユーティリティ
  * CSV、Excel、PDFへのデータエクスポート機能
  */
-import { saveAs } from 'file-saver';
-import * as XLSX from 'xlsx';
 import { formatDate, formatCurrency } from './format';
+
+// Try to load libraries if available
+let saveAs: ((data: Blob, filename: string) => void) | null = null;
+let XLSX: any = null;
+
+// Check if we can import libraries
+try {
+  const fileSaverModule = require('file-saver');
+  saveAs = fileSaverModule.saveAs;
+} catch (e) {
+  console.warn('file-saver not available');
+}
+
+try {
+  XLSX = require('xlsx');
+} catch (e) {
+  console.warn('xlsx not available');
+}
 
 /**
  * CSVエクスポート
@@ -14,6 +30,10 @@ export const exportToCSV = (
   filename: string = 'export',
   headers?: { [key: string]: string }
 ) => {
+  if (!saveAs) {
+    console.error('File saver not available');
+    return;
+  }
   if (!data.length) return;
 
   const keys = Object.keys(data[0]);
@@ -40,7 +60,9 @@ export const exportToCSV = (
   // BOMを追加（Excelで文字化けを防ぐ）
   const bom = '\uFEFF';
   const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8' });
-  saveAs(blob, `${filename}_${formatDate(new Date(), 'yyyyMMdd_HHmmss')}.csv`);
+  if (saveAs) {
+    saveAs(blob, `${filename}_${formatDate(new Date(), 'yyyyMMdd_HHmmss')}.csv`);
+  }
 };
 
 /**
@@ -52,6 +74,10 @@ export const exportToExcel = (
   sheetName: string = 'Sheet1',
   headers?: { [key: string]: string }
 ) => {
+  if (!saveAs || !XLSX) {
+    console.error('Export libraries not available');
+    return;
+  }
   if (!data.length) return;
 
   // ヘッダーマッピング
@@ -96,7 +122,9 @@ export const exportToExcel = (
   const excelBlob = new Blob([excelBuffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
-  saveAs(excelBlob, `${filename}_${formatDate(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`);
+  if (saveAs) {
+    saveAs(excelBlob, `${filename}_${formatDate(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`);
+  }
 };
 
 /**
@@ -106,6 +134,10 @@ export const exportToJSON = (
   data: any[],
   filename: string = 'export'
 ) => {
+  if (!saveAs) {
+    console.error('File saver not available');
+    return;
+  }
   const jsonContent = JSON.stringify(data, null, 2);
   const blob = new Blob([jsonContent], { type: 'application/json' });
   saveAs(blob, `${filename}_${formatDate(new Date(), 'yyyyMMdd_HHmmss')}.json`);
@@ -122,7 +154,7 @@ export const exportToPDF = async (
   // 実装例（html2canvasとjsPDFを使用）
   try {
     const { default: html2canvas } = await import('html2canvas');
-    const { jsPDF } = await import('jspdf');
+    const jsPDF = (await import('jspdf')).default;
 
     const canvas = await html2canvas(element);
     const imgData = canvas.toDataURL('image/png');

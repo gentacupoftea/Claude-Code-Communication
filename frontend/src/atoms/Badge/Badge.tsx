@@ -3,11 +3,11 @@
  * ステータスやカウントを表示するための小さなラベル
  */
 import React from 'react';
-import { Badge as MuiBadge, BadgeProps as MuiBadgeProps, Chip } from '@mui/material';
+import { Badge as MuiBadge, Chip } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
 export interface BadgeProps {
-  variant?: 'dot' | 'number' | 'status';
+  variant?: 'dot' | 'standard' | 'status';
   color?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info';
   value?: string | number;
   max?: number;
@@ -22,13 +22,25 @@ const StatusChip = styled(Chip)<{ statusColor?: string }>(({ theme, statusColor 
   fontSize: '0.75rem',
   fontWeight: 600,
   ...(statusColor && {
-    backgroundColor: theme.palette[statusColor]?.light,
-    color: theme.palette[statusColor]?.dark,
+    backgroundColor: statusColor === 'primary' ? theme.palette.primary.light
+      : statusColor === 'secondary' ? theme.palette.secondary.light
+      : statusColor === 'success' ? theme.palette.success.light
+      : statusColor === 'error' ? theme.palette.error.light
+      : statusColor === 'warning' ? theme.palette.warning.light
+      : statusColor === 'info' ? theme.palette.info.light
+      : theme.palette.primary.light,
+    color: statusColor === 'primary' ? theme.palette.primary.dark
+      : statusColor === 'secondary' ? theme.palette.secondary.dark
+      : statusColor === 'success' ? theme.palette.success.dark
+      : statusColor === 'error' ? theme.palette.error.dark
+      : statusColor === 'warning' ? theme.palette.warning.dark
+      : statusColor === 'info' ? theme.palette.info.dark
+      : theme.palette.primary.dark,
   }),
 }));
 
 export const Badge: React.FC<BadgeProps> = ({
-  variant = 'number',
+  variant = 'standard',
   color = 'primary',
   value,
   max = 99,
@@ -56,7 +68,7 @@ export const Badge: React.FC<BadgeProps> = ({
     <MuiBadge
       badgeContent={displayValue}
       color={color}
-      variant={variant}
+      variant={variant === 'standard' ? 'standard' : 'dot'}
       max={max}
       anchorOrigin={{
         vertical: 'top',

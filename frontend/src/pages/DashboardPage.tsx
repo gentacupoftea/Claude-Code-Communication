@@ -26,8 +26,13 @@ const DashboardPage: React.FC = () => {
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => {
-      const response = await api.get('/dashboard/summary');
-      return response.data;
+      // Temporarily return mock data while API is not available
+      return {
+        totalRevenue: 1234567,
+        totalOrders: 89,
+        newCustomers: 23,
+        conversionRate: 3.4,
+      };
     },
   });
 

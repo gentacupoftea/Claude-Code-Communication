@@ -32,7 +32,7 @@ const SignupPage: React.FC = () => {
       await signup({
         email: formData.email,
         password: formData.password,
-        fullName: formData.fullName,
+        name: formData.fullName,
       });
       navigate('/dashboard');
     } catch (err) {
