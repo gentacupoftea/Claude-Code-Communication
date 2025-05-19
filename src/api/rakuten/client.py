@@ -11,15 +11,17 @@ import json
 import random
 from datetime import datetime
 from cachetools import TTLCache
-from typing import Optional
 
 from ..abstract.base_client import AbstractEcommerceClient, RateLimitInfo
 from .auth import RakutenAuth, RakutenCredentials
 from .models.product import RakutenProduct
 from .models.order import RakutenOrder
 from .models.customer import RakutenCustomer
+from .models.category import RakutenCategory
 from .security import SecureSanitizer, create_safe_error_message
 from .validators import validate_product_data, validate_customer_data
+from .rms_endpoints import RMSEndpoints, APIType
+from .rms_errors import RMSErrorCodes, RMSErrorHandler
 
 logger = logging.getLogger(__name__)
 
@@ -173,14 +175,42 @@ class RakutenAPIClient(AbstractEcommerceClient):
             # Check for errors
             if response.status_code >= 400:
                 error_data = response.json() if response.content else {}
-                error_message = error_data.get('errors', [{}])[0].get('message', 'Unknown error')
-                error_code = error_data.get('errors', [{}])[0].get('code')
+                
+                # Handle RMS-style error response
+                if 'error' in error_data:
+                    error_code = error_data['error'].get('code', '')
+                    error_message = error_data['error'].get('message', 'Unknown error')
+                else:
+                    # Fallback to previous format
+                    errors_list = error_data.get('errors', [{}])
+                    error_code = errors_list[0].get('code', '') if errors_list else ''
+                    error_message = errors_list[0].get('message', 'Unknown error') if errors_list else 'Unknown error'
+                
+                # Use RMS error handler for better error messages
+                error_context = {
+                    'status_code': response.status_code,
+                    'endpoint': endpoint,
+                    'method': method,
+                    'request_id': response.headers.get('X-Request-Id')
+                }
+                
+                error_details = RMSErrorHandler.handle_error(
+                    error_code or f"HTTP{response.status_code}",
+                    error_message,
+                    error_context
+                )
                 
                 # Sanitize error message
-                safe_message = SecureSanitizer.sanitize_message(error_message)
-                logger.error(f"API error {response.status_code}: {safe_message}")
+                safe_message = SecureSanitizer.sanitize_message(error_details['message'])
+                logger.error(f"RMS API error: {safe_message}", extra=error_details)
                 
-                raise RakutenAPIError(safe_message, code=error_code, response=response)
+                # Create enhanced error
+                api_error = RakutenAPIError(safe_message, code=error_code, response=response)
+                api_error.is_retryable = error_details['is_retryable']
+                api_error.error_category = error_details['category']
+                api_error.error_details = error_details
+                
+                raise api_error
                 
             return response
             
@@ -292,10 +322,12 @@ class RakutenAPIClient(AbstractEcommerceClient):
         self._cache_stats['misses'] += 1
         logger.debug(f"Cache miss for product {product_id}")
         
-        response = await self._make_request(
+        # Use RMS endpoint
+        endpoint_url = RMSEndpoints.build_url("get_product")
+        response = await self._make_request_with_retry(
             'GET',
-            f'/{self.API_VERSION}/product/get',
-            params={'productId': product_id}
+            endpoint_url,
+            params={'itemId': product_id}  # RMS uses itemId
         )
         
         data = response.json()
@@ -444,7 +476,7 @@ class RakutenAPIClient(AbstractEcommerceClient):
         response = await self._make_request(
             'GET',
             f'/{self.API_VERSION}/order/get',
-            params={'orderNumber': order_id}
+            params={'orderId': order_id}
         )
         
         data = response.json()
@@ -460,7 +492,7 @@ class RakutenAPIClient(AbstractEcommerceClient):
         Args:
             limit: Maximum number of orders
             offset: Number of orders to skip
-            filters: Optional filters (status, date range, etc.)
+            filters: Optional filters (date range, status, etc.)
             
         Returns:
             List of order dictionaries
@@ -471,16 +503,14 @@ class RakutenAPIClient(AbstractEcommerceClient):
         }
         
         if filters:
-            # Convert common filters to Rakuten format
+            # Map common filter names to Rakuten-specific names
+            if 'start_date' in filters:
+                params['startDate'] = filters['start_date']
+            if 'end_date' in filters:
+                params['endDate'] = filters['end_date']
             if 'status' in filters:
-                params['orderStatus'] = self._convert_order_status(filters['status'])
-            if 'created_after' in filters:
-                params['orderDateFrom'] = filters['created_after']
-            if 'created_before' in filters:
-                params['orderDateTo'] = filters['created_before']
+                params['orderStatus'] = filters['status']
                 
-            params.update(filters)
-            
         response = await self._make_request(
             'GET',
             f'/{self.API_VERSION}/orders/search',
@@ -496,43 +526,81 @@ class RakutenAPIClient(AbstractEcommerceClient):
             
         return orders
         
-    async def update_order_status(self, order_id: str, status: str) -> Dict[str, Any]:
+    async def create_order(self, order_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Update order status
+        Create a new order (not typically supported for marketplaces)
+        
+        Args:
+            order_data: Order data to create
+            
+        Returns:
+            Created order data
+            
+        Raises:
+            NotImplementedError: Rakuten doesn't support order creation via API
+        """
+        raise NotImplementedError("Rakuten doesn't support order creation via API")
+        
+    async def update_order(self, order_id: str, order_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Update an existing order (limited support)
         
         Args:
             order_id: Order identifier
-            status: New status
+            order_data: Order data to update
             
         Returns:
             Updated order data
         """
-        rakuten_status = self._convert_order_status(status)
+        # Rakuten has limited order update capabilities
+        # Typically only status updates are allowed
+        allowed_updates = {
+            'status': order_data.get('status'),
+            'tracking_number': order_data.get('tracking_number'),
+            'shipping_carrier': order_data.get('shipping_carrier')
+        }
+        
+        # Remove None values
+        update_data = {k: v for k, v in allowed_updates.items() if v is not None}
         
         response = await self._make_request(
             'POST',
             f'/{self.API_VERSION}/order/update',
             data={
-                'orderNumber': order_id,
-                'orderStatus': rakuten_status
+                'orderId': order_id,
+                **update_data
             }
         )
         
         updated_data = response.json()
         return RakutenOrder.from_platform_format(updated_data).to_common_format()
         
-    def _convert_order_status(self, status: str) -> int:
-        """Convert common status to Rakuten status code"""
-        status_map = {
-            'pending': 100,     # 注文確認待ち
-            'processing': 200,  # 処理中
-            'shipped': 400,     # 発送済み
-            'delivered': 500,   # 配達完了
-            'cancelled': 600,   # キャンセル
-            'refunded': 700,    # 返金済み
-        }
-        return status_map.get(status, 100)
+    async def cancel_order(self, order_id: str, reason: Optional[str] = None) -> bool:
+        """
+        Cancel an order
         
+        Args:
+            order_id: Order identifier
+            reason: Cancellation reason
+            
+        Returns:
+            True if cancellation successful
+        """
+        try:
+            data = {'orderId': order_id}
+            if reason:
+                data['cancelReason'] = reason
+                
+            await self._make_request(
+                'POST',
+                f'/{self.API_VERSION}/order/cancel',
+                data=data
+            )
+            return True
+        except RakutenAPIError as e:
+            logger.error(f"Failed to cancel order {order_id}: {e}")
+            return False
+            
     # Customer operations
     async def get_customer(self, customer_id: str) -> Dict[str, Any]:
         """
@@ -544,6 +612,17 @@ class RakutenAPIClient(AbstractEcommerceClient):
         Returns:
             Customer data dictionary
         """
+        cache_key = f"customer:{customer_id}"
+        
+        # Try to get from cache
+        if self._cache_enabled and cache_key in self._customer_cache:
+            self._cache_stats['hits'] += 1
+            logger.debug(f"Cache hit for customer {customer_id}")
+            return self._customer_cache[cache_key]
+        
+        # Cache miss
+        self._cache_stats['misses'] += 1
+        
         response = await self._make_request(
             'GET',
             f'/{self.API_VERSION}/member/get',
@@ -551,12 +630,18 @@ class RakutenAPIClient(AbstractEcommerceClient):
         )
         
         data = response.json()
-        return RakutenCustomer.from_platform_format(data).to_common_format()
+        result = RakutenCustomer.from_platform_format(data).to_common_format()
+        
+        # Cache the result
+        if self._cache_enabled:
+            self._customer_cache[cache_key] = result
+            
+        return result
         
     async def get_customers(self,
-                          limit: int = 50,
-                          offset: int = 0,
-                          filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+                           limit: int = 50,
+                           offset: int = 0,
+                           filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """
         Get list of customers
         
@@ -586,155 +671,196 @@ class RakutenAPIClient(AbstractEcommerceClient):
         customers = []
         
         for item in data.get('members', []):
-            customer = RakutenCustomer.from_platform_format(item)
-            customers.append(customer.to_common_format())
-            
+            try:
+                validated_data = validate_customer_data(item)
+                customer = RakutenCustomer.from_platform_format(validated_data)
+                customers.append(customer.to_common_format())
+            except ValueError as e:
+                logger.warning(f"Invalid customer data skipped: {e}")
+                continue
+                
         return customers
         
-    # Inventory operations
-    async def get_inventory(self, product_id: str) -> Dict[str, Any]:
+    async def create_customer(self, customer_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Get inventory for a product
+        Create a new customer (not typically supported)
         
         Args:
-            product_id: Product identifier
+            customer_data: Customer data to create
             
         Returns:
-            Inventory data dictionary
+            Created customer data
+            
+        Raises:
+            NotImplementedError: Rakuten doesn't support customer creation via API
         """
-        response = await self._make_request(
-            'GET',
-            f'/{self.API_VERSION}/inventory/get',
-            params={'productId': product_id}
-        )
+        raise NotImplementedError("Rakuten doesn't support customer creation via API")
         
-        data = response.json()
-        return {
-            'product_id': product_id,
-            'quantity': data.get('quantity', 0),
-            'locations': data.get('locations', [])
-        }
-        
-    async def update_inventory(self, 
-                             product_id: str, 
-                             quantity: int,
-                             location_id: Optional[str] = None) -> Dict[str, Any]:
+    async def update_customer(self, customer_id: str, customer_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Update inventory quantity
+        Update an existing customer (limited support)
         
         Args:
-            product_id: Product identifier
-            quantity: New quantity
-            location_id: Optional warehouse ID
+            customer_id: Customer identifier
+            customer_data: Customer data to update
             
         Returns:
-            Updated inventory data
+            Updated customer data
         """
-        data = {
-            'productId': product_id,
-            'quantity': quantity
-        }
-        
-        if location_id:
-            data['warehouseId'] = location_id
-            
+        # Rakuten has very limited customer update capabilities
+        # Typically only certain fields can be updated
         response = await self._make_request(
             'POST',
-            f'/{self.API_VERSION}/inventory/update',
-            data=data
+            f'/{self.API_VERSION}/member/update',
+            data={
+                'memberId': customer_id,
+                **customer_data
+            }
         )
         
         updated_data = response.json()
-        return {
-            'product_id': product_id,
-            'quantity': updated_data.get('quantity', quantity),
-            'location_id': location_id
-        }
+        return RakutenCustomer.from_platform_format(updated_data).to_common_format()
+        
+    async def delete_customer(self, customer_id: str) -> bool:
+        """
+        Delete a customer (not supported)
+        
+        Args:
+            customer_id: Customer identifier
+            
+        Returns:
+            False (operation not supported)
+        """
+        logger.warning("Customer deletion is not supported by Rakuten API")
+        return False
         
     # Platform-specific features
-    def get_platform_capabilities(self) -> Dict[str, bool]:
+    def get_platform_features(self) -> Dict[str, bool]:
         """
-        Get Rakuten-specific capabilities
+        Get platform-specific feature availability
         
         Returns:
-            Dictionary of capability flags
+            Dictionary of feature flags
         """
         return {
-            'multi_warehouse': True,
-            'multi_currency': False,  # 楽天は日本円のみ
-            'gift_wrapping': True,
-            'tax_calculation': True,
-            'shipping_integration': True,
-            'loyalty_points': True,   # 楽天ポイント
-            'marketplace': True,
-            'product_variants': True,
-            'bulk_operations': True,
+            'variants': True,         # 商品バリエーション対応
+            'bundles': True,          # セット商品対応
+            'categories': True,       # カテゴリ管理
+            'reviews': True,          # レビュー管理
+            'inventory_tracking': True,
+            'multi_currency': False,  # 日本円のみ
+            'multi_language': True,   # 多言語対応（日本語必須）
+            'custom_fields': True,    # カスタムフィールド
+            'digital_products': True, # デジタル商品
+            'subscriptions': False,   # 定期購買は別API
+            'tax_management': True,   # 税込み価格管理
+            'shipping_zones': True,   # 配送エリア管理
+            'gift_cards': False,      # ギフトカードは別
+            'discounts': True,        # クーポン・割引
+            'customer_groups': True,  # 会員ランク
+            'b2b_features': True,     # B2B機能（楽天B2B）
+            'marketplace': True,      # マーケットプレイス
+            'dropshipping': False,    # 直送は個別対応
+            'pos_integration': False, # POS連携なし
+            'social_commerce': True,  # SNS連携
+            'mobile_app': True,       # モバイルアプリ対応
+            'analytics': True,        # 分析機能
+            'seo_tools': True,        # SEOツール
+            'email_marketing': False, # メールは別サービス
+            'abandoned_cart': True,   # カート放棄対策
+            'loyalty_program': True,  # ポイントプログラム
+            'wishlist': True,         # お気に入り機能
+            'product_questions': True,# 商品Q&A
+            'live_chat': False,       # チャットは別
+            'ai_recommendations': True,# AI商品推奨
+            'bulk_operations': True,  # 一括操作
+            'api_rate_limits': True,  # APIレート制限
             'webhooks': False,        # イベント通知APIは別
         }
         
-    def invalidate_cache(self, pattern: str = "*") -> int:
+    # Category operations
+    async def get_categories(self) -> List[Dict[str, Any]]:
         """
-        Invalidate cache entries matching pattern
+        Get all categories
+        
+        Returns:
+            List of category dictionaries in hierarchical structure
+        """
+        endpoint_url = RMSEndpoints.build_url("get_categories")
+        response = await self._make_request_with_retry(
+            'GET',
+            endpoint_url
+        )
+        
+        data = response.json()
+        categories = []
+        
+        # Process hierarchical category data
+        for category_data in data.get('categories', []):
+            category = RakutenCategory.from_platform_format(category_data)
+            categories.append(category.to_common_format())
+            
+        return categories
+    
+    async def get_category(self, category_id: str) -> Dict[str, Any]:
+        """
+        Get a single category by ID
         
         Args:
-            pattern: Cache key pattern to match
+            category_id: Category identifier
             
         Returns:
-            Number of entries invalidated
+            Category data dictionary
         """
-        count = 0
+        endpoint_url = RMSEndpoints.build_url("get_category")
+        response = await self._make_request_with_retry(
+            'GET',
+            endpoint_url,
+            params={'categoryId': category_id}
+        )
         
-        if pattern == "*":
-            # Clear all caches
-            count += len(self._product_cache)
-            count += len(self._order_cache)
-            count += len(self._customer_cache)
-            self._product_cache.clear()
-            self._order_cache.clear()
-            self._customer_cache.clear()
-        elif pattern.startswith("product:"):
-            product_id = pattern.split(":", 1)[1]
-            cache_key = f"product:{product_id}"
-            if cache_key in self._product_cache:
-                del self._product_cache[cache_key]
-                count += 1
-        elif pattern.startswith("order:"):
-            order_id = pattern.split(":", 1)[1]
-            cache_key = f"order:{order_id}"
-            if cache_key in self._order_cache:
-                del self._order_cache[cache_key]
-                count += 1
-        elif pattern.startswith("customer:"):
-            customer_id = pattern.split(":", 1)[1]
-            cache_key = f"customer:{customer_id}"
-            if cache_key in self._customer_cache:
-                del self._customer_cache[cache_key]
-                count += 1
-        
-        logger.info(f"Invalidated {count} cache entries matching {pattern}")
-        return count
+        data = response.json()
+        category = RakutenCategory.from_platform_format(data)
+        return category.to_common_format()
     
-    def get_cache_stats(self) -> Dict[str, Any]:
+    async def get_products_by_category(self, 
+                                     category_id: str,
+                                     limit: int = 50,
+                                     offset: int = 0) -> List[Dict[str, Any]]:
         """
-        Get cache statistics
+        Get products in a specific category
         
+        Args:
+            category_id: Category identifier
+            limit: Maximum number of products
+            offset: Number of products to skip
+            
         Returns:
-            Cache statistics dictionary
+            List of product dictionaries
         """
-        total_hits = self._cache_stats['hits']
-        total_misses = self._cache_stats['misses']
-        total_requests = total_hits + total_misses
-        
-        return {
-            'enabled': self._cache_enabled,
-            'stats': self._cache_stats,
-            'product_cache_size': len(self._product_cache),
-            'order_cache_size': len(self._order_cache), 
-            'customer_cache_size': len(self._customer_cache),
-            'hit_ratio': total_hits / total_requests if total_requests > 0 else 0
-        }
+        # Use product search with category filter
+        return await self.get_products(
+            limit=limit,
+            offset=offset,
+            filters={'categoryId': category_id}
+        )
     
     async def close(self):
         """Close connections"""
         await self.auth.close()
         await self.client.aclose()
+        
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """Get cache statistics for monitoring"""
+        total_requests = self._cache_stats['hits'] + self._cache_stats['misses']
+        hit_rate = self._cache_stats['hits'] / total_requests if total_requests > 0 else 0
+        
+        return {
+            'enabled': self._cache_enabled,
+            'hits': self._cache_stats['hits'],
+            'misses': self._cache_stats['misses'],
+            'hit_rate': hit_rate,
+            'product_cache_size': len(self._product_cache),
+            'order_cache_size': len(self._order_cache),
+            'customer_cache_size': len(self._customer_cache)
+        }
