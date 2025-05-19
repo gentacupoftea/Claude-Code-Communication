@@ -231,36 +231,102 @@ class RakutenAuth:
                 
         return True
         
-    def save_token(self, filepath: str) -> None:
+    def save_token(self, filepath: str, encryption_key: Optional[str] = None) -> None:
         """
-        Save token to file
+        Save token to file with optional encryption
         
         Args:
             filepath: Path to save token
+            encryption_key: Optional encryption key (base64 encoded)
         """
         if not self.token:
             raise ValueError("No token to save")
             
         try:
-            with open(filepath, 'w') as f:
-                json.dump(self.token.to_dict(), f)
+            import os
+            token_data = self.token.to_dict()
+            
+            if encryption_key:
+                # Use Fernet for encryption
+                from cryptography.fernet import Fernet
+                try:
+                    cipher = Fernet(encryption_key.encode() if isinstance(encryption_key, str) else encryption_key)
+                except Exception:
+                    # If key is not valid base64, encode it
+                    from cryptography.hazmat.primitives import hashes
+                    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+                    import base64
+                    kdf = PBKDF2HMAC(
+                        algorithm=hashes.SHA256(),
+                        length=32,
+                        salt=b'rakuten_salt_v1',  # Static salt for consistency
+                        iterations=100000,
+                    )
+                    key = base64.urlsafe_b64encode(kdf.derive(encryption_key.encode()))
+                    cipher = Fernet(key)
+                
+                encrypted_data = cipher.encrypt(json.dumps(token_data).encode())
+                with open(filepath, 'wb') as f:
+                    f.write(encrypted_data)
+            else:
+                # Warn about security risk
+                self.logger.warning("Saving token without encryption is a security risk")
+                with open(filepath, 'w') as f:
+                    json.dump(token_data, f)
+                    
+            # Set appropriate file permissions (read/write for owner only)
+            os.chmod(filepath, 0o600)
             self.logger.info(f"Token saved to {filepath}")
         except Exception as e:
             self.logger.error(f"Failed to save token: {e}")
+            raise
             
-    def load_token(self, filepath: str) -> bool:
+    def load_token(self, filepath: str, encryption_key: Optional[str] = None) -> bool:
         """
-        Load token from file
+        Load token from file with optional decryption
         
         Args:
             filepath: Path to load token from
+            encryption_key: Optional encryption key (base64 encoded)
             
         Returns:
             True if token loaded successfully
         """
         try:
-            with open(filepath, 'r') as f:
-                token_data = json.load(f)
+            import os
+            if not os.path.exists(filepath):
+                self.logger.warning(f"Token file {filepath} does not exist")
+                return False
+                
+            if encryption_key:
+                # Decrypt token
+                from cryptography.fernet import Fernet
+                try:
+                    cipher = Fernet(encryption_key.encode() if isinstance(encryption_key, str) else encryption_key)
+                except Exception:
+                    # If key is not valid base64, encode it
+                    from cryptography.hazmat.primitives import hashes
+                    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+                    import base64
+                    kdf = PBKDF2HMAC(
+                        algorithm=hashes.SHA256(),
+                        length=32,
+                        salt=b'rakuten_salt_v1',  # Static salt for consistency
+                        iterations=100000,
+                    )
+                    key = base64.urlsafe_b64encode(kdf.derive(encryption_key.encode()))
+                    cipher = Fernet(key)
+                    
+                with open(filepath, 'rb') as f:
+                    encrypted_data = f.read()
+                decrypted_data = cipher.decrypt(encrypted_data)
+                token_data = json.loads(decrypted_data.decode())
+            else:
+                # Load unencrypted token
+                self.logger.warning("Loading token without encryption - consider using encryption")
+                with open(filepath, 'r') as f:
+                    token_data = json.load(f)
+                    
             self.token = RakutenToken.from_dict(token_data)
             self.logger.info(f"Token loaded from {filepath}")
             return True

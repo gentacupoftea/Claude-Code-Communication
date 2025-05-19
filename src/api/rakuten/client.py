@@ -8,13 +8,18 @@ import logging
 from typing import Dict, Any, Optional, List
 import httpx
 import json
+import random
 from datetime import datetime
+from cachetools import TTLCache
+from typing import Optional
 
 from ..abstract.base_client import AbstractEcommerceClient, RateLimitInfo
 from .auth import RakutenAuth, RakutenCredentials
 from .models.product import RakutenProduct
 from .models.order import RakutenOrder
 from .models.customer import RakutenCustomer
+from .security import SecureSanitizer, create_safe_error_message
+from .validators import validate_product_data, validate_customer_data
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +86,13 @@ class RakutenAPIClient(AbstractEcommerceClient):
         
         # Shop ID
         self.shop_id = credentials['shop_id']
+        
+        # Initialize caching
+        self._cache_enabled = credentials.get('cache_enabled', True)
+        self._product_cache = TTLCache(maxsize=1000, ttl=300)  # 5 minute cache
+        self._order_cache = TTLCache(maxsize=500, ttl=60)     # 1 minute cache
+        self._customer_cache = TTLCache(maxsize=500, ttl=300) # 5 minute cache
+        self._cache_stats = {'hits': 0, 'misses': 0}
         
     async def authenticate(self) -> bool:
         """
@@ -164,13 +176,81 @@ class RakutenAPIClient(AbstractEcommerceClient):
                 error_message = error_data.get('errors', [{}])[0].get('message', 'Unknown error')
                 error_code = error_data.get('errors', [{}])[0].get('code')
                 
-                raise RakutenAPIError(error_message, code=error_code, response=response)
+                # Sanitize error message
+                safe_message = SecureSanitizer.sanitize_message(error_message)
+                logger.error(f"API error {response.status_code}: {safe_message}")
+                
+                raise RakutenAPIError(safe_message, code=error_code, response=response)
                 
             return response
             
         except httpx.RequestError as e:
-            logger.error(f"Request error: {e}")
-            raise RakutenAPIError(f"Request failed: {e}")
+            # Sanitize error message
+            safe_error = create_safe_error_message(e, "Request failed")
+            logger.error(safe_error)
+            raise RakutenAPIError(safe_error)
+    
+    async def _make_request_with_retry(self,
+                                      method: str,
+                                      endpoint: str,
+                                      data: Optional[Dict[str, Any]] = None,
+                                      params: Optional[Dict[str, Any]] = None,
+                                      max_retries: int = 3,
+                                      base_delay: float = 1.0) -> httpx.Response:
+        """
+        Make request with exponential backoff retry for rate limits
+        
+        Args:
+            method: HTTP method
+            endpoint: API endpoint
+            data: Request body
+            params: Query parameters
+            max_retries: Maximum retry attempts
+            base_delay: Base delay in seconds
+            
+        Returns:
+            HTTP response
+        """
+        last_exception = None
+        
+        for attempt in range(max_retries):
+            try:
+                return await self._make_request(method, endpoint, data, params)
+            except RakutenAPIError as e:
+                last_exception = e
+                
+                # Check if it's a rate limit error
+                if hasattr(e, 'response') and e.response:
+                    status_code = e.response.status_code
+                    if status_code == 429 or (hasattr(e, 'code') and e.code in ['RATE_LIMIT', 'TOO_MANY_REQUESTS']):
+                        # Exponential backoff with jitter
+                        delay = base_delay * (2 ** attempt) * (0.5 + random.random())
+                        
+                        # Check for Retry-After header
+                        retry_after = e.response.headers.get('Retry-After')
+                        if retry_after:
+                            try:
+                                delay = max(delay, float(retry_after))
+                            except ValueError:
+                                pass
+                        
+                        logger.warning(
+                            f"Rate limited on attempt {attempt+1}/{max_retries}, "
+                            f"retrying in {delay:.2f}s"
+                        )
+                        
+                        # Update rate limit info
+                        self.rate_limit_info.requests_remaining = 0
+                        
+                        await asyncio.sleep(delay)
+                        continue
+                
+                # Not a rate limit error, don't retry
+                raise
+        
+        # Max retries exceeded
+        logger.error(f"Max retries ({max_retries}) exceeded")
+        raise last_exception
             
     def _update_rate_limit_info(self, headers: Dict[str, str]):
         """Update rate limit info from response headers"""
@@ -200,6 +280,18 @@ class RakutenAPIClient(AbstractEcommerceClient):
         Returns:
             Product data dictionary
         """
+        cache_key = f"product:{product_id}"
+        
+        # Try to get from cache
+        if self._cache_enabled and cache_key in self._product_cache:
+            self._cache_stats['hits'] += 1
+            logger.debug(f"Cache hit for product {product_id}")
+            return self._product_cache[cache_key]
+        
+        # Cache miss
+        self._cache_stats['misses'] += 1
+        logger.debug(f"Cache miss for product {product_id}")
+        
         response = await self._make_request(
             'GET',
             f'/{self.API_VERSION}/product/get',
@@ -207,7 +299,13 @@ class RakutenAPIClient(AbstractEcommerceClient):
         )
         
         data = response.json()
-        return RakutenProduct.from_platform_format(data).to_common_format()
+        result = RakutenProduct.from_platform_format(data).to_common_format()
+        
+        # Cache the result
+        if self._cache_enabled:
+            self._product_cache[cache_key] = result
+            
+        return result
         
     async def get_products(self,
                           limit: int = 50,
@@ -257,18 +355,26 @@ class RakutenAPIClient(AbstractEcommerceClient):
         Returns:
             Created product data
         """
-        # Convert common format to Rakuten format
-        rakuten_product = RakutenProduct.from_common_format(product_data)
-        platform_data = rakuten_product.to_platform_format()
-        
-        response = await self._make_request(
-            'POST',
-            f'/{self.API_VERSION}/product/create',
-            data=platform_data
-        )
-        
-        created_data = response.json()
-        return RakutenProduct.from_platform_format(created_data).to_common_format()
+        try:
+            # Validate input data
+            validated_data = validate_product_data(product_data, is_update=False)
+            
+            # Convert common format to Rakuten format
+            rakuten_product = RakutenProduct.from_common_format(validated_data)
+            platform_data = rakuten_product.to_platform_format()
+            
+            response = await self._make_request_with_retry(
+                'POST',
+                f'/{self.API_VERSION}/product/create',
+                data=platform_data
+            )
+            
+            created_data = response.json()
+            return RakutenProduct.from_platform_format(created_data).to_common_format()
+        except ValueError as e:
+            # Validation error
+            logger.error(f"Product validation error: {e}")
+            raise RakutenAPIError(f"Invalid product data: {e}") from e
         
     async def update_product(self, product_id: str, product_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -566,6 +672,68 @@ class RakutenAPIClient(AbstractEcommerceClient):
             'webhooks': False,        # イベント通知APIは別
         }
         
+    def invalidate_cache(self, pattern: str = "*") -> int:
+        """
+        Invalidate cache entries matching pattern
+        
+        Args:
+            pattern: Cache key pattern to match
+            
+        Returns:
+            Number of entries invalidated
+        """
+        count = 0
+        
+        if pattern == "*":
+            # Clear all caches
+            count += len(self._product_cache)
+            count += len(self._order_cache)
+            count += len(self._customer_cache)
+            self._product_cache.clear()
+            self._order_cache.clear()
+            self._customer_cache.clear()
+        elif pattern.startswith("product:"):
+            product_id = pattern.split(":", 1)[1]
+            cache_key = f"product:{product_id}"
+            if cache_key in self._product_cache:
+                del self._product_cache[cache_key]
+                count += 1
+        elif pattern.startswith("order:"):
+            order_id = pattern.split(":", 1)[1]
+            cache_key = f"order:{order_id}"
+            if cache_key in self._order_cache:
+                del self._order_cache[cache_key]
+                count += 1
+        elif pattern.startswith("customer:"):
+            customer_id = pattern.split(":", 1)[1]
+            cache_key = f"customer:{customer_id}"
+            if cache_key in self._customer_cache:
+                del self._customer_cache[cache_key]
+                count += 1
+        
+        logger.info(f"Invalidated {count} cache entries matching {pattern}")
+        return count
+    
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """
+        Get cache statistics
+        
+        Returns:
+            Cache statistics dictionary
+        """
+        total_hits = self._cache_stats['hits']
+        total_misses = self._cache_stats['misses']
+        total_requests = total_hits + total_misses
+        
+        return {
+            'enabled': self._cache_enabled,
+            'stats': self._cache_stats,
+            'product_cache_size': len(self._product_cache),
+            'order_cache_size': len(self._order_cache), 
+            'customer_cache_size': len(self._customer_cache),
+            'hit_ratio': total_hits / total_requests if total_requests > 0 else 0
+        }
+    
     async def close(self):
         """Close connections"""
         await self.auth.close()
