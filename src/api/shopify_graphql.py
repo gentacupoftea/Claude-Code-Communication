@@ -11,6 +11,7 @@ from urllib.parse import urljoin
 import backoff
 import httpx
 from functools import lru_cache
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -392,3 +393,52 @@ class ShopifyGraphQLAPI:
 
 # Import for backward compatibility
 import os
+
+# Import optimization components if enabled
+USE_OPTIMIZATIONS = os.getenv('SHOPIFY_USE_OPTIMIZATIONS', 'true').lower() == 'true'
+
+if USE_OPTIMIZATIONS:
+    try:
+        from .shopify.optimized_client import OptimizedShopifyGraphQL, create_optimized_client
+        logger.info("GraphQL optimizations enabled")
+    except ImportError:
+        USE_OPTIMIZATIONS = False
+        logger.warning("GraphQL optimizations not available")
+
+
+def create_graphql_client(shop_url: str,
+                         access_token: str,
+                         api_version: str = "2025-04",
+                         use_optimizations: Optional[bool] = None,
+                         **kwargs):
+    """
+    Factory function to create GraphQL client
+    
+    Args:
+        shop_url: Shopify shop URL
+        access_token: API access token
+        api_version: API version
+        use_optimizations: Force enable/disable optimizations
+        **kwargs: Additional configuration options
+        
+    Returns:
+        GraphQL client instance (optimized or standard)
+    """
+    # Determine if we should use optimizations
+    should_optimize = use_optimizations if use_optimizations is not None else USE_OPTIMIZATIONS
+    
+    if should_optimize and USE_OPTIMIZATIONS:
+        # Return optimized client
+        return create_optimized_client(
+            shop_url=shop_url,
+            access_token=access_token,
+            api_version=api_version,
+            **kwargs
+        )
+    else:
+        # Return standard client
+        return ShopifyGraphQLAPI(
+            shop_url=shop_url,
+            access_token=access_token,
+            api_version=api_version
+        )
