@@ -1,4 +1,4 @@
-"""Analytics API routes for the Shopify MCP Server with enhanced security."""
+"""Analytics API routes for the Shopify MCP Server with enhanced security and export functionality."""
 
 import logging
 from typing import Optional
@@ -83,88 +83,39 @@ async def get_current_user(
                 detail="Invalid authentication token"
             )
         
-        # Extract user information
-        user_id = payload.get("sub")
-        user_role = payload.get("role", "user")
-        user_email = payload.get("email")
-        
-        if not user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token payload"
-            )
-        
-        # Create user object
+        # Create user object from payload
         user = User(
-            id=user_id,
-            email=user_email,
-            role=user_role,
-            is_active=True
+            id=payload.get("sub"),
+            email=payload.get("email"),
+            role=payload.get("role", "user")
         )
         
         return user
-        
     except InvalidTokenError as e:
-        logger.error(f"JWT validation error: {e}")
+        logger.error(f"Invalid token error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token"
+            detail="Invalid authentication token"
         )
     except Exception as e:
-        logger.error(f"Authentication error: {e}")
+        logger.error(f"Authentication error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Authentication service error"
+            detail="Authentication error"
         )
 
 
 def get_shopify_api() -> ShopifyAPI:
     """Dependency to get Shopify API instance."""
-    # In production, this would use proper configuration
     return ShopifyAPI()
 
 
-def get_analytics_processor(
-    api: ShopifyAPI = Depends(get_shopify_api),
-    current_user: User = Depends(get_current_user)
-) -> AnalyticsProcessor:
-    """Dependency to get analytics processor with user context."""
-    logger.info(f"Creating analytics processor for user: {current_user.id}")
+def get_analytics_processor(api: ShopifyAPI = Depends(get_shopify_api)) -> AnalyticsProcessor:
+    """Dependency to get analytics processor."""
     return AnalyticsProcessor(api)
 
 
-def sanitize_date_input(date_str: Optional[str]) -> Optional[str]:
-    """Sanitize and validate date input."""
-    if not date_str:
-        return None
-    
-    try:
-        # Remove any SQL injection attempts
-        if not SQLInjectionProtector.is_safe(date_str):
-            raise ValueError("Unsafe date input detected")
-        
-        # Validate date format
-        dt = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
-        
-        # Check reasonable date range
-        now = datetime.utcnow()
-        if dt < now - timedelta(days=365 * 5):  # 5 years ago
-            raise ValueError("Date too far in the past")
-        if dt > now + timedelta(days=365):  # 1 year in future
-            raise ValueError("Date too far in the future")
-        
-        return dt.isoformat() + 'Z'
-    
-    except Exception as e:
-        logger.error(f"Invalid date input: {date_str} - {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid date format: {date_str}"
-        )
-
-
 @router.get("/orders/summary")
-@RBACChecker.require_permission("analytics:read")
 async def get_order_summary(
     start_date: Optional[str] = Query(None, description="Start date (ISO format)"),
     end_date: Optional[str] = Query(None, description="End date (ISO format)"),
@@ -173,257 +124,197 @@ async def get_order_summary(
     current_user: User = Depends(get_current_user)
 ):
     """Get order summary data grouped by time period."""
-    logger.info(f"User {current_user.id} requesting order summary")
+    # Check permissions
+    if not RBACChecker.has_permission(current_user, "analytics:read"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied: analytics:read required"
+        )
     
     try:
-        # Sanitize inputs
-        start_date = sanitize_date_input(start_date)
-        end_date = sanitize_date_input(end_date)
-        
-        # Validate group_by parameter
-        if group_by not in ['day', 'week', 'month']:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid group_by parameter. Must be: day, week, or month"
-            )
-        
         # Set default date range if not provided
         if not end_date:
-            end_date = datetime.utcnow().isoformat() + 'Z'
+            end_date = datetime.utcnow().isoformat()
         if not start_date:
-            start_date = (datetime.utcnow() - timedelta(days=30)).isoformat() + 'Z'
+            start_date = (datetime.utcnow() - timedelta(days=30)).isoformat()
         
-        # Get data
         data = processor.get_order_summary(
             start_date=start_date,
             end_date=end_date,
             group_by=group_by
         )
-        
-        # Sanitize response data
-        sanitized_data = DataSanitizer.sanitize_data(data)
-        
-        logger.info(f"Successfully fetched order summary for user {current_user.id}")
-        return sanitized_data
-        
-    except HTTPException:
-        raise
+        return data
     except ValueError as e:
-        logger.error(f"Value error in order summary: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Error fetching order summary: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to fetch order summary"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to fetch order summary: {str(e)}")
 
 
-@router.get("/sales/by-category")
-@RBACChecker.require_permission("analytics:read")
-async def get_category_sales(
+@router.get("/sales/analysis")
+async def get_sales_analysis(
     start_date: Optional[str] = Query(None, description="Start date (ISO format)"),
     end_date: Optional[str] = Query(None, description="End date (ISO format)"),
     processor: AnalyticsProcessor = Depends(get_analytics_processor),
     current_user: User = Depends(get_current_user)
 ):
-    """Get sales data by product category."""
-    logger.info(f"User {current_user.id} requesting category sales")
+    """Get sales analysis with revenue breakdown."""
+    # Check permissions
+    if not RBACChecker.has_permission(current_user, "analytics:read"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied: analytics:read required"
+        )
     
     try:
-        # Sanitize inputs
-        start_date = sanitize_date_input(start_date)
-        end_date = sanitize_date_input(end_date)
-        
         # Set default date range if not provided
         if not end_date:
-            end_date = datetime.utcnow().isoformat() + 'Z'
+            end_date = datetime.utcnow().isoformat()
         if not start_date:
-            start_date = (datetime.utcnow() - timedelta(days=30)).isoformat() + 'Z'
+            start_date = (datetime.utcnow() - timedelta(days=90)).isoformat()
         
-        data = processor.get_category_sales(
+        data = processor.get_sales_analysis(
             start_date=start_date,
             end_date=end_date
         )
-        
-        # Sanitize response
-        sanitized_data = DataSanitizer.sanitize_data(data)
-        
-        return {"data": sanitized_data}
-        
-    except HTTPException:
-        raise
+        return data
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"Error fetching category sales: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to fetch category sales"
-        )
-
-
-@router.get("/sales/trend")
-@RBACChecker.require_permission("analytics:read")
-async def get_sales_trend(
-    start_date: Optional[str] = Query(None, description="Start date (ISO format)"),
-    end_date: Optional[str] = Query(None, description="End date (ISO format)"),
-    compare_previous: bool = Query(True, description="Include previous year comparison"),
-    processor: AnalyticsProcessor = Depends(get_analytics_processor),
-    current_user: User = Depends(get_current_user)
-):
-    """Get sales trend data with optional year-over-year comparison."""
-    logger.info(f"User {current_user.id} requesting sales trend")
-    
-    try:
-        # Sanitize inputs
-        start_date = sanitize_date_input(start_date)
-        end_date = sanitize_date_input(end_date)
-        
-        # Set default date range if not provided
-        if not end_date:
-            end_date = datetime.utcnow().isoformat() + 'Z'
-        if not start_date:
-            start_date = (datetime.utcnow() - timedelta(days=30)).isoformat() + 'Z'
-        
-        data = processor.get_sales_trend(
-            start_date=start_date,
-            end_date=end_date,
-            compare_previous=compare_previous
-        )
-        
-        # Sanitize response
-        sanitized_data = DataSanitizer.sanitize_data(data)
-        
-        return sanitized_data
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error fetching sales trend: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to fetch sales trend"
-        )
-
-
-@router.get("/sales/geographic")
-@RBACChecker.require_permission("analytics:read")
-async def get_geographic_distribution(
-    start_date: Optional[str] = Query(None, description="Start date (ISO format)"),
-    end_date: Optional[str] = Query(None, description="End date (ISO format)"),
-    processor: AnalyticsProcessor = Depends(get_analytics_processor),
-    current_user: User = Depends(get_current_user)
-):
-    """Get sales distribution by geographic location."""
-    logger.info(f"User {current_user.id} requesting geographic distribution")
-    
-    try:
-        # Sanitize inputs
-        start_date = sanitize_date_input(start_date)
-        end_date = sanitize_date_input(end_date)
-        
-        # Set default date range if not provided
-        if not end_date:
-            end_date = datetime.utcnow().isoformat() + 'Z'
-        if not start_date:
-            start_date = (datetime.utcnow() - timedelta(days=30)).isoformat() + 'Z'
-        
-        data = processor.get_geographic_distribution(
-            start_date=start_date,
-            end_date=end_date
-        )
-        
-        # Sanitize response
-        sanitized_data = DataSanitizer.sanitize_data(data)
-        
-        return {"data": sanitized_data}
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error fetching geographic data: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to fetch geographic data"
-        )
+        logger.error(f"Error fetching sales analysis: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch sales analysis: {str(e)}")
 
 
 @router.get("/export/{data_type}")
 @RBACChecker.require_permission("analytics:export")
 async def export_data(
     data_type: str,
-    format: str = Query("csv", description="Export format: csv, json, excel"),
+    format: str = Query("csv", description="Export format: csv, json, excel, pdf"),
     start_date: Optional[str] = Query(None, description="Start date (ISO format)"),
     end_date: Optional[str] = Query(None, description="End date (ISO format)"),
     processor: AnalyticsProcessor = Depends(get_analytics_processor),
     current_user: User = Depends(get_current_user)
 ):
-    """Export analytics data in specified format."""
-    logger.info(f"User {current_user.id} exporting {data_type} as {format}")
-    
+    """Export analytics data in specified format including PDF."""
     try:
-        # Sanitize inputs
-        start_date = sanitize_date_input(start_date)
-        end_date = sanitize_date_input(end_date)
-        
-        # Validate export format
-        if format not in ['csv', 'json', 'excel']:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid format. Must be: csv, json, or excel"
-            )
-        
         # Set default date range if not provided
         if not end_date:
-            end_date = datetime.utcnow().isoformat() + 'Z'
+            end_date = datetime.utcnow().isoformat()
         if not start_date:
-            start_date = (datetime.utcnow() - timedelta(days=30)).isoformat() + 'Z'
+            start_date = (datetime.utcnow() - timedelta(days=30)).isoformat()
+        
+        # Validate format
+        valid_formats = ['csv', 'json', 'excel', 'pdf']
+        if format not in valid_formats:
+            raise HTTPException(status_code=400, detail=f"Invalid format: {format}. Valid formats: {', '.join(valid_formats)}")
         
         # Fetch data based on type
         if data_type == "orders":
             data = processor.get_order_summary(start_date=start_date, end_date=end_date)
         elif data_type == "categories":
             data = processor.get_category_sales(start_date=start_date, end_date=end_date)
-        elif data_type == "trend":
-            data = processor.get_sales_trend(start_date=start_date, end_date=end_date)
-        elif data_type == "geographic":
-            data = processor.get_geographic_distribution(start_date=start_date, end_date=end_date)
+        elif data_type == "sales":
+            data = processor.get_sales_analysis(start_date=start_date, end_date=end_date)
         else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid data type: {data_type}"
-            )
+            raise HTTPException(status_code=400, detail=f"Invalid data type: {data_type}")
         
-        # Sanitize data before export
-        sanitized_data = DataSanitizer.sanitize_export_data(data)
+        # Export data in requested format
+        exported_data = processor.export_data(data, format=format)
         
-        # Export data
-        exported = processor.export_data(sanitized_data, format=format)
-        
-        # Set appropriate content type
+        # Determine content type and filename
         content_types = {
             'csv': 'text/csv',
             'json': 'application/json',
-            'excel': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            'excel': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'pdf': 'application/pdf'
         }
         
-        filename = f"{data_type}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.{format}"
+        extensions = {
+            'csv': 'csv',
+            'json': 'json',
+            'excel': 'xlsx',
+            'pdf': 'pdf'
+        }
         
-        logger.info(f"Successfully exported {data_type} for user {current_user.id}")
+        filename = f"{data_type}_export_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.{extensions[format]}"
         
         return StreamingResponse(
-            io.BytesIO(exported),
-            media_type=content_types.get(format, 'application/octet-stream'),
+            io.BytesIO(exported_data),
+            media_type=content_types[format],
             headers={
-                "Content-Disposition": f"attachment; filename={filename}",
-                "X-Content-Type-Options": "nosniff"
+                "Content-Disposition": f"attachment; filename={filename}"
             }
         )
-        
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error exporting data: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to export data: {str(e)}")
+
+
+@router.get("/category-sales")
+async def get_category_sales(
+    start_date: Optional[str] = Query(None, description="Start date (ISO format)"),
+    end_date: Optional[str] = Query(None, description="End date (ISO format)"),
+    processor: AnalyticsProcessor = Depends(get_analytics_processor),
+    current_user: User = Depends(get_current_user)
+):
+    """Get sales by category."""
+    # Check permissions
+    if not RBACChecker.has_permission(current_user, "analytics:read"):
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to export data"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied: analytics:read required"
         )
+    
+    try:
+        # Set default date range if not provided
+        if not end_date:
+            end_date = datetime.utcnow().isoformat()
+        if not start_date:
+            start_date = (datetime.utcnow() - timedelta(days=30)).isoformat()
+        
+        data = processor.get_category_sales(
+            start_date=start_date,
+            end_date=end_date
+        )
+        return data
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error fetching category sales: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch category sales: {str(e)}")
+
+
+@router.get("/geographic-distribution")
+async def get_geographic_distribution(
+    start_date: Optional[str] = Query(None, description="Start date (ISO format)"),
+    end_date: Optional[str] = Query(None, description="End date (ISO format)"),
+    processor: AnalyticsProcessor = Depends(get_analytics_processor),
+    current_user: User = Depends(get_current_user)
+):
+    """Get geographic distribution of sales."""
+    # Check permissions
+    if not RBACChecker.has_permission(current_user, "analytics:read"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied: analytics:read required"
+        )
+    
+    try:
+        # Set default date range if not provided
+        if not end_date:
+            end_date = datetime.utcnow().isoformat()
+        if not start_date:
+            start_date = (datetime.utcnow() - timedelta(days=30)).isoformat()
+        
+        data = processor.get_geographic_distribution(
+            start_date=start_date,
+            end_date=end_date
+        )
+        return data
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error fetching geographic distribution: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch geographic distribution: {str(e)}")
