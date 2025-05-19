@@ -3,7 +3,7 @@ Validators for Rakuten API data
 Ensures data integrity and proper formatting
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Dict, Any
 from decimal import Decimal
 import re
@@ -20,25 +20,29 @@ class RakutenProductCreate(BaseModel):
     categories: List[str] = Field(default_factory=list)
     images: List[Dict[str, Any]] = Field(default_factory=list)
     
-    @validator('sku')
+    @field_validator('sku')
+    @classmethod
     def validate_sku(cls, v):
         if not re.match(r'^[A-Za-z0-9_\-]+$', v):
             raise ValueError('SKU must contain only alphanumeric characters, underscores, and hyphens')
         return v
     
-    @validator('categories')
+    @field_validator('categories')
+    @classmethod
     def validate_categories(cls, v):
         if len(v) > 5:
             raise ValueError('A maximum of 5 categories is allowed')
         return v
     
-    @validator('images')
+    @field_validator('images')
+    @classmethod
     def validate_images(cls, v):
         if len(v) > 20:
             raise ValueError('A maximum of 20 images is allowed')
         return v
     
-    @validator('name')
+    @field_validator('name')
+    @classmethod
     def validate_name(cls, v):
         # Remove control characters
         v = re.sub(r'[\x00-\x1F\x7F-\x9F]', '', v)
@@ -56,7 +60,8 @@ class RakutenProductUpdate(BaseModel):
     categories: Optional[List[str]] = None
     images: Optional[List[Dict[str, Any]]] = None
     
-    @validator('name')
+    @field_validator('name')
+    @classmethod
     def validate_name(cls, v):
         if v is not None:
             v = re.sub(r'[\x00-\x1F\x7F-\x9F]', '', v)
@@ -65,13 +70,15 @@ class RakutenProductUpdate(BaseModel):
             return v.strip()
         return v
     
-    @validator('categories')
+    @field_validator('categories')
+    @classmethod
     def validate_categories(cls, v):
         if v is not None and len(v) > 5:
             raise ValueError('A maximum of 5 categories is allowed')
         return v
     
-    @validator('images')
+    @field_validator('images')
+    @classmethod
     def validate_images(cls, v):
         if v is not None and len(v) > 20:
             raise ValueError('A maximum of 20 images is allowed')
@@ -84,7 +91,8 @@ class RakutenOrderItem(BaseModel):
     quantity: int = Field(..., gt=0, le=9999)
     price: int = Field(..., gt=0)
     
-    @validator('product_id')
+    @field_validator('product_id')
+    @classmethod
     def validate_product_id(cls, v):
         if not re.match(r'^[A-Za-z0-9_\-]+$', v):
             raise ValueError('Invalid product ID format')
@@ -101,14 +109,16 @@ class RakutenAddressCreate(BaseModel):
     address2: Optional[str] = Field(None, max_length=100)
     phone: Optional[str] = Field(None, pattern=r'^[\d\-]+$')
     
-    @validator('postal_code')
+    @field_validator('postal_code')
+    @classmethod
     def normalize_postal_code(cls, v):
         # Normalize postal code format (add hyphen if missing)
         if len(v) == 7 and '-' not in v:
             return f"{v[:3]}-{v[3:]}"
         return v
     
-    @validator('phone')
+    @field_validator('phone')
+    @classmethod
     def validate_phone(cls, v):
         if v:
             # Remove non-numeric characters
@@ -120,17 +130,19 @@ class RakutenAddressCreate(BaseModel):
 
 class RakutenCustomerCreate(BaseModel):
     """Validation model for customer creation"""
-    email: str = Field(..., regex=r'^[\w\.-]+@[\w\.-]+\.\w+$')
+    email: str = Field(..., pattern=r'^[\w\.-]+@[\w\.-]+\.\w+$')
     first_name: Optional[str] = Field(None, min_length=1, max_length=50)
     last_name: Optional[str] = Field(None, min_length=1, max_length=50)
     phone: Optional[str] = Field(None, pattern=r'^[\d\-]+$')
     accepts_marketing: bool = Field(default=False)
     
-    @validator('email')
+    @field_validator('email')
+    @classmethod
     def normalize_email(cls, v):
         return v.lower().strip()
     
-    @validator('first_name', 'last_name')
+    @field_validator('first_name', 'last_name')
+    @classmethod
     def sanitize_name(cls, v):
         if v:
             # Remove control characters and normalize whitespace

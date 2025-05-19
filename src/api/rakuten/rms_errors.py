@@ -3,7 +3,7 @@ Rakuten RMS API error code definitions and handlers
 """
 
 from enum import Enum
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 
 class RMSErrorCategory(Enum):
