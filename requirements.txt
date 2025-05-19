@@ -18,6 +18,12 @@ psycopg2-binary==2.9.9
 redis==5.0.1
 aioredis==2.0.1
 
+# Security and encryption
+cryptography==41.0.7
+
+# Caching
+cachetools==5.3.2
+
 # Analytics & ML
 pandas==2.1.3
 numpy==1.26.1
