@@ -13,6 +13,11 @@ Model Context Protocol (MCP) server for integrating Shopify API with Claude Desk
 - **Intelligent Caching**: Redis-based caching for improved performance
 - **Extended API Support**: Both REST and GraphQL endpoints for analytics
 
+### Updates in v0.2.1
+- **Adaptive Rate Limiting**: Automatic API request throttling to prevent rate limit errors
+- **Exponential Backoff**: Smart retry mechanism for failed requests
+- **Rate Limit Monitoring**: New tool to track API usage and rate limit status
+
 ### Previous Updates (v0.2.0)
 - **GraphQL API Support**: Efficient data fetching with up to 70% fewer API calls
 - **Enhanced Testing**: Comprehensive test suite with coverage reporting
@@ -36,9 +41,10 @@ Model Context Protocol (MCP) server for integrating Shopify API with Claude Desk
 - 🧪 Comprehensive test coverage
 - 🐳 Docker support
 - 📝 Extensive documentation
-- 🔄 CI/CD ready
+- 🔄 Integrated CI/CD with GitHub Actions
 - 🛡️ Network resilient installation
 - 🔐 Redis-based caching for Google Analytics
+- 🧩 TypeScript and Python dual support
 
 ## 📚 Quick Start
 
@@ -119,6 +125,7 @@ See [Environment Setup Guide](docs/configuration/environment.md) for detailed in
 - `get_orders_summary`: Order statistics and revenue
 - `get_sales_analytics`: Sales trends and analytics
 - `get_product_performance`: Top performing products
+- `get_rate_limit_stats`: Monitor API rate limit usage (v0.2.1+)
 
 ### GraphQL API Tools
 - `get_shop_info_graphql`: Comprehensive shop information
@@ -130,6 +137,24 @@ See [Environment Setup Guide](docs/configuration/environment.md) for detailed in
 - `get_realtime_data`: Real-time visitor analytics
 - `get_conversion_funnel`: Analyze conversion paths
 - `get_user_segments`: Compare user segments
+
+### TypeScript Services
+- `ServiceRegistry`: Centralized service management with dependency injection
+- `AnalysisAgent`: AI-powered data analysis for e-commerce data
+- `DataService`: Data access and transformation services
+- `VectorDBService`: Vector database integration for semantic search
+- `ECIntegrationService`: Multi-platform e-commerce integration
+
+### Type Definitions
+
+The project uses TypeScript for strong typing. Key type definitions:
+
+- `UnifiedProduct`: Standardized product format across platforms
+- `Order`, `Customer`: Core e-commerce data types
+- `AnalysisRequest`/`ECAnalysisRequest`: Data analysis request formats
+- `AnalysisResult`/`ECAnalysisResult`: AI analysis result formats
+
+See [Type Definitions Document](docs/TypeDefinitions.md) for complete type reference.
 
 ### When to Use Which?
 
@@ -146,6 +171,8 @@ See [Environment Setup Guide](docs/configuration/environment.md) for detailed in
 See [GraphQL vs REST Guide](docs/user-guide/graphql-vs-rest.md) for detailed comparisons.
 
 ## 🧪 Testing
+
+### Python Tests
 
 Prepare the test environment and run the suite:
 
@@ -176,6 +203,36 @@ python run_e2e_tests.py
 python scripts/generate_mock_data.py  # optional deterministic test DB
 ```
 
+### TypeScript Tests
+
+For testing the TypeScript components:
+
+```bash
+# Install dependencies
+npm install
+
+# Run unit tests
+npm test
+
+# Run with coverage report
+npm test -- --coverage
+
+# Run specific test file
+npm test -- tests/unit/ServiceRegistry.test.ts
+```
+
+### Type Checking
+
+Run TypeScript type checking:
+
+```bash
+# Check types
+npm run build:ts
+
+# Build the TypeScript code
+npm run build
+```
+
 ## 🔧 Troubleshooting
 
 ### Network Issues
@@ -187,11 +244,25 @@ If you encounter dependency installation failures:
 3. **Use offline mode**: See [docs/NETWORK_TROUBLESHOOTING.md](docs/NETWORK_TROUBLESHOOTING.md)
 4. **Disable retries**: `INSTALL_RETRY_DISABLED=1 ./setup_test_env.sh`
 
+### API Rate Limiting
+
+If you experience rate limiting issues with Shopify API:
+
+1. **Adjust rate limit settings**: Modify the following environment variables:
+   ```
+   SHOPIFY_RATE_LIMIT_RPS=2.0    # Requests per second
+   SHOPIFY_RATE_LIMIT_BURST=10   # Maximum burst size
+   SHOPIFY_RATE_LIMIT_LOG=true   # Enable detailed logging
+   ```
+2. **Monitor rate limit usage**: Use the `get_rate_limit_stats` MCP tool
+3. **Check rate limit headers**: Review logs for "Shopify API Rate Limit" warnings
+
 ### Common Issues
 
 - **Import errors**: Run `python test_imports.py` for specific instructions
 - **SSL errors**: Update certificates or use trusted sources
 - **Timeout errors**: Increase `INSTALL_TIMEOUT` environment variable
+- **Rate limit errors**: Adjust rate limit settings as described above
 
 ## 🐳 Docker Support
 
@@ -244,6 +315,30 @@ We welcome contributions! Please see our [Contributing Guide](docs/contributing/
 - Pull request process
 - Release procedures
 
+### CI/CD Pipeline
+
+Our project uses GitHub Actions for continuous integration and deployment:
+
+- **TypeScript CI**: Type checking, linting, and unit tests for TypeScript code
+- **Python CI**: Testing, linting, and formatting checks for Python code
+- **Combined CI**: Comprehensive workflow including Docker-based integration tests
+
+All pull requests must pass the CI pipeline before merging.
+
+```bash
+# Run TypeScript checks locally
+npm run typecheck
+npm run lint
+npm test
+
+# Run Python checks locally
+pytest tests/
+flake8 src tests
+black src tests
+```
+
+See [CI/CD Workflows](.github/workflows/README.md) for more details.
+
 ## 📊 Performance
 
 v0.2.0 brings significant performance improvements:
@@ -257,7 +352,8 @@ v0.2.0 brings significant performance improvements:
 
 - Environment-based configuration
 - Secure token storage
-- Rate limiting awareness
+- Adaptive rate limiting and automatic throttling
+- Rate limit statistics monitoring
 - SSL/TLS support
 
 ## 📄 License

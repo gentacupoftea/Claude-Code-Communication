@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-05-20
+
+### Added
+- Adaptive rate limiting for Shopify API requests
+  - Automatic request throttling to prevent API rate limit errors
+  - Exponential backoff for retrying throttled requests
+  - Rate limit statistics monitoring tool
+  - Configurable via environment variables
+
+### Changed
+- Improved API client resilience
+  - Better handling of 429 rate limit errors
+  - Automatic retry mechanism for rate-limited requests
+  - Header-based rate limit tracking
+
+### Performance
+- Optimized API usage to stay within Shopify rate limits
+- Reduced API errors and improved reliability
+- Added rate limit statistics display
+
 ## [0.2.0] - 2025-05-30
 
 ### Added

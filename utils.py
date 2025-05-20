@@ -6,8 +6,9 @@ import logging
 import os
 import sys
 import threading
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from typing import Any, Dict, Callable, Optional, Tuple, TypeVar, cast, List, NamedTuple
+import math
 
 T = TypeVar('T')
 CacheDict = Dict[str, Tuple[Any, float]]
@@ -277,3 +278,179 @@ def optimize_dataframe_dtypes(df):
             df[col] = df[col].astype('category')
     
     return df
+
+
+class RateLimiter:
+    """
+    シンプルなレート制限機能を提供するクラス
+    
+    以下の機能を提供する:
+    - リクエスト数の制限
+    - 自動的なバックオフと再試行
+    - レート制限状態の追跡
+    """
+    
+    def __init__(self, requests_per_second: float = 2.0, 
+                 max_burst: int = 10, 
+                 backoff_factor: float = 1.5,
+                 max_backoff: float = 30.0,
+                 enable_log: bool = True):
+        """
+        レート制限機能を初期化
+        
+        Args:
+            requests_per_second: 1秒あたりの最大リクエスト数
+            max_burst: バースト（短時間での集中リクエスト）の最大許容数
+            backoff_factor: バックオフ（待機時間）の増加率
+            max_backoff: 最大バックオフ時間（秒）
+            enable_log: ログ出力を有効にするかどうか
+        """
+        self._lock = threading.Lock()
+        self.requests_per_second = requests_per_second
+        self.request_interval = 1.0 / requests_per_second
+        self.max_burst = max_burst
+        self.backoff_factor = backoff_factor
+        self.max_backoff = max_backoff
+        self.enable_log = enable_log
+        
+        # 状態追跡
+        self.last_request_time = 0.0
+        self.current_backoff = 0.0
+        self.request_times = deque(maxlen=100)  # 直近のリクエスト時間
+        self.retry_counts = deque(maxlen=100)   # 直近の再試行回数
+        
+        # 統計情報
+        self.total_requests = 0
+        self.throttled_requests = 0
+        self.consecutive_throttles = 0
+        
+        self.logger = logging.getLogger("rate_limiter")
+    
+    def log(self, message, level=logging.INFO):
+        """ログ出力（有効な場合のみ）"""
+        if self.enable_log:
+            self.logger.log(level, message)
+    
+    def wait(self):
+        """
+        レート制限に基づいて適切な時間だけ待機する
+        """
+        with self._lock:
+            now = time.time()
+            self.total_requests += 1
+            
+            # 最後のリクエストからの経過時間を計算
+            elapsed = now - self.last_request_time
+            
+            # バーストリクエスト制御
+            recent_requests = sum(1 for t in self.request_times 
+                               if now - t < 1.0)  # 過去1秒間のリクエスト数
+            
+            # 待機時間の計算
+            if recent_requests >= self.max_burst:
+                # バースト制限に達した場合
+                wait_time = max(self.request_interval, self.current_backoff)
+                self.throttled_requests += 1
+                self.consecutive_throttles += 1
+                
+                # バックオフ時間を増加
+                if self.consecutive_throttles > 1:
+                    self.current_backoff = min(
+                        self.current_backoff * self.backoff_factor,
+                        self.max_backoff
+                    )
+                    self.log(f"バックオフ時間を増加: {self.current_backoff:.2f}秒", 
+                          logging.WARNING)
+            elif elapsed < self.request_interval:
+                # 通常の制限のための待機
+                wait_time = self.request_interval - elapsed
+                self.consecutive_throttles = 0
+            else:
+                # 待機不要
+                wait_time = 0
+                self.consecutive_throttles = 0
+            
+            # 実際に待機
+            if wait_time > 0:
+                if wait_time > 1.0:  # 1秒以上の待機の場合だけログ出力
+                    self.log(f"レート制限のため {wait_time:.2f}秒待機中...")
+                time.sleep(wait_time)
+            
+            # 状態を更新
+            self.last_request_time = time.time()
+            self.request_times.append(self.last_request_time)
+            
+            # バックオフ時間の減少
+            if self.consecutive_throttles == 0 and self.current_backoff > 0:
+                self.current_backoff = max(0, self.current_backoff / self.backoff_factor)
+    
+    def __call__(self, func):
+        """
+        関数にレート制限を適用するデコレータとして使用できるようにする
+        """
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            retry_count = 0
+            max_retries = 3
+            
+            while True:
+                self.wait()
+                
+                try:
+                    result = func(*args, **kwargs)
+                    # 成功したらリトライカウントをリセット
+                    self.retry_counts.append(retry_count)
+                    return result
+                    
+                except Exception as e:
+                    # APIレート制限エラーの場合は再試行
+                    if "rate limit" in str(e).lower() or "429" in str(e):
+                        retry_count += 1
+                        if retry_count <= max_retries:
+                            wait_time = min(2 ** retry_count, self.max_backoff)
+                            self.log(f"レート制限エラー、{wait_time}秒後に再試行 ({retry_count}/{max_retries})...",
+                                    logging.WARNING)
+                            time.sleep(wait_time)
+                            # バックオフを増加
+                            self.current_backoff = min(
+                                self.max_backoff,
+                                self.current_backoff * self.backoff_factor
+                            )
+                            self.consecutive_throttles += 1
+                        else:
+                            self.log(f"最大再試行回数に達しました: {max_retries}", logging.ERROR)
+                            raise
+                    else:
+                        # その他のエラーは再試行しない
+                        raise
+                        
+        return wrapper
+    
+    def get_stats(self):
+        """
+        レート制限の統計情報を取得
+        """
+        with self._lock:
+            average_retry = sum(self.retry_counts) / len(self.retry_counts) if self.retry_counts else 0
+            recent_requests_per_second = sum(1 for t in self.request_times 
+                                          if time.time() - t < 1.0)
+            
+            return {
+                "total_requests": self.total_requests,
+                "throttled_requests": self.throttled_requests,
+                "throttle_rate": self.throttled_requests / max(1, self.total_requests),
+                "current_backoff": self.current_backoff,
+                "consecutive_throttles": self.consecutive_throttles,
+                "average_retry_count": average_retry,
+                "recent_requests_per_second": recent_requests_per_second,
+                "max_requests_per_second": self.requests_per_second
+            }
+
+
+# シングルトンのレート制限インスタンスを作成
+# デフォルトでは1秒あたり2リクエスト、最大バースト10
+shopify_rate_limiter = RateLimiter(
+    requests_per_second=float(os.getenv('SHOPIFY_RATE_LIMIT_RPS', '2.0')),
+    max_burst=int(os.getenv('SHOPIFY_RATE_LIMIT_BURST', '10')),
+    enable_log=os.getenv('SHOPIFY_RATE_LIMIT_LOG', 'true').lower() in ('true', '1', 'yes')
+)
