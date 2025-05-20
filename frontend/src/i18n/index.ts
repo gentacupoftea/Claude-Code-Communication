@@ -28,6 +28,7 @@ i18n
     resources,
     fallbackLng: 'ja',
     debug: process.env.NODE_ENV === 'development',
+    lng: 'ja', // 初期言語を明示的に設定
 
     interpolation: {
       escapeValue: false, // ReactはXSS対策済み

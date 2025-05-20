@@ -5,8 +5,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import axios, { AxiosRequestConfig, AxiosError, CancelTokenSource } from 'axios';
 import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
-import { APIResponse } from '@/types';
+import { RootState } from '../store';
+import { APIResponse } from '../types';
 
 interface UseApiOptions extends AxiosRequestConfig {
   manual?: boolean; // 手動実行フラグ
@@ -101,7 +101,7 @@ export function useApi<T = any>(
     return () => {
       cancel();
     };
-  }, [options.manual]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [options.manual, execute, cancel]);
 
   return { data, loading, error, execute, cancel };
 }

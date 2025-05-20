@@ -5,12 +5,14 @@ Main client for interacting with Rakuten RMS API
 
 import asyncio
 import logging
+import os
 from typing import Dict, Any, Optional, List
 import httpx
 import json
 import random
 from datetime import datetime
 from cachetools import TTLCache
+import time
 
 from ..abstract.base_client import AbstractEcommerceClient, RateLimitInfo
 from .auth import RakutenAuth, RakutenCredentials
@@ -22,6 +24,7 @@ from .security import SecureSanitizer, create_safe_error_message
 from .validators import validate_product_data, validate_customer_data
 from .rms_endpoints import RMSEndpoints, APIType
 from .rms_errors import RMSErrorCodes, RMSErrorHandler
+from .rate_limiter import rakuten_rate_limiter, RakutenRateLimiter
 
 logger = logging.getLogger(__name__)
 
@@ -45,10 +48,16 @@ class RakutenAPIClient(AbstractEcommerceClient):
     Implements the AbstractEcommerceClient interface for Rakuten
     """
     
+    # デフォルト値はテスト時に環境変数から上書きされる
     BASE_URL = "https://api.rms.rakuten.co.jp"
     API_VERSION = "es/2.0"
     
     def __init__(self, credentials: Dict[str, Any]):
+        # 環境変数からBASE_URLを取得して上書き（テスト用）
+        base_url_env = os.getenv('RAKUTEN_BASE_URL')
+        if base_url_env:
+            self.__class__.BASE_URL = base_url_env
+            logger.info(f"楽天API BASE_URL: {self.BASE_URL} (環境変数から設定)")
         """
         Initialize Rakuten API client
         
@@ -85,6 +94,10 @@ class RakutenAPIClient(AbstractEcommerceClient):
             requests_limit=30,
             reset_time=None
         )
+        
+        # レート制限設定
+        self.rate_limiting_enabled = credentials.get('rate_limiting_enabled', True)
+        self.rate_limiter = rakuten_rate_limiter
         
         # Shop ID
         self.shop_id = credentials['shop_id']
@@ -129,6 +142,7 @@ class RakutenAPIClient(AbstractEcommerceClient):
         """
         return self.rate_limit_info
         
+    @rakuten_rate_limiter
     async def _make_request(self,
                           method: str,
                           endpoint: str,
@@ -159,7 +173,32 @@ class RakutenAPIClient(AbstractEcommerceClient):
         
         # Make request
         try:
-            url = endpoint if endpoint.startswith('/') else f'/{endpoint}'
+            # 標準化されたURLパス処理 - 相対パスでも絶対URLでも処理可能
+            if endpoint.startswith(('http://', 'https://')):
+                # 絶対URL - これはテスト環境では避ける
+                logger.warning(f"絶対URL '{endpoint}' を使用します。テスト環境ではBASE_URLが正しく設定されているか確認してください。")
+                if self.test_mode:
+                    # テストモードでは絶対URLのホスト部分を置き換え
+                    parsed_url = httpx.URL(endpoint)
+                    path = parsed_url.path
+                    url = f"{self.BASE_URL}{path}"
+                    logger.info(f"テストモードの絶対URL置換: {endpoint} -> {url}")
+                else:
+                    url = endpoint
+            elif endpoint.startswith('/'):
+                # 相対パス(先頭が/) - BASE_URLに追加
+                url = endpoint
+            else:
+                # 相対パス(先頭が/なし) - BASE_URLに追加
+                url = f'/{endpoint}'
+                
+            # ベースURLがhttps://api.rms.rakuten.co.jpのままで
+            # 本番環境以外の場合は警告を出す（テスト時に役立つ）
+            if self.test_mode and self.BASE_URL == "https://api.rms.rakuten.co.jp":
+                logger.warning("テストモードで本番URLを使用しています。BASE_URLを確認してください。")
+                
+            # デバッグ用ログ
+            logger.debug(f"Making {method} request to {url} with params={params}")
             
             response = await self.client.request(
                 method=method,
@@ -172,9 +211,18 @@ class RakutenAPIClient(AbstractEcommerceClient):
             # Update rate limit info from headers
             self._update_rate_limit_info(response.headers)
             
+            # レート制限情報をレート制限機能に反映
+            self.rate_limiter.update_from_headers(response.headers)
+            
             # Check for errors
             if response.status_code >= 400:
-                error_data = response.json() if response.content else {}
+                error_data = {}
+                try:
+                    if response.content:
+                        error_data = response.json()
+                except Exception:
+                    # JSONとしてパースできない場合
+                    error_data = {'error': {'message': response.text[:200]}}
                 
                 # Handle RMS-style error response
                 if 'error' in error_data:
@@ -202,7 +250,10 @@ class RakutenAPIClient(AbstractEcommerceClient):
                 
                 # Sanitize error message
                 safe_message = SecureSanitizer.sanitize_message(error_details['message'])
-                logger.error(f"RMS API error: {safe_message}", extra=error_details)
+                # Prefix all keys in error_details to avoid LogRecord attribute conflicts
+                log_extra = {f'error_{k}': v for k, v in error_details.items() if k != 'message'}
+                # Don't use the extra parameter to avoid LogRecord conflicts
+                logger.error(f"RMS API error: {safe_message} (Code: {error_details.get('code', 'unknown')})")
                 
                 # Create enhanced error
                 api_error = RakutenAPIError(safe_message, code=error_code, response=response)
@@ -322,11 +373,13 @@ class RakutenAPIClient(AbstractEcommerceClient):
         self._cache_stats['misses'] += 1
         logger.debug(f"Cache miss for product {product_id}")
         
-        # Use RMS endpoint
-        endpoint_url = RMSEndpoints.build_url("get_product")
+        # RMSEndpointsを使用してURL構築
+        endpoint = RMSEndpoints.build_url("get_product", base_url=self.BASE_URL)
+        
+        # リクエスト
         response = await self._make_request_with_retry(
             'GET',
-            endpoint_url,
+            endpoint,
             params={'itemId': product_id}  # RMS uses itemId
         )
         
@@ -361,10 +414,13 @@ class RakutenAPIClient(AbstractEcommerceClient):
         
         if filters:
             params.update(filters)
+        
+        # RMSEndpointsを使用してURL構築
+        endpoint = RMSEndpoints.build_url("search_products", base_url=self.BASE_URL)
             
         response = await self._make_request(
             'GET',
-            f'/{self.API_VERSION}/products/search',
+            endpoint,
             params=params
         )
         
@@ -473,9 +529,10 @@ class RakutenAPIClient(AbstractEcommerceClient):
         Returns:
             Order data dictionary
         """
+        endpoint = RMSEndpoints.build_url("get_order")
         response = await self._make_request(
             'GET',
-            f'/{self.API_VERSION}/order/get',
+            endpoint,
             params={'orderId': order_id}
         )
         
@@ -511,9 +568,10 @@ class RakutenAPIClient(AbstractEcommerceClient):
             if 'status' in filters:
                 params['orderStatus'] = filters['status']
                 
+        endpoint = RMSEndpoints.build_url("search_orders")
         response = await self._make_request(
             'GET',
-            f'/{self.API_VERSION}/orders/search',
+            endpoint,
             params=params
         )
         
@@ -563,9 +621,10 @@ class RakutenAPIClient(AbstractEcommerceClient):
         # Remove None values
         update_data = {k: v for k, v in allowed_updates.items() if v is not None}
         
+        endpoint = RMSEndpoints.build_url("update_order")
         response = await self._make_request(
             'POST',
-            f'/{self.API_VERSION}/order/update',
+            endpoint,
             data={
                 'orderId': order_id,
                 **update_data
@@ -591,9 +650,10 @@ class RakutenAPIClient(AbstractEcommerceClient):
             if reason:
                 data['cancelReason'] = reason
                 
+            endpoint = RMSEndpoints.build_url("cancel_order")
             await self._make_request(
                 'POST',
-                f'/{self.API_VERSION}/order/cancel',
+                endpoint,
                 data=data
             )
             return True
@@ -623,9 +683,10 @@ class RakutenAPIClient(AbstractEcommerceClient):
         # Cache miss
         self._cache_stats['misses'] += 1
         
+        endpoint = RMSEndpoints.build_url("get_customer", base_url=self.BASE_URL)
         response = await self._make_request(
             'GET',
-            f'/{self.API_VERSION}/member/get',
+            endpoint,
             params={'memberId': customer_id}
         )
         
@@ -661,9 +722,10 @@ class RakutenAPIClient(AbstractEcommerceClient):
         if filters:
             params.update(filters)
             
+        endpoint = RMSEndpoints.build_url("search_customers", base_url=self.BASE_URL)
         response = await self._make_request(
             'GET',
-            f'/{self.API_VERSION}/members/search',
+            endpoint,
             params=params
         )
         
@@ -709,9 +771,10 @@ class RakutenAPIClient(AbstractEcommerceClient):
         """
         # Rakuten has very limited customer update capabilities
         # Typically only certain fields can be updated
+        endpoint = RMSEndpoints.build_url("update_customer", base_url=self.BASE_URL)
         response = await self._make_request(
             'POST',
-            f'/{self.API_VERSION}/member/update',
+            endpoint,
             data={
                 'memberId': customer_id,
                 **customer_data
@@ -734,6 +797,75 @@ class RakutenAPIClient(AbstractEcommerceClient):
         logger.warning("Customer deletion is not supported by Rakuten API")
         return False
         
+    # Inventory operations - Added for AbstractEcommerceClient compatibility
+    async def get_inventory(self, product_id: str) -> Dict[str, Any]:
+        """
+        Get inventory for a product
+        
+        Args:
+            product_id: Product identifier
+            
+        Returns:
+            Inventory data dictionary
+        """
+        # Get product data which includes inventory
+        product = await self.get_product(product_id)
+        
+        # Extract inventory information
+        inventory_data = {
+            'product_id': product_id,
+            'quantity': product.get('stockCount', 0),
+            'available': product.get('stockCount', 0) > 0,
+            'updated_at': product.get('updatedAt')
+        }
+        
+        return inventory_data
+    
+    async def update_inventory(self, product_id: str, quantity: int, location_id: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Update inventory quantity
+        
+        Args:
+            product_id: Product identifier
+            quantity: New quantity
+            location_id: Optional location/warehouse identifier (not used in Rakuten)
+            
+        Returns:
+            Updated inventory data
+        """
+        # Update product with new inventory
+        product_data = {
+            'stockCount': quantity
+        }
+        
+        # Use product update endpoint
+        updated_product = await self.update_product(product_id, product_data)
+        
+        # Return inventory view
+        return {
+            'product_id': product_id,
+            'quantity': updated_product.get('stockCount', quantity),
+            'available': quantity > 0,
+            'updated_at': updated_product.get('updatedAt')
+        }
+    
+    async def update_order_status(self, order_id: str, status: str) -> Dict[str, Any]:
+        """
+        Update order status
+        
+        Args:
+            order_id: Order identifier
+            status: New status
+            
+        Returns:
+            Updated order data
+        """
+        # Map status to Rakuten-specific status if needed
+        rakuten_status = status  # Simplified mapping
+        
+        # Update order using general update method
+        return await self.update_order(order_id, {'status': rakuten_status})
+    
     # Platform-specific features
     def get_platform_features(self) -> Dict[str, bool]:
         """
@@ -786,10 +918,12 @@ class RakutenAPIClient(AbstractEcommerceClient):
         Returns:
             List of category dictionaries in hierarchical structure
         """
-        endpoint_url = RMSEndpoints.build_url("get_categories")
+        # RMSEndpointsを使用してURL構築
+        endpoint = RMSEndpoints.build_url("get_categories", base_url=self.BASE_URL)
+        
         response = await self._make_request_with_retry(
             'GET',
-            endpoint_url
+            endpoint
         )
         
         data = response.json()
@@ -864,3 +998,16 @@ class RakutenAPIClient(AbstractEcommerceClient):
             'order_cache_size': len(self._order_cache),
             'customer_cache_size': len(self._customer_cache)
         }
+    
+    def get_rate_limit_stats(self) -> Dict[str, Any]:
+        """Get rate limit statistics"""
+        # レート制限情報と組み合わせた統計情報
+        stats = self.rate_limiter.get_stats()
+        
+        # 追加情報
+        stats.update({
+            'rate_limiting_enabled': self.rate_limiting_enabled,
+            'test_mode': self.test_mode,
+        })
+        
+        return stats

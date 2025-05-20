@@ -1,108 +1,161 @@
-import React, { useState } from 'react';
-import { Menu } from '@headlessui/react';
-import { BellIcon, UserCircleIcon } from '@heroicons/react/24/outline';
-import { useAuth } from '../../contexts/AuthContext';
+import React from 'react';
+import {
+  AppBar,
+  Toolbar,
+  IconButton,
+  Typography,
+  Box,
+  Avatar,
+  Menu,
+  MenuItem,
+  Divider,
+} from '@mui/material';
+import {
+  Bars3Icon as MenuIcon,
+  UserIcon,
+  Cog6ToothIcon as CogIcon,
+  ArrowRightOnRectangleIcon,
+  SunIcon,
+  MoonIcon,
+} from '@heroicons/react/24/outline';
+import { useAuth } from '../../contexts/MockAuthContext';
+import { NotificationPopup } from '../notifications/NotificationPopup';
+import { useTheme } from '../../hooks';
 import { useNavigate } from 'react-router-dom';
+import { ConeaLogo } from '../branding/ConeaLogo';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onMenuClick: () => void;
+  isMobile?: boolean;
+}
+
+const Header: React.FC<HeaderProps> = ({ onMenuClick, isMobile = false }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [darkMode, setDarkMode] = useState(false);
+  const { toggleTheme, theme } = useTheme();
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleProfileMenuClose = () => {
+    setAnchorEl(null);
+  };
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    handleProfileMenuClose();
   };
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    if (darkMode) {
-      document.documentElement.classList.remove('dark');
-    } else {
-      document.documentElement.classList.add('dark');
-    }
+  const handleProfile = () => {
+    navigate('/profile');
+    handleProfileMenuClose();
+  };
+
+  const handleSettings = () => {
+    navigate('/settings');
+    handleProfileMenuClose();
   };
 
   return (
-    <header className="flex items-center justify-between h-16 px-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-      <div className="flex items-center space-x-4">
-        <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-          {/* Dynamic page title can be added here */}
-        </h2>
-      </div>
+    <AppBar
+      position="fixed"
+      sx={{
+        zIndex: (theme) => theme.zIndex.drawer + 1,
+        background: theme.palette.mode === 'dark' 
+          ? 'linear-gradient(135deg, #1a1a1a 0%, #111111 100%)' 
+          : 'linear-gradient(135deg, #86EFAC 0%, #6EE7B7 100%)',
+        color: theme.palette.primary.contrastText,
+        backdropFilter: 'blur(10px)',
+        borderBottom: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)'}`,
+      }}
+      elevation={0}
+    >
+      <Toolbar>
+        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+          <ConeaLogo 
+            variant={isMobile ? 'icon-only' : 'horizontal'}
+            size="md"
+            showTagline={!isMobile}
+          />
+        </Box>
 
-      <div className="flex items-center space-x-4">
-        {/* Dark mode toggle */}
-        <button
-          onClick={toggleDarkMode}
-          className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-        >
-          {darkMode ? (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-          ) : (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-            </svg>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* テーマ切り替えボタン */}
+          <IconButton onClick={toggleTheme} color="inherit">
+            {theme.palette.mode === 'dark' ? 
+              <SunIcon className="h-5 w-5" style={{ color: '#FFFFFF' }} /> : 
+              <MoonIcon className="h-5 w-5" />
+            }
+          </IconButton>
+
+          {/* 通知ボタン */}
+          <NotificationPopup />
+
+          {/* プロフィールメニュー */}
+          <IconButton
+            aria-label="account of current user"
+            aria-controls="menu-appbar"
+            aria-haspopup="true"
+            onClick={handleProfileMenuOpen}
+            color="inherit"
+          >
+            <Avatar sx={{ width: 32, height: 32 }}>
+              {user?.name?.charAt(0) || 'U'}
+            </Avatar>
+          </IconButton>
+
+          {/* ハンバーガーメニュー（モバイルのみ） */}
+          {isMobile && (
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              onClick={onMenuClick}
+              edge="end"
+            >
+              <MenuIcon className="h-6 w-6" />
+            </IconButton>
           )}
-        </button>
-
-        {/* Notifications */}
-        <button className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
-          <BellIcon className="w-5 h-5" />
-          <span className="absolute top-0 right-0 flex items-center justify-center w-2 h-2 text-xs text-white bg-red-500 rounded-full"></span>
-        </button>
-
-        {/* User menu */}
-        <Menu as="div" className="relative">
-          <Menu.Button className="flex items-center space-x-2 text-sm focus:outline-none">
-            <UserCircleIcon className="w-8 h-8 text-gray-500 dark:text-gray-400" />
-            <span className="text-gray-700 dark:text-gray-300">{user?.name || user?.email}</span>
-          </Menu.Button>
-
-          <Menu.Items className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50">
-            <Menu.Item>
-              {({ active }) => (
-                <a
-                  href="/profile"
-                  className={`block px-4 py-2 text-sm ${
-                    active ? 'bg-gray-100 dark:bg-gray-700' : ''
-                  } text-gray-700 dark:text-gray-200`}
-                >
-                  Your Profile
-                </a>
-              )}
-            </Menu.Item>
-            <Menu.Item>
-              {({ active }) => (
-                <a
-                  href="/settings"
-                  className={`block px-4 py-2 text-sm ${
-                    active ? 'bg-gray-100 dark:bg-gray-700' : ''
-                  } text-gray-700 dark:text-gray-200`}
-                >
-                  Settings
-                </a>
-              )}
-            </Menu.Item>
-            <hr className="my-1 border-gray-200 dark:border-gray-700" />
-            <Menu.Item>
-              {({ active }) => (
-                <button
-                  onClick={handleLogout}
-                  className={`block w-full text-left px-4 py-2 text-sm ${
-                    active ? 'bg-gray-100 dark:bg-gray-700' : ''
-                  } text-gray-700 dark:text-gray-200`}
-                >
-                  Sign out
-                </button>
-              )}
-            </Menu.Item>
-          </Menu.Items>
-        </Menu>
-      </div>
-    </header>
+          <Menu
+            id="menu-appbar"
+            anchorEl={anchorEl}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            keepMounted
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+            open={Boolean(anchorEl)}
+            onClose={handleProfileMenuClose}
+          >
+            <Box sx={{ px: 2, py: 1 }}>
+              <Typography variant="subtitle1">{user?.name}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {user?.email}
+              </Typography>
+            </Box>
+            <Divider />
+            <MenuItem onClick={handleProfile}>
+              <UserIcon className="h-5 w-5 mr-2" />
+              プロフィール
+            </MenuItem>
+            <MenuItem onClick={handleSettings}>
+              <CogIcon className="h-5 w-5 mr-2" />
+              設定
+            </MenuItem>
+            <Divider />
+            <MenuItem onClick={handleLogout}>
+              <ArrowRightOnRectangleIcon className="h-5 w-5 mr-2" />
+              ログアウト
+            </MenuItem>
+          </Menu>
+        </Box>
+      </Toolbar>
+    </AppBar>
   );
 };
 

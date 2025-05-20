@@ -2,8 +2,8 @@
  * 注文状態管理スライス
  */
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { Order, PaginationParams, FilterParams } from '@/types';
-import ordersService from '@/services/ordersService';
+import { Order, PaginationParams, FilterParams } from '../../types';
+import ordersService from '../../services/ordersService';
 
 interface OrdersState {
   items: Order[];

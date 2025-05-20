@@ -5,29 +5,49 @@
 import { useCallback, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { createTheme, ThemeOptions } from '@mui/material/styles';
-import { RootState } from '@/store';
-import { setTheme } from '@/store/slices/settingsSlice';
+import { RootState } from '../store';
+import { setTheme } from '../store/slices/settingsSlice';
 
 const lightTheme: ThemeOptions = {
   palette: {
     mode: 'light',
     primary: {
-      main: '#1976d2',
-      light: '#42a5f5',
-      dark: '#1565c0',
+      main: '#10B981',
+      light: '#34D399',
+      dark: '#059669',
     },
     secondary: {
-      main: '#dc004e',
-      light: '#e33371',
-      dark: '#c51162',
+      main: '#06B6D4',
+      light: '#22D3EE',
+      dark: '#0891B2',
     },
     background: {
-      default: '#f5f5f5',
-      paper: '#ffffff',
+      default: '#F0FDF4',
+      paper: '#FFFFFF',
+    },
+    info: {
+      main: '#0EA5E9',
+      light: '#38BDF8',
+      dark: '#0284C7',
+    },
+    success: {
+      main: '#10B981',
+      light: '#34D399',
+      dark: '#059669',
+    },
+    warning: {
+      main: '#F59E0B',
+      light: '#FCD34D',
+      dark: '#D97706',
+    },
+    error: {
+      main: '#EF4444',
+      light: '#F87171',
+      dark: '#DC2626',
     },
   },
   shape: {
-    borderRadius: 8,
+    borderRadius: 12,
   },
   typography: {
     fontFamily: '"Noto Sans JP", "Roboto", "Helvetica", "Arial", sans-serif',
@@ -63,18 +83,42 @@ const darkTheme: ThemeOptions = {
   palette: {
     mode: 'dark',
     primary: {
-      main: '#90caf9',
-      light: '#e3f2fd',
-      dark: '#42a5f5',
+      main: '#10B981',
+      light: '#34D399',
+      dark: '#059669',
     },
     secondary: {
-      main: '#f48fb1',
-      light: '#fbb4c4',
-      dark: '#c51162',
+      main: '#6B7280',
+      light: '#9CA3AF',
+      dark: '#4B5563',
     },
     background: {
-      default: '#121212',
-      paper: '#1e1e1e',
+      default: '#000000',
+      paper: '#1a1a1a',
+    },
+    text: {
+      primary: '#F3F4F6',
+      secondary: '#9CA3AF',
+    },
+    info: {
+      main: '#3B82F6',
+      light: '#60A5FA',
+      dark: '#2563EB',
+    },
+    success: {
+      main: '#10B981',
+      light: '#34D399',
+      dark: '#059669',
+    },
+    warning: {
+      main: '#F59E0B',
+      light: '#FCD34D',
+      dark: '#D97706',
+    },
+    error: {
+      main: '#EF4444',
+      light: '#F87171',
+      dark: '#DC2626',
     },
   },
 };
@@ -87,6 +131,13 @@ export const useTheme = () => {
     const newTheme = themeMode === 'light' ? 'dark' : 'light';
     dispatch(setTheme(newTheme));
     localStorage.setItem('theme', newTheme);
+    
+    // Immediately update the dark class
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, [themeMode, dispatch]);
 
   useEffect(() => {
@@ -95,6 +146,15 @@ export const useTheme = () => {
       dispatch(setTheme(savedTheme));
     }
   }, [dispatch, themeMode]);
+
+  // Tailwind dark mode class management
+  useEffect(() => {
+    if (themeMode === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [themeMode]);
 
   const theme = createTheme(themeMode === 'light' ? lightTheme : darkTheme);
 

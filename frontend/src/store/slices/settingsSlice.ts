@@ -2,7 +2,7 @@
  * 設定状態管理スライス
  */
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { APIConfig } from '@/types';
+import { APIConfig } from '../../types';
 
 interface SettingsState {
   theme: 'light' | 'dark';

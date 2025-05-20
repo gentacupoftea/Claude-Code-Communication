@@ -24,17 +24,19 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState, AppDispatch } from '@/store';
-import { setDateRange, setLoading } from '@/store/slices/dashboardSlice';
-import { MetricCard, DataTable, SearchBar } from '@/molecules';
-import { Card, Button } from '@/atoms';
-import { Order } from '@/types';
+import { RootState, AppDispatch } from '../../store';
+import { setDateRange, setLoading } from '../../store/slices/dashboardSlice';
+import { MetricCard, DataTable, SearchBar } from '../../molecules';
+import { Card, Button } from '../../atoms';
+import GlassCard from '../../components/futuristic/GlassCard';
+import FuturisticButton from '../../components/futuristic/FuturisticButton';
+import { Order } from '../../types';
 import { SalesChart } from './components/SalesChart';
 import { TopProducts } from './components/TopProducts';
 import { RecentOrders } from './components/RecentOrders';
 import { PlatformSync } from './components/PlatformSync';
 import { DateRangeSelector } from './components/DateRangeSelector';
-import { formatCurrency, formatPercent } from '@/utils/format';
+import { formatCurrency, formatPercent } from '../../utils/format';
 
 interface DashboardProps {}
 

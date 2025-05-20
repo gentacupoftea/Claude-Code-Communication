@@ -2,7 +2,7 @@
  * ダッシュボード状態管理スライス
  */
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Widget, ChartData } from '@/types';
+import { Widget, ChartData } from '../../types';
 
 interface DashboardState {
   widgets: Widget[];

@@ -18,7 +18,7 @@ import io
 import base64
 import asyncio
 from typing import Optional
-from utils import memoize, optimize_dataframe_dtypes  # 新しいユーティリティをインポート
+from utils import memoize, optimize_dataframe_dtypes, shopify_rate_limiter  # 新しいユーティリティをインポート
 import warnings
 from urllib3.exceptions import InsecureRequestWarning
 
@@ -42,6 +42,9 @@ logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 # Initialize MCP server
 mcp = FastMCP("shopify-mcp-server", dependencies=["requests", "pandas", "matplotlib"])
 
+# レート制限設定
+RATE_LIMIT_ENABLED = os.getenv("RATE_LIMIT_ENABLED", "true").lower() in ("true", "1", "yes")
+
 # Shopify API configuration
 SHOPIFY_API_VERSION = os.getenv("SHOPIFY_API_VERSION", "2023-10")
 SHOPIFY_API_KEY = os.getenv("SHOPIFY_API_KEY")
@@ -61,9 +64,11 @@ class ShopifyAPI:
             "Content-Type": "application/json"
         }
     
+    @shopify_rate_limiter
     def _make_request(self, method, endpoint, params=None, data=None):
         """
-        Make a request to the Shopify API with error handling.
+        Make a request to the Shopify API with error handling and rate limiting.
+        レート制限機能を組み込んだShopify APIリクエスト関数
         
         Args:
             method (str): HTTP method (GET, POST, etc.)
@@ -84,9 +89,29 @@ class ShopifyAPI:
                 json=data,
                 verify=False
             )
+            
+            # レートリミット情報を記録（Shopify APIレスポンスヘッダーから）
+            if 'X-Shopify-Shop-Api-Call-Limit' in response.headers:
+                limit_header = response.headers['X-Shopify-Shop-Api-Call-Limit']
+                logging.debug(f"Shopify API Rate Limit: {limit_header}")
+                
+                # レート制限に近づいている場合は警告
+                try:
+                    current, maximum = map(int, limit_header.split('/'))
+                    usage_percent = (current / maximum) * 100
+                    if usage_percent > 80:
+                        logging.warning(f"Shopify API Rate Limit Warning: {usage_percent:.1f}% used ({current}/{maximum})")
+                except (ValueError, ZeroDivisionError):
+                    pass
+            
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as e:
+            # レート制限エラー（429）の場合は特別なエラーメッセージ
+            if hasattr(e, 'response') and e.response.status_code == 429:
+                logging.error(f"Rate limit exceeded: {e}")
+                # レート制限デコレータが自動的に再試行するように例外を再スロー
+                raise
             logging.error(f"HTTP error: {e}")
             return {}
         except requests.exceptions.ConnectionError as e:
@@ -593,6 +618,32 @@ async def get_page_order_sales_refunds(start_date: Optional[str] = None, end_dat
         result += f"| {page} | {stat['orders']} | ¥{stat['sales']:.0f} | ¥{stat['refunds']:.0f} |\n"
     return result
 
+@mcp.tool(description="レート制限の現在の状態を取得")
+async def get_rate_limit_stats() -> str:
+    """
+    Shopify APIのレート制限に関する統計情報を取得
+    
+    Returns:
+        str: レート制限の統計情報をMarkdown形式で返す
+    """
+    stats = shopify_rate_limiter.get_stats()
+    
+    result = "# Shopify API レート制限状況\n\n"
+    result += "| 指標 | 値 |\n|---|---|\n"
+    result += f"| 総リクエスト数 | {stats['total_requests']} |\n"
+    result += f"| スロットル（制限）されたリクエスト | {stats['throttled_requests']} |\n"
+    result += f"| スロットル率 | {stats['throttle_rate']*100:.1f}% |\n"
+    result += f"| 現在のバックオフ時間 | {stats['current_backoff']:.2f}秒 |\n"
+    result += f"| 連続スロットル数 | {stats['consecutive_throttles']} |\n"
+    result += f"| 平均再試行回数 | {stats['average_retry_count']:.1f} |\n"
+    result += f"| 直近の毎秒リクエスト数 | {stats['recent_requests_per_second']} |\n"
+    result += f"| 設定された最大毎秒リクエスト数 | {stats['max_requests_per_second']} |\n"
+    
+    return result
+
+
 # Main entry point
 if __name__ == "__main__":
+    # レート制限の有効/無効をログに出力
+    logging.info(f"Shopify API Rate Limiting: {'ENABLED' if RATE_LIMIT_ENABLED else 'DISABLED'}")
     mcp.run()

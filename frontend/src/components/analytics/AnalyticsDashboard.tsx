@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Calendar, Filter, Download, TrendingUp } from 'lucide-react';
-import { format, subDays } from 'date-fns';
+import React, { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Calendar, Filter, Download, TrendingUp } from "lucide-react";
+import { format, subDays } from "date-fns";
 
-import SalesTrendChart from './charts/SalesTrendChart';
-import CategoryPieChart from './charts/CategoryPieChart';
-import OrderSummaryChart from './charts/OrderSummaryChart';
-import GeographicMap from './charts/GeographicMap';
-import MetricCard from './MetricCard';
-import DateRangePicker from '../common/DateRangePicker';
-import api from '../../services/api';
+import SalesTrendChart from "./charts/SalesTrendChart";
+import CategoryPieChart from "./charts/CategoryPieChart";
+import OrderSummaryChart from "./charts/OrderSummaryChart";
+import GeographicMap from "./charts/GeographicMap";
+import MetricCard from "./MetricCard";
+import DateRangePicker from "../common/DateRangePicker";
+import api from "../../services/api";
 
 interface DateRange {
   startDate: Date;
@@ -29,17 +29,17 @@ const AnalyticsDashboard: React.FC = () => {
     startDate: subDays(new Date(), 30),
     endDate: new Date(),
   });
-  const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
+  const [groupBy, setGroupBy] = useState<"day" | "week" | "month">("day");
   const [isExporting, setIsExporting] = useState(false);
 
   // Format dates for API calls
-  const formatDate = (date: Date) => format(date, 'yyyy-MM-dd');
+  const formatDate = (date: Date) => format(date, "yyyy-MM-dd");
 
   // Fetch order summary data
   const { data: orderSummary, isLoading: orderLoading } = useQuery({
-    queryKey: ['order-summary', dateRange, groupBy],
+    queryKey: ["order-summary", dateRange, groupBy],
     queryFn: async () => {
-      const response = await api.get('/analytics/orders/summary', {
+      const response = await api.get("/analytics/orders/summary", {
         params: {
           start_date: formatDate(dateRange.startDate),
           end_date: formatDate(dateRange.endDate),
@@ -52,9 +52,9 @@ const AnalyticsDashboard: React.FC = () => {
 
   // Fetch category sales data
   const { data: categoryData, isLoading: categoryLoading } = useQuery({
-    queryKey: ['category-sales', dateRange],
+    queryKey: ["category-sales", dateRange],
     queryFn: async () => {
-      const response = await api.get('/analytics/sales/by-category', {
+      const response = await api.get("/analytics/sales/by-category", {
         params: {
           start_date: formatDate(dateRange.startDate),
           end_date: formatDate(dateRange.endDate),
@@ -66,9 +66,9 @@ const AnalyticsDashboard: React.FC = () => {
 
   // Fetch sales trend data
   const { data: trendData, isLoading: trendLoading } = useQuery({
-    queryKey: ['sales-trend', dateRange],
+    queryKey: ["sales-trend", dateRange],
     queryFn: async () => {
-      const response = await api.get('/analytics/sales/trend', {
+      const response = await api.get("/analytics/sales/trend", {
         params: {
           start_date: formatDate(dateRange.startDate),
           end_date: formatDate(dateRange.endDate),
@@ -81,9 +81,9 @@ const AnalyticsDashboard: React.FC = () => {
 
   // Fetch geographic distribution data
   const { data: geoData, isLoading: geoLoading } = useQuery({
-    queryKey: ['geographic-sales', dateRange],
+    queryKey: ["geographic-sales", dateRange],
     queryFn: async () => {
-      const response = await api.get('/analytics/sales/geographic', {
+      const response = await api.get("/analytics/sales/geographic", {
         params: {
           start_date: formatDate(dateRange.startDate),
           end_date: formatDate(dateRange.endDate),
@@ -102,19 +102,19 @@ const AnalyticsDashboard: React.FC = () => {
           end_date: formatDate(dateRange.endDate),
           format,
         },
-        responseType: 'blob',
+        responseType: "blob",
       });
 
       // Create download link
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      link.setAttribute('download', `${dataType}_${format}.${format}`);
+      link.setAttribute("download", `${dataType}_${format}.${format}`);
       document.body.appendChild(link);
       link.click();
       link.remove();
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error("Export failed:", error);
     } finally {
       setIsExporting(false);
     }
@@ -141,7 +141,9 @@ const AnalyticsDashboard: React.FC = () => {
           <DateRangePicker
             startDate={dateRange.startDate}
             endDate={dateRange.endDate}
-            onChange={(start, end) => setDateRange({ startDate: start, endDate: end })}
+            onChange={(start, end) =>
+              setDateRange({ startDate: start, endDate: end })
+            }
           />
           <select
             value={groupBy}
@@ -161,14 +163,14 @@ const AnalyticsDashboard: React.FC = () => {
           title="Total Orders"
           value={summaryData.total_orders}
           icon={<Filter className="w-5 h-5" />}
-          trend={growthRate > 0 ? 'up' : growthRate < 0 ? 'down' : 'neutral'}
+          trend={growthRate > 0 ? "up" : growthRate < 0 ? "down" : "neutral"}
           trendValue={Math.abs(growthRate)}
         />
         <MetricCard
           title="Total Revenue"
           value={`$${summaryData.total_revenue.toLocaleString()}`}
           icon={<TrendingUp className="w-5 h-5" />}
-          trend={growthRate > 0 ? 'up' : growthRate < 0 ? 'down' : 'neutral'}
+          trend={growthRate > 0 ? "up" : growthRate < 0 ? "down" : "neutral"}
           trendValue={Math.abs(growthRate)}
         />
         <MetricCard
@@ -197,7 +199,7 @@ const AnalyticsDashboard: React.FC = () => {
               Order Summary
             </h3>
             <button
-              onClick={() => handleExport('orders', 'csv')}
+              onClick={() => handleExport("orders", "csv")}
               disabled={isExporting}
               className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
             >
@@ -209,7 +211,7 @@ const AnalyticsDashboard: React.FC = () => {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
           ) : (
-            <OrderSummaryChart data={orderSummary?.data || []} />
+            <OrderSummaryChart data={orderSummary?.data || []} title="注文概要" />
           )}
         </div>
 
@@ -220,7 +222,7 @@ const AnalyticsDashboard: React.FC = () => {
               Sales by Category
             </h3>
             <button
-              onClick={() => handleExport('categories', 'json')}
+              onClick={() => handleExport("categories", "json")}
               disabled={isExporting}
               className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
             >
@@ -232,7 +234,7 @@ const AnalyticsDashboard: React.FC = () => {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
           ) : (
-            <CategoryPieChart data={categoryData || []} />
+            <CategoryPieChart data={categoryData || []} title="カテゴリー別売上" />
           )}
         </div>
 
@@ -243,7 +245,7 @@ const AnalyticsDashboard: React.FC = () => {
               Sales Trend
             </h3>
             <button
-              onClick={() => handleExport('trend', 'excel')}
+              onClick={() => handleExport("trend", "excel")}
               disabled={isExporting}
               className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
             >
@@ -259,6 +261,7 @@ const AnalyticsDashboard: React.FC = () => {
               currentData={trendData?.current || []}
               previousData={trendData?.previous || []}
               growthRate={trendData?.growth_rate || 0}
+              title="売上トレンド"
             />
           )}
         </div>
@@ -270,7 +273,7 @@ const AnalyticsDashboard: React.FC = () => {
               Geographic Distribution
             </h3>
             <button
-              onClick={() => handleExport('geographic', 'csv')}
+              onClick={() => handleExport("geographic", "csv")}
               disabled={isExporting}
               className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
             >
