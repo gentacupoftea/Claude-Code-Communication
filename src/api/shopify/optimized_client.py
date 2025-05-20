@@ -10,10 +10,13 @@ from typing import Dict, Any, Optional, List, Tuple
 import redis
 from contextlib import asynccontextmanager
 
-from ..shopify_graphql import ShopifyGraphQLAPI, ShopifyGraphQLError
+from ..shopify_graphql import ShopifyGraphQLAPI
+from ..errors import ShopifyAPIError, ShopifyGraphQLError, ShopifyRateLimitError
 from .batch_processor import GraphQLBatchProcessor
 from .cache_manager import GraphQLCacheManager
 from .rate_limiter import AdaptiveRateLimiter
+from .fragment_library import fragment_library
+from .query_optimizer import query_optimizer
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +56,10 @@ class OptimizedShopifyGraphQL:
             access_token=access_token,
             api_version=api_version
         )
+        
+        # Query optimization components
+        self.fragment_library = fragment_library
+        self.query_optimizer = query_optimizer
         
         # Redis client
         self.redis_client = None
@@ -146,7 +153,8 @@ class OptimizedShopifyGraphQL:
                           use_batch: bool = True,
                           priority: int = 5,
                           cache_ttl: Optional[float] = None,
-                          cache_tags: Optional[List[str]] = None) -> Dict[str, Any]:
+                          cache_tags: Optional[List[str]] = None,
+                          optimize_query: bool = True) -> Dict[str, Any]:
         """
         Execute GraphQL query with optimizations
         
@@ -163,6 +171,26 @@ class OptimizedShopifyGraphQL:
             Query result
         """
         self.metrics['queries_executed'] += 1
+        
+        # Optimize query if enabled
+        original_query = query
+        if optimize_query and self.query_optimizer:
+            try:
+                optimization_result = self.query_optimizer.optimize(query)
+                if optimization_result.optimized_query != query:
+                    query = optimization_result.optimized_query
+                    logger.debug(
+                        f"Query optimized: {optimization_result.estimated_cost_original} -> "
+                        f"{optimization_result.estimated_cost_optimized} cost "
+                        f"({optimization_result.optimization_ratio:.1%} savings)"
+                    )
+                    
+                    if optimization_result.fragments_added:
+                        logger.debug(f"Added fragments: {', '.join(optimization_result.fragments_added)}")
+            except Exception as e:
+                logger.warning(f"Query optimization failed: {e}")
+                # Fall back to original query
+                query = original_query
         
         # Try cache first
         if use_cache and self.cache_manager:
@@ -241,10 +269,26 @@ class OptimizedShopifyGraphQL:
             self.metrics['errors'] += 1
             
             # Update actual cost if available
-            if e.query_cost:
+            if hasattr(e, 'query_cost') and e.query_cost:
                 execution.actual_cost = e.query_cost
                 self.metrics['total_cost'] += e.query_cost
             
+            raise
+        except ShopifyRateLimitError as e:
+            self.metrics['errors'] += 1
+            
+            # Update rate limiter state
+            if e.retry_after and self.rate_limiter:
+                self.rate_limiter.state.cost_available = 0
+                
+            # Apply backoff for rate limit errors
+            execution.actual_cost = execution.estimated_cost
+            execution.error = str(e)
+                
+            raise
+        except ShopifyAPIError as e:
+            self.metrics['errors'] += 1
+            execution.error = str(e)
             raise
     
     # Enhanced query methods with optimization
@@ -258,9 +302,24 @@ class OptimizedShopifyGraphQL:
                                   use_cache: bool = True,
                                   cache_ttl: float = 300) -> Dict[str, Any]:
         """Get orders with optimization"""
-        # Build query
-        query = self._build_orders_query(
-            fields or ['lineItems', 'customer', 'totalPrice']
+        # Use fragment library to build query
+        fragment_name = "OrderWithLineItems"
+        if fields and "customer" in fields and "lineItems" not in fields:
+            fragment_name = "OrderWithCustomer"
+        elif fields and "fulfillments" in fields:
+            fragment_name = "OrderWithFulfillments"
+        
+        pagination = {
+            "first": first,
+            "after": after
+        }
+        
+        # Build optimized query with appropriate fragment
+        query = self.fragment_library.build_optimized_query(
+            operation_type="query",
+            entity_type="Order",
+            fragment_name=fragment_name,
+            pagination=pagination
         )
         
         variables = {
@@ -284,7 +343,8 @@ class OptimizedShopifyGraphQL:
             variables=variables,
             use_cache=use_cache,
             cache_ttl=cache_ttl,
-            cache_tags=cache_tags
+            cache_tags=cache_tags,
+            optimize_query=True
         )
     
     async def get_products_optimized(self,
@@ -294,8 +354,22 @@ class OptimizedShopifyGraphQL:
                                    use_cache: bool = True,
                                    cache_ttl: float = 600) -> Dict[str, Any]:
         """Get products with optimization"""
-        query = self._build_products_query(
-            fields or ['variants', 'images', 'status']
+        # Use fragment library to build query
+        fragment_name = "ProductWithVariants"
+        if fields and "images" in fields and "variants" not in fields:
+            fragment_name = "ProductWithImages"
+        
+        pagination = {
+            "first": first,
+            "after": after
+        }
+        
+        # Build optimized query with appropriate fragment
+        query = self.fragment_library.build_optimized_query(
+            operation_type="query",
+            entity_type="Product",
+            fragment_name=fragment_name,
+            pagination=pagination
         )
         
         variables = {
@@ -308,7 +382,8 @@ class OptimizedShopifyGraphQL:
             variables=variables,
             use_cache=use_cache,
             cache_ttl=cache_ttl,
-            cache_tags=['products']
+            cache_tags=['products'],
+            optimize_query=True
         )
     
     async def get_customers_optimized(self,
@@ -318,8 +393,24 @@ class OptimizedShopifyGraphQL:
                                     use_cache: bool = True,
                                     cache_ttl: float = 900) -> Dict[str, Any]:
         """Get customers with optimization"""
-        query = self._build_customers_query(
-            fields or ['addresses', 'orders', 'tags']
+        # Use fragment library to build query
+        fragment_name = "CoreCustomerFields"
+        if fields and "addresses" in fields:
+            fragment_name = "CustomerWithAddresses"
+        elif fields and "orders" in fields:
+            fragment_name = "CustomerWithOrders"
+        
+        pagination = {
+            "first": first,
+            "after": after
+        }
+        
+        # Build optimized query with appropriate fragment
+        query = self.fragment_library.build_optimized_query(
+            operation_type="query",
+            entity_type="Customer",
+            fragment_name=fragment_name,
+            pagination=pagination
         )
         
         variables = {
@@ -332,30 +423,92 @@ class OptimizedShopifyGraphQL:
             variables=variables,
             use_cache=use_cache,
             cache_ttl=cache_ttl,
-            cache_tags=['customers']
+            cache_tags=['customers'],
+            optimize_query=True
         )
     
     # Batch operations
     async def get_multiple_orders(self,
                                 order_ids: List[str],
-                                fields: Optional[List[str]] = None) -> List[Dict[str, Any]]:
-        """Get multiple orders in batch"""
-        if not self.batch_processor:
-            # Fallback to sequential execution
+                                fields: Optional[List[str]] = None,
+                                fragment_name: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get multiple orders in batch using intelligent batching"""
+        if not order_ids:
+            return []
+            
+        # Determine fragment to use
+        if not fragment_name:
+            fragment_name = "CoreOrderFields"
+            if fields:
+                if "lineItems" in fields:
+                    fragment_name = "OrderWithLineItems"
+                elif "customer" in fields:
+                    fragment_name = "OrderWithCustomer"
+                elif "fulfillments" in fields:
+                    fragment_name = "OrderWithFulfillments"
+        
+        # Prepare queries
+        queries = []
+        for order_id in order_ids:
+            query = f"""
+            query GetOrder{{order_id}} {{  
+              order(id: "{order_id}") {{  
+                ...{fragment_name}  
+              }}  
+            }}  
+            """
+            queries.append(query)
+        
+        # Check if we should use batch processor
+        if not self.batch_processor or len(order_ids) <= 3:
+            # For small batches, use query optimizer directly
+            combined_query, query_map = self.query_optimizer.combine_queries(queries)
+            
+            # Add the fragment definition
+            fragment = self.fragment_library.get_fragment("Order", fragment_name)
+            if fragment:
+                combined_query = f"{fragment}\n\n{combined_query}"
+            
+            # Execute combined query
+            combined_result = await self.execute_query(
+                query=combined_query,
+                use_batch=False,
+                use_cache=True,
+                cache_tags=["orders"],
+                optimize_query=False  # Already optimized
+            )
+            
+            # Extract results
             results = []
-            for order_id in order_ids:
-                query = self._build_order_by_id_query(order_id, fields)
-                result = await self.execute_query(query, use_batch=False)
-                results.append(result.get('order', {}))
+            for i, order_id in enumerate(order_ids):
+                alias = f"q{i}"
+                if alias in combined_result:
+                    results.append(combined_result[alias].get('order', {}))
+                else:
+                    results.append({})
+                    
             return results
         
-        # Use batching
+        # Otherwise use batch processor for large batches
         tasks = []
-        for order_id in order_ids:
-            query = self._build_order_by_id_query(order_id, fields)
-            task = self.batch_processor.add_query(query)
+        for i, order_id in enumerate(order_ids):
+            # Create optimized query with fragment
+            query = f"""
+            {self.fragment_library.get_fragment("Order", fragment_name)}
+            
+            query GetOrder {{  
+              order(id: "{order_id}") {{  
+                ...{fragment_name}  
+              }}  
+            }}  
+            """
+            
+            # Add to batch processor with priority
+            priority = 5  # Default priority
+            task = self.batch_processor.add_query(query, priority=priority)
             tasks.append(task)
         
+        # Execute all tasks concurrently
         results = await asyncio.gather(*tasks)
         return [r.get('order', {}) for r in results]
     
@@ -402,79 +555,90 @@ class OptimizedShopifyGraphQL:
         
         return state
     
-    # Query builders (simplified for example)
-    def _build_orders_query(self, fields: List[str]) -> str:
-        fields_str = '\n'.join(fields)
-        return f"""
-        query GetOrders($first: Int!, $after: String, $status: String,
-                       $createdAtMin: String, $createdAtMax: String) {{
-          orders(first: $first, after: $after, query: $query) {{
-            edges {{
-              node {{
-                id
-                name
-                {fields_str}
-              }}
-            }}
-            pageInfo {{
-              hasNextPage
-              endCursor
-            }}
-          }}
-        }}
-        """
+    # Batch operations for other entity types
+    async def get_multiple_products(self, 
+                                  product_ids: List[str],
+                                  fields: Optional[List[str]] = None,
+                                  fragment_name: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get multiple products in batch"""
+        if not product_ids:
+            return []
+            
+        # Determine fragment to use
+        if not fragment_name:
+            fragment_name = "CoreProductFields"
+            if fields:
+                if "variants" in fields:
+                    fragment_name = "ProductWithVariants"
+                elif "images" in fields:
+                    fragment_name = "ProductWithImages"
+        
+        # Create tasks
+        tasks = []
+        for product_id in product_ids:
+            query = f"""
+            {self.fragment_library.get_fragment("Product", fragment_name)}
+            
+            query GetProduct {{  
+              product(id: "{product_id}") {{  
+                ...{fragment_name}  
+              }}  
+            }}  
+            """
+            
+            # Add to batch processor
+            if self.batch_processor:
+                task = self.batch_processor.add_query(query)
+            else:
+                task = self.execute_query(query, use_batch=False)
+                
+            tasks.append(task)
+        
+        # Execute all tasks concurrently
+        results = await asyncio.gather(*tasks)
+        return [r.get('product', {}) for r in results]
     
-    def _build_products_query(self, fields: List[str]) -> str:
-        fields_str = '\n'.join(fields)
-        return f"""
-        query GetProducts($first: Int!, $after: String) {{
-          products(first: $first, after: $after) {{
-            edges {{
-              node {{
-                id
-                title
-                {fields_str}
-              }}
-            }}
-            pageInfo {{
-              hasNextPage
-              endCursor
-            }}
-          }}
-        }}
-        """
-    
-    def _build_customers_query(self, fields: List[str]) -> str:
-        fields_str = '\n'.join(fields)
-        return f"""
-        query GetCustomers($first: Int!, $after: String) {{
-          customers(first: $first, after: $after) {{
-            edges {{
-              node {{
-                id
-                displayName
-                {fields_str}
-              }}
-            }}
-            pageInfo {{
-              hasNextPage
-              endCursor
-            }}
-          }}
-        }}
-        """
-    
-    def _build_order_by_id_query(self, order_id: str, fields: Optional[List[str]]) -> str:
-        fields_str = '\n'.join(fields or ['totalPrice', 'currencyCode'])
-        return f"""
-        query GetOrder {{
-          order(id: "{order_id}") {{
-            id
-            name
-            {fields_str}
-          }}
-        }}
-        """
+    async def get_multiple_customers(self,
+                                    customer_ids: List[str],
+                                    fields: Optional[List[str]] = None,
+                                    fragment_name: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get multiple customers in batch"""
+        if not customer_ids:
+            return []
+            
+        # Determine fragment to use
+        if not fragment_name:
+            fragment_name = "CoreCustomerFields"
+            if fields:
+                if "addresses" in fields:
+                    fragment_name = "CustomerWithAddresses"
+                elif "orders" in fields:
+                    fragment_name = "CustomerWithOrders"
+        
+        # Create tasks
+        tasks = []
+        for customer_id in customer_ids:
+            query = f"""
+            {self.fragment_library.get_fragment("Customer", fragment_name)}
+            
+            query GetCustomer {{  
+              customer(id: "{customer_id}") {{  
+                ...{fragment_name}  
+              }}  
+            }}  
+            """
+            
+            # Add to batch processor
+            if self.batch_processor:
+                task = self.batch_processor.add_query(query)
+            else:
+                task = self.execute_query(query, use_batch=False)
+                
+            tasks.append(task)
+        
+        # Execute all tasks concurrently
+        results = await asyncio.gather(*tasks)
+        return [r.get('customer', {}) for r in results]
     
     # Context manager support
     async def __aenter__(self):

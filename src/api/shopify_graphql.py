@@ -6,31 +6,24 @@ Based on PR #9 architecture with PR #20 error handling and PR #25 network resili
 import asyncio
 import json
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 from urllib.parse import urljoin
-import backoff
+from .retry_utils import retry_async, RetryStrategy
 import httpx
-from functools import lru_cache
+from functools import lru_cache, wraps
 import os
+
+# Import unified error handling
+from .errors import (
+    ShopifyAPIError, ShopifyGraphQLError, ShopifyRateLimitError,
+    ShopifyNetworkError, ShopifyAuthenticationError,
+    handle_graphql_error, should_retry_error
+)
 
 logger = logging.getLogger(__name__)
 
 
-class ShopifyGraphQLError(Exception):
-    """GraphQL特有のエラー（PR #20のアプローチを採用）"""
-    
-    def __init__(self, message: str, errors: Optional[List[Dict]] = None, response: Optional[httpx.Response] = None):
-        super().__init__(message)
-        self.errors = errors or []
-        self.response = response
-        self.query_cost = None
-        
-        # GraphQL特有のエラー情報を解析
-        if errors:
-            for error in errors:
-                extensions = error.get('extensions', {})
-                if 'cost' in extensions:
-                    self.query_cost = extensions['cost']
+# ShopifyGraphQLError is now imported from errors.py
 
 
 class ShopifyGraphQLAPI:
@@ -66,12 +59,11 @@ class ShopifyGraphQLAPI:
         self.cost_available = 1000
         self.cost_restore_rate = 50
         
-    @backoff.on_exception(
-        backoff.expo,
-        (httpx.RequestError, httpx.TimeoutException),
-        max_tries=lambda self: self.retry_config['max_retries'],
-        max_time=lambda self: self.retry_config['timeout']
-    )
+    @retry_async(strategy=RetryStrategy(
+        max_retries=3,
+        base_delay=1.0,
+        max_delay=60.0
+    ))
     async def execute_query(self, query: str, variables: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         GraphQLクエリを実行し、結果を返す
@@ -95,20 +87,16 @@ class ShopifyGraphQLAPI:
             
             # GraphQLエラーをチェック
             if 'errors' in response_data:
-                raise ShopifyGraphQLError(
-                    "GraphQL query failed",
-                    errors=response_data['errors'],
-                    response=response
-                )
+                handle_graphql_error(response_data['errors'], response)
             
             return response_data.get('data', {})
             
         except httpx.RequestError as e:
             logger.error(f"Network error during GraphQL request: {e}")
-            raise ShopifyGraphQLError(f"Network error: {e}")
+            raise ShopifyNetworkError(f"Network error during GraphQL request", original_error=e)
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse GraphQL response: {e}")
-            raise ShopifyGraphQLError(f"Invalid response format: {e}")
+            raise ShopifyAPIError(f"Invalid GraphQL response format", response_data={'original_error': str(e)})
     
     def _update_rate_limit_info(self, headers: Dict[str, str]):
         """レート制限情報を更新"""
