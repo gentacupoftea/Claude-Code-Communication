@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -85,6 +85,30 @@ const ChatAnalysisComponent: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(true);
 
+  // モックデータを初期化
+  useEffect(() => {
+    const loadMockData = async () => {
+      try {
+        const mockData = await import('../../utils/mockData');
+        const mockMessages = mockData.mockChatMessages;
+        
+        const convertedMessages: ChatMessage[] = mockMessages.map(msg => ({
+          id: msg.id,
+          type: msg.type === 'assistant' ? 'ai' : 'user',
+          content: msg.message,
+          timestamp: msg.timestamp,
+          data: msg.attachments?.[0]?.data,
+          visualization: msg.attachments?.[0]?.type as any,
+        }));
+        
+        setMessages(convertedMessages);
+      } catch (error) {
+        console.error('Failed to load mock data:', error);
+      }
+    };
+    loadMockData();
+  }, []);
+
   const handleSendMessage = async () => {
     if (!input.trim()) return;
 
@@ -107,14 +131,13 @@ const ChatAnalysisComponent: React.FC = () => {
         content: '過去30日間の売上データを分析しました。',
         timestamp: new Date(),
         visualization: 'chart',
-        data: {
-          // モックデータ
-          sales: [
-            { date: '2024-01-01', sales: 45000 },
-            { date: '2024-01-02', sales: 52000 },
-            // ... 他のデータ
-          ],
-        },
+        data: [
+          { date: '2024-01-01', amount: 45000 },
+          { date: '2024-01-02', amount: 52000 },
+          { date: '2024-01-03', amount: 48000 },
+          { date: '2024-01-04', amount: 56000 },
+          { date: '2024-01-05', amount: 61000 },
+        ],
       };
 
       setMessages(prev => [...prev, aiMessage]);
@@ -140,7 +163,7 @@ const ChatAnalysisComponent: React.FC = () => {
       case 'chart':
         return (
           <Box sx={{ mt: 2, height: 300 }}>
-            <SalesChart data={message.data?.sales || []} />
+            <SalesChart data={message.data || []} />
           </Box>
         );
       case 'table':

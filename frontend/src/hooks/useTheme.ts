@@ -12,28 +12,38 @@ const lightTheme: ThemeOptions = {
   palette: {
     mode: 'light',
     primary: {
-      main: '#6366F1',
-      light: '#818CF8',
-      dark: '#4F46E5',
+      main: '#10B981',
+      light: '#34D399',
+      dark: '#059669',
     },
     secondary: {
-      main: '#F59E0B',
-      light: '#FCD34D',
-      dark: '#D97706',
+      main: '#06B6D4',
+      light: '#22D3EE',
+      dark: '#0891B2',
     },
     background: {
-      default: '#F8FAFC',
+      default: '#F0FDF4',
       paper: '#FFFFFF',
     },
     info: {
-      main: '#3B82F6',
-      light: '#60A5FA',
-      dark: '#2563EB',
+      main: '#0EA5E9',
+      light: '#38BDF8',
+      dark: '#0284C7',
     },
     success: {
       main: '#10B981',
       light: '#34D399',
       dark: '#059669',
+    },
+    warning: {
+      main: '#F59E0B',
+      light: '#FCD34D',
+      dark: '#D97706',
+    },
+    error: {
+      main: '#EF4444',
+      light: '#F87171',
+      dark: '#DC2626',
     },
   },
   shape: {
@@ -73,28 +83,42 @@ const darkTheme: ThemeOptions = {
   palette: {
     mode: 'dark',
     primary: {
-      main: '#818CF8',
-      light: '#A5B4FC',
-      dark: '#6366F1',
+      main: '#10B981',
+      light: '#34D399',
+      dark: '#059669',
     },
     secondary: {
-      main: '#FCD34D',
-      light: '#FDE68A',
-      dark: '#F59E0B',
+      main: '#6B7280',
+      light: '#9CA3AF',
+      dark: '#4B5563',
     },
     background: {
-      default: '#0F172A',
-      paper: '#1E293B',
+      default: '#000000',
+      paper: '#1a1a1a',
+    },
+    text: {
+      primary: '#F3F4F6',
+      secondary: '#9CA3AF',
     },
     info: {
-      main: '#60A5FA',
-      light: '#93C5FD',
-      dark: '#3B82F6',
+      main: '#3B82F6',
+      light: '#60A5FA',
+      dark: '#2563EB',
     },
     success: {
-      main: '#34D399',
-      light: '#6EE7B7',
-      dark: '#10B981',
+      main: '#10B981',
+      light: '#34D399',
+      dark: '#059669',
+    },
+    warning: {
+      main: '#F59E0B',
+      light: '#FCD34D',
+      dark: '#D97706',
+    },
+    error: {
+      main: '#EF4444',
+      light: '#F87171',
+      dark: '#DC2626',
     },
   },
 };
@@ -107,6 +131,13 @@ export const useTheme = () => {
     const newTheme = themeMode === 'light' ? 'dark' : 'light';
     dispatch(setTheme(newTheme));
     localStorage.setItem('theme', newTheme);
+    
+    // Immediately update the dark class
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, [themeMode, dispatch]);
 
   useEffect(() => {
@@ -115,6 +146,15 @@ export const useTheme = () => {
       dispatch(setTheme(savedTheme));
     }
   }, [dispatch, themeMode]);
+
+  // Tailwind dark mode class management
+  useEffect(() => {
+    if (themeMode === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [themeMode]);
 
   const theme = createTheme(themeMode === 'light' ? lightTheme : darkTheme);
 

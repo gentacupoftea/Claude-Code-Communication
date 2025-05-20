@@ -10,25 +10,47 @@ interface Order {
   totalPrice: number;
   financialStatus: string;
   fulfillmentStatus: string;
-  createdAt: string;
+  createdAt: Date;
 }
 
 const OrdersPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   
-  // Fetch orders data
+  // Fetch orders data with mock data
   const { data, isLoading } = useQuery({
     queryKey: ['orders', page, search],
     queryFn: async () => {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '10',
-        search: search,
-      });
+      // Use mock data while API is not available
+      const mockData = await import('../utils/mockData');
+      const orders = mockData.mockOrders;
       
-      const response = await api.get(`/orders?${params}`);
-      return response.data;
+      // Filter by search
+      const filteredOrders = search
+        ? orders.filter(order => 
+            order.customer.name.toLowerCase().includes(search.toLowerCase()) ||
+            order.customer.email.toLowerCase().includes(search.toLowerCase()) ||
+            order.orderNumber.toLowerCase().includes(search.toLowerCase())
+          )
+        : orders;
+      
+      // Paginate
+      const startIndex = (page - 1) * 10;
+      const endIndex = startIndex + 10;
+      const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+      
+      return {
+        orders: paginatedOrders.map(order => ({
+          id: order.id,
+          name: order.orderNumber,
+          email: order.customer.email,
+          totalPrice: order.totalAmount,
+          financialStatus: order.status === 'delivered' ? 'paid' : 'pending',
+          fulfillmentStatus: order.status,
+          createdAt: order.createdAt,
+        })),
+        totalPages: Math.ceil(filteredOrders.length / 10),
+      };
     },
   });
 
@@ -68,10 +90,10 @@ const OrdersPage: React.FC = () => {
             placeholder="Search orders..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-[#1a1a1a] dark:text-white"
           />
           
-          <select className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white">
+          <select className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-[#1a1a1a] dark:text-white">
             <option value="">All statuses</option>
             <option value="paid">Paid</option>
             <option value="pending">Pending</option>
@@ -85,9 +107,9 @@ const OrdersPage: React.FC = () => {
       </div>
 
       {/* Orders table */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+      <div className="bg-white dark:bg-[#1a1a1a] shadow rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-700">
+          <thead className="bg-gray-50 dark:bg-[#1a1a1a]">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Order
@@ -112,7 +134,7 @@ const OrdersPage: React.FC = () => {
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody className="bg-white dark:bg-[#1a1a1a] divide-y divide-gray-200 dark:divide-gray-700">
             {isLoading ? (
               <tr>
                 <td colSpan={7} className="text-center py-4">
@@ -126,7 +148,7 @@ const OrdersPage: React.FC = () => {
                 </td>
               </tr>
             ) : (
-              data?.orders?.map((order: Order) => (
+              data?.orders?.map((order) => (
                 <tr key={order.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                     #{order.name}
@@ -158,7 +180,7 @@ const OrdersPage: React.FC = () => {
         </table>
         
         {/* Pagination */}
-        {data?.totalPages > 1 && (
+        {data && data.totalPages > 1 && (
           <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200 dark:border-gray-700">
             <div className="text-sm text-gray-700 dark:text-gray-300">
               Showing page {page} of {data.totalPages}

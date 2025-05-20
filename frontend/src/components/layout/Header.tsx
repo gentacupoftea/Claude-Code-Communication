@@ -15,11 +15,14 @@ import {
   UserIcon,
   Cog6ToothIcon as CogIcon,
   ArrowRightOnRectangleIcon,
+  SunIcon,
+  MoonIcon,
 } from '@heroicons/react/24/outline';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/MockAuthContext';
 import { NotificationPopup } from '../notifications/NotificationPopup';
 import { useTheme } from '../../hooks';
 import { useNavigate } from 'react-router-dom';
+import { ConeaLogo } from '../branding/ConeaLogo';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -61,8 +64,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, isMobile = false }) => {
       sx={{
         zIndex: (theme) => theme.zIndex.drawer + 1,
         background: theme.palette.mode === 'dark' 
-          ? 'linear-gradient(135deg, #1E293B 0%, #334155 100%)' 
-          : 'linear-gradient(135deg, #6366F1 0%, #818CF8 100%)',
+          ? 'linear-gradient(135deg, #1a1a1a 0%, #111111 100%)' 
+          : 'linear-gradient(135deg, #86EFAC 0%, #6EE7B7 100%)',
         color: theme.palette.primary.contrastText,
         backdropFilter: 'blur(10px)',
         borderBottom: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)'}`,
@@ -70,14 +73,21 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, isMobile = false }) => {
       elevation={0}
     >
       <Toolbar>
-        <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-          conea
-        </Typography>
+        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+          <ConeaLogo 
+            variant={isMobile ? 'icon-only' : 'horizontal'}
+            size="md"
+            showTagline={!isMobile}
+          />
+        </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {/* テーマ切り替えボタン */}
           <IconButton onClick={toggleTheme} color="inherit">
-            {theme.palette.mode === 'dark' ? '🌞' : '🌙'}
+            {theme.palette.mode === 'dark' ? 
+              <SunIcon className="h-5 w-5" style={{ color: '#FFFFFF' }} /> : 
+              <MoonIcon className="h-5 w-5" />
+            }
           </IconButton>
 
           {/* 通知ボタン */}

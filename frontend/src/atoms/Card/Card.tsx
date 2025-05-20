@@ -69,7 +69,7 @@ const StyledCard = styled(MuiCard)<StyledCardProps>(({ theme, variant, shadow, f
   }
 
   if (currentVariant === 'filled') {
-    styles.backgroundColor = theme.palette.background.default;
+    styles.backgroundColor = theme.palette.mode === 'dark' ? '#1a1a1a' : '#ffffff';
   }
 
   return styles;

@@ -160,6 +160,7 @@ const DashboardEditorComponent: React.FC = () => {
           position: 'relative',
           overflow: 'hidden',
           cursor: viewMode === 'edit' ? 'move' : 'default',
+          bgcolor: theme.palette.mode === 'dark' ? '#1a1a1a' : '#ffffff',
           '&:hover': viewMode === 'edit' ? {
             boxShadow: theme.shadows[4],
           } : {},
@@ -198,20 +199,42 @@ const DashboardEditorComponent: React.FC = () => {
           <Typography variant="h6">{widget.title}</Typography>
         </Box>
 
-        {/* ウィジェットのコンテンツ（仮） */}
+        {/* ウィジェットのコンテンツ */}
         <Box
           sx={{
             height: 'calc(100% - 60px)',
-            bgcolor: alpha(theme.palette.primary.main, 0.05),
-            borderRadius: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            padding: 2,
           }}
         >
-          <Typography color="text.secondary">
-            {widget.type}ウィジェット
-          </Typography>
+          {widget.type === 'metric' && (
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="h3" color="primary">
+                ¥1,234,567
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                +12.5% 前月比
+              </Typography>
+            </Box>
+          )}
+          {widget.type === 'chart' && (
+            <Box sx={{ color: 'text.secondary', textAlign: 'center' }}>
+              <Typography>チャートエリア</Typography>
+              <Typography variant="caption">売上推移データ</Typography>
+            </Box>
+          )}
+          {widget.type === 'table' && (
+            <Box sx={{ color: 'text.secondary', textAlign: 'center' }}>
+              <Typography>テーブルエリア</Typography>
+              <Typography variant="caption">注文一覧データ</Typography>
+            </Box>
+          )}
+          {widget.type === 'text' && (
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography color="text.secondary">
+                テキストコンテンツ
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Paper>
     );
@@ -275,7 +298,7 @@ const DashboardEditorComponent: React.FC = () => {
       </AppBar>
 
       {/* メインコンテンツ */}
-      <Box sx={{ flex: 1, overflow: 'auto', p: 3, bgcolor: theme.palette.grey[50] }}>
+      <Box sx={{ flex: 1, overflow: 'auto', p: 3, bgcolor: theme.palette.mode === 'dark' ? '#000000' : theme.palette.grey[50] }}>
         {viewMode === 'edit' && dashboard.widgets.length === 0 ? (
           <Box
             sx={{
