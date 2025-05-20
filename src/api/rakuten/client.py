@@ -127,7 +127,9 @@ class RakutenAPIClient(AbstractEcommerceClient):
         """
         try:
             # Try to get shop info as connection test
-            response = await self._make_request('GET', f'/{self.API_VERSION}/shop/get')
+            # RMSEndpointsを使用してURL構築
+            endpoint = RMSEndpoints.build_url("get_shop")
+            response = await self._make_request('GET', endpoint)
             return response.status_code == 200
         except Exception as e:
             logger.error(f"Connection check failed: {e}")
@@ -451,9 +453,12 @@ class RakutenAPIClient(AbstractEcommerceClient):
             rakuten_product = RakutenProduct.from_common_format(validated_data)
             platform_data = rakuten_product.to_platform_format()
             
+            # RMSEndpointsを使用してURL構築
+            endpoint = RMSEndpoints.build_url("create_product")
+            
             response = await self._make_request_with_retry(
                 'POST',
-                f'/{self.API_VERSION}/product/create',
+                endpoint,
                 data=platform_data
             )
             
@@ -476,10 +481,11 @@ class RakutenAPIClient(AbstractEcommerceClient):
             Updated product data
         """
         # Get existing product first
+        endpoint = RMSEndpoints.build_url("get_product")
         existing = await self._make_request(
             'GET',
-            f'/{self.API_VERSION}/product/get',
-            params={'productId': product_id}
+            endpoint,
+            params={'itemId': product_id}  # RMS uses itemId
         )
         existing_data = existing.json()
         
@@ -488,9 +494,10 @@ class RakutenAPIClient(AbstractEcommerceClient):
         rakuten_product.update_from_common_format(product_data)
         platform_data = rakuten_product.to_platform_format()
         
+        endpoint = RMSEndpoints.build_url("update_product")
         response = await self._make_request(
             'POST',
-            f'/{self.API_VERSION}/product/update',
+            endpoint,
             data=platform_data
         )
         
@@ -508,10 +515,11 @@ class RakutenAPIClient(AbstractEcommerceClient):
             True if deletion successful
         """
         try:
+            endpoint = RMSEndpoints.build_url("delete_product")
             await self._make_request(
                 'POST',
-                f'/{self.API_VERSION}/product/delete',
-                data={'productId': product_id}
+                endpoint,
+                data={'itemId': product_id}  # RMS uses itemId
             )
             return True
         except RakutenAPIError as e:

@@ -345,7 +345,7 @@ async def auth_token(request: Request):
 
 
 # ショップ情報
-@app.get("/es/2.0/shop/get")
+@app.get("/es/1.0/shop/get")
 async def get_shop(authorization: str = Header(None)):
     """ショップ情報取得 (接続テスト用)"""
     if not authorization or 'bearer' not in authorization.lower():
@@ -363,7 +363,7 @@ async def get_shop(authorization: str = Header(None)):
 
 
 # 商品一覧
-@app.get("/es/2.0/products/search")
+@app.get("/es/2.0/item/search")
 async def search_products(limit: int = 50, offset: int = 0, 
                         categoryId: Optional[str] = None,
                         authorization: str = Header(None)):
@@ -390,7 +390,7 @@ async def search_products(limit: int = 50, offset: int = 0,
 
 
 # 単一商品取得
-@app.get("/es/2.0/product/get")
+@app.get("/es/2.0/item/get")
 async def get_product(itemId: str, authorization: str = Header(None)):
     """単一商品取得"""
     if not authorization or 'bearer' not in authorization.lower():
@@ -414,8 +414,61 @@ async def get_product(itemId: str, authorization: str = Header(None)):
     raise HTTPException(status_code=404, detail="Product not found")
 
 
+# 商品更新
+@app.post("/es/2.0/item/update")
+async def update_product(request: Request, authorization: str = Header(None)):
+    """商品更新"""
+    if not authorization or 'bearer' not in authorization.lower():
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    data = await request.json()
+    item_id = data.get("itemId")
+    
+    if not item_id:
+        raise HTTPException(status_code=400, detail="Item ID is required")
+    
+    # IDが一致する商品を検索
+    for product in mock_data['products']:
+        if product.get("itemId") == item_id:
+            # 更新データをマージ
+            for key, value in data.items():
+                if key != "itemId":
+                    product[key] = value
+            
+            # 更新日時を設定
+            product["updatedAt"] = datetime.now().isoformat()
+            
+            return product
+    
+    # 見つからない場合は404
+    raise HTTPException(status_code=404, detail="Product not found")
+
+
+# 商品削除
+@app.post("/es/2.0/item/delete")
+async def delete_product(request: Request, authorization: str = Header(None)):
+    """商品削除"""
+    if not authorization or 'bearer' not in authorization.lower():
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    data = await request.json()
+    item_id = data.get("itemId")
+    
+    if not item_id:
+        raise HTTPException(status_code=400, detail="Item ID is required")
+    
+    # IDが一致する商品を検索して削除
+    for i, product in enumerate(mock_data['products']):
+        if product.get("itemId") == item_id:
+            del mock_data['products'][i]
+            return {"success": True, "message": "Product deleted successfully"}
+    
+    # 見つからない場合は404
+    raise HTTPException(status_code=404, detail="Product not found")
+
+
 # 商品作成
-@app.post("/es/2.0/product/create")
+@app.post("/es/2.0/item/insert")
 async def create_product(product: RakutenProduct, authorization: str = Header(None)):
     """商品作成"""
     if not authorization or 'bearer' not in authorization.lower():
@@ -439,7 +492,7 @@ async def create_product(product: RakutenProduct, authorization: str = Header(No
 
 
 # 注文一覧
-@app.get("/es/2.0/orders/search")
+@app.get("/es/2.0/order/searchOrder")
 async def search_orders(limit: int = 50, offset: int = 0,
                        startDate: Optional[str] = None,
                        endDate: Optional[str] = None,
@@ -482,7 +535,7 @@ async def search_orders(limit: int = 50, offset: int = 0,
 
 
 # 単一注文取得
-@app.get("/es/2.0/order/get")
+@app.get("/es/2.0/order/getOrder")
 async def get_order(orderId: str, authorization: str = Header(None)):
     """単一注文取得"""
     if not authorization or 'bearer' not in authorization.lower():
@@ -503,7 +556,7 @@ async def get_order(orderId: str, authorization: str = Header(None)):
 
 
 # 注文ステータス更新
-@app.post("/es/2.0/order/update")
+@app.post("/es/2.0/order/updateOrder")
 async def update_order(request: Request, authorization: str = Header(None)):
     """注文更新"""
     if not authorization or 'bearer' not in authorization.lower():
@@ -532,8 +585,36 @@ async def update_order(request: Request, authorization: str = Header(None)):
     raise HTTPException(status_code=404, detail="Order not found")
 
 
+# 注文キャンセル
+@app.post("/es/2.0/order/cancel")
+async def cancel_order(request: Request, authorization: str = Header(None)):
+    """注文をキャンセル"""
+    if not authorization or 'bearer' not in authorization.lower():
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    data = await request.json()
+    order_id = data.get("orderId")
+    cancel_reason = data.get("cancelReason", "自社都合によるキャンセル")
+    
+    if not order_id:
+        raise HTTPException(status_code=400, detail="Order ID is required")
+    
+    # IDが一致する注文を検索
+    for order in mock_data['orders']:
+        if order.get("orderId") == order_id:
+            # 注文ステータスをCANCELEDに更新
+            order["orderStatus"] = "CANCELED"
+            order["cancelReason"] = cancel_reason
+            order["updatedAt"] = datetime.now().isoformat()
+            
+            return {"success": True, "message": "Order canceled successfully", "order": order}
+    
+    # 見つからない場合は404
+    raise HTTPException(status_code=404, detail="Order not found")
+
+
 # 顧客一覧
-@app.get("/es/2.0/members/search")
+@app.get("/es/2.0/member/search")
 async def search_customers(limit: int = 50, offset: int = 0,
                           authorization: str = Header(None)):
     """顧客検索"""
@@ -580,9 +661,39 @@ async def get_customer(memberId: str, authorization: str = Header(None)):
     raise HTTPException(status_code=404, detail="Customer not found")
 
 
+# 顧客情報更新
+@app.post("/es/2.0/member/update")
+async def update_customer(request: Request, authorization: str = Header(None)):
+    """顧客情報更新"""
+    if not authorization or 'bearer' not in authorization.lower():
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    data = await request.json()
+    member_id = data.get("memberId")
+    
+    if not member_id:
+        raise HTTPException(status_code=400, detail="Member ID is required")
+    
+    # IDが一致する顧客を検索
+    for customer in mock_data['customers']:
+        if customer.get("memberId") == member_id or customer.get("id") == member_id:
+            # 更新データをマージ
+            for key, value in data.items():
+                if key != "memberId":
+                    customer[key] = value
+                    
+            # idキーの統一性を確保
+            if 'memberId' in customer and 'id' not in customer:
+                customer['id'] = customer['memberId']
+                
+            return customer
+    
+    # 見つからない場合は404
+    raise HTTPException(status_code=404, detail="Customer not found")
+
+
 # カテゴリ一覧
-@app.get("/es/2.0/categories")
-@app.get("/es/1.0/categories")
+@app.get("/es/1.0/category/getall")
 async def get_categories(authorization: str = Header(None)):
     """カテゴリ一覧取得"""
     if not authorization or 'bearer' not in authorization.lower():
@@ -595,7 +706,7 @@ async def get_categories(authorization: str = Header(None)):
 
 
 # 単一カテゴリ取得
-@app.get("/es/2.0/category/get")
+@app.get("/es/1.0/category/get")
 async def get_category(categoryId: str, authorization: str = Header(None)):
     """単一カテゴリ取得"""
     if not authorization or 'bearer' not in authorization.lower():
@@ -608,6 +719,125 @@ async def get_category(categoryId: str, authorization: str = Header(None)):
     
     # 見つからない場合は404
     raise HTTPException(status_code=404, detail="Category not found")
+
+
+# 在庫取得
+@app.get("/es/1.0/inventory/getInventory")
+async def get_inventory(itemId: str, authorization: str = Header(None)):
+    """商品の在庫情報を取得"""
+    if not authorization or 'bearer' not in authorization.lower():
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    # 商品を探す
+    for product in mock_data['products']:
+        if product.get("itemId") == itemId:
+            # 在庫情報を生成
+            inventory = {
+                "itemId": itemId,
+                "quantity": product.get("stockCount", 0),
+                "available": product.get("stockCount", 0) > 0,
+                "updatedAt": product.get("updatedAt")
+            }
+            return inventory
+    
+    # 商品が見つからない場合
+    raise HTTPException(status_code=404, detail="Product not found")
+
+
+# 在庫更新
+@app.post("/es/1.0/inventory/updateInventory")
+async def update_inventory(request: Request, authorization: str = Header(None)):
+    """商品の在庫情報を更新"""
+    if not authorization or 'bearer' not in authorization.lower():
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    data = await request.json()
+    item_id = data.get("itemId")
+    quantity = data.get("quantity")
+    
+    if not item_id or quantity is None:
+        raise HTTPException(status_code=400, detail="Item ID and quantity are required")
+    
+    # 商品を探す
+    for product in mock_data['products']:
+        if product.get("itemId") == item_id:
+            # 在庫数を更新
+            product["stockCount"] = quantity
+            product["updatedAt"] = datetime.now().isoformat()
+            
+            # 更新された在庫情報を返す
+            inventory = {
+                "itemId": item_id,
+                "quantity": quantity,
+                "available": quantity > 0,
+                "updatedAt": product["updatedAt"]
+            }
+            return inventory
+    
+    # 商品が見つからない場合
+    raise HTTPException(status_code=404, detail="Product not found")
+
+
+# レビュー一覧
+@app.get("/es/1.0/review/search")
+async def get_reviews(limit: int = 50, offset: int = 0,
+                   itemId: Optional[str] = None,
+                   authorization: str = Header(None)):
+    """商品レビュー検索"""
+    if not authorization or 'bearer' not in authorization.lower():
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    # ダミーレビューデータを返す
+    reviews = [
+        {
+            "reviewId": "r12345",
+            "itemId": "p000001",
+            "rating": 5,
+            "title": "とても良い商品です",
+            "content": "帯にすぐ届きました。品質も問題なく満足しています。",
+            "authorId": "c000001",
+            "authorName": "買い手1",
+            "createdAt": "2023-01-01T12:00:00Z",
+            "status": "PUBLISHED"
+        },
+        {
+            "reviewId": "r12346",
+            "itemId": "p000002",
+            "rating": 4,
+            "title": "まあまあ良い",
+            "content": "と。まあ商品としては問題ないですが、配送が過剰包装で環境によくないと思いました。",
+            "authorId": "c000002",
+            "authorName": "買い手2",
+            "createdAt": "2023-01-02T15:30:00Z",
+            "status": "PUBLISHED"
+        },
+        {
+            "reviewId": "r12347",
+            "itemId": "p000001",
+            "rating": 3,
+            "title": "普通です",
+            "content": "期待していたほどのものではありませんでしたが、それなりに使えます。",
+            "authorId": "c000003",
+            "authorName": "買い手3",
+            "createdAt": "2023-01-03T09:15:00Z",
+            "status": "PUBLISHED"
+        }
+    ]
+    
+    # 商品IDでフィルタリング
+    if itemId:
+        reviews = [r for r in reviews if r.get("itemId") == itemId]
+    
+    # ページネーション
+    total_count = len(reviews)
+    paginated = reviews[offset:offset+limit]
+    
+    return {
+        "totalCount": total_count,
+        "offset": offset,
+        "limit": limit,
+        "reviews": paginated
+    }
 
 
 # 管理API - テスト設定変更

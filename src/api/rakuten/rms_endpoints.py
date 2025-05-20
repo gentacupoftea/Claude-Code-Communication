@@ -49,6 +49,13 @@ class RMSEndpoints:
     
     # Endpoint definitions
     ENDPOINTS = {
+        # Auth API
+        "auth_token": EndpointConfig(
+            path="auth/token",
+            version="es/2.0",
+            method="POST",
+            requires_auth=False
+        ),
         # Product API
         "get_product": EndpointConfig(
             path="item/get",
@@ -92,6 +99,11 @@ class RMSEndpoints:
             version=API_VERSIONS[APIType.ORDER],
             method="POST"
         ),
+        "cancel_order": EndpointConfig(
+            path="order/cancel",
+            version=API_VERSIONS[APIType.ORDER],
+            method="POST"
+        ),
         
         # Inventory API (different version)
         "get_inventory": EndpointConfig(
@@ -127,6 +139,11 @@ class RMSEndpoints:
             path="member/search",
             version=API_VERSIONS[APIType.CUSTOMER],
             method="GET"
+        ),
+        "update_customer": EndpointConfig(
+            path="member/update",
+            version=API_VERSIONS[APIType.CUSTOMER],
+            method="POST"
         ),
         
         # Review API
