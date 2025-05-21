@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-05-31
+
+> 🔄 **Name Change**: With this release, we begin transitioning from "Shopify MCP Server" to our new name "Conea". Documentation has been updated to reflect this change, with full code migration coming in v0.3.1 and v0.3.2. See our [Rename Migration Plan](docs/RENAME_MIGRATION.md) for details.
+
+### Added
+- Project rename: First phase of migration from "Shopify MCP Server" to "Conea"
+- Intelligent processing prototype for enhanced data handling
+- Native MCP server implementation
+- Advanced data visualization components
+- Internationalization support (EN, JA, FR)
+- Comprehensive export functionality
+- GraphQL API optimization
+- Performance monitoring dashboard
+- Memory-optimized data processing
+- Rate limit statistics monitoring
+- Automated testing suite
+- Documentation in multiple languages
+
+### Changed
+- Complete project restructuring as a Python package
+- Improved API response format
+- Enhanced error handling
+- Memory-optimized data types
+- Optimized caching system
+- Adaptive rate limiting implementation
+
+### Deprecated
+- Legacy FastAPI mode (still available with USE_FASTAPI=true)
+- Old configuration format (use new environment variables)
+- Custom rate limiting implementations (use built-in system)
+
+### Removed
+- Deprecated v1 API endpoints
+- Legacy jQuery dependencies
+- Unused configuration options
+
+### Fixed
+- Memory leak in real-time data updates (#142)
+- Race condition in batch processing (#156)
+- Date formatting issues in different timezones (#163)
+- Currency display for multi-currency stores (#171)
+- Export functionality for large datasets (#189)
+
 ## [0.2.1] - 2025-05-20
 
 ### Added

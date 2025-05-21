@@ -1,13 +1,14 @@
-# Shopify MCP Server
+# Conea: Shopify MCP Server
 
-Model Context Protocol (MCP) server for integrating Shopify API with Claude Desktop for real-time e-commerce analytics and data visualization.
+Conea is a Model Context Protocol (MCP) server for integrating e-commerce platforms (Shopify, Rakuten, Amazon) with Claude Desktop for real-time analytics and data visualization.
 
-**Version**: v0.3.0 (Analytics Edition)  
+**Version**: v0.3.0 (Analytics & MCP Edition)  
 **Status**: Production Ready  
 **Documentation**: [Full Documentation](docs/README.md)
 
 ## 🚀 What's New in v0.3.0
 
+- **Native MCP Integration**: Full support for Claude Desktop's Model Context Protocol
 - **Google Analytics Integration**: Comprehensive GA4 API support with real-time data
 - **Advanced Analytics**: Conversion funnels, user segments, and custom metrics
 - **Intelligent Caching**: Redis-based caching for improved performance
@@ -34,9 +35,10 @@ Model Context Protocol (MCP) server for integrating Shopify API with Claude Desk
 - 🔒 Secure API integration
 - 📈 Product performance tracking
 - 🌐 GraphQL and REST API support
-- 📊 Google Analytics integration (NEW in v0.3.0)
+- 📊 Google Analytics integration
 
 ### Technical Features
+- 🤖 Native MCP server implementation
 - 🚄 High-performance caching
 - 🧪 Comprehensive test coverage
 - 🐳 Docker support
@@ -59,17 +61,16 @@ Model Context Protocol (MCP) server for integrating Shopify API with Claude Desk
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/mourigenta/shopify-mcp-server.git
-cd shopify-mcp-server
+git clone https://github.com/mourigenta/conea.git
+cd conea
 
 # 2. Set up environment with network resilience
-./setup_test_env.sh
+./setup_env.sh
 # Or with custom options:
-# INSTALL_TIMEOUT=300 INSTALL_RETRY=5 ./setup_test_env.sh
+# INSTALL_TIMEOUT=300 INSTALL_RETRY=5 ./setup_env.sh
 
 # 3. Configure your Shopify credentials
-cp .env.example .env
-# Edit .env with your credentials
+# Edit .env with your credentials (created by setup_env.sh)
 ```
 
 #### Installation in Restricted Networks
@@ -79,32 +80,32 @@ cp .env.example .env
 
 # 1. Behind a proxy
 export PIP_PROXY=http://your-proxy:port
-./setup_test_env.sh
+./setup_env.sh
 
 # 2. Limited network connectivity
-INSTALL_TIMEOUT=300 INSTALL_RETRY=10 ./setup_test_env.sh
+INSTALL_TIMEOUT=300 INSTALL_RETRY=10 ./setup_env.sh
 
 # 3. Offline installation
 # First, download packages on a connected machine:
 pip download -r requirements.txt -d vendor/
 # Then on the target machine:
-OFFLINE_MODE=1 ./setup_test_env.sh
+OFFLINE_MODE=1 ./setup_env.sh
 
 # 4. Minimal installation (core features only)
-INSTALL_OPTIONAL=0 INSTALL_DEV=0 ./setup_test_env.sh
+INSTALL_DEV=0 INSTALL_GOOGLE=0 INSTALL_PRODUCTION=0 ./setup_env.sh
 ```
 
-### Dependency Installation Options
+### Running the Server
 
 ```bash
-# Core dependencies only (minimal functionality)
-pip install -r requirements-base.txt
+# Start the MCP server
+./run_server.py
 
-# Extended dependencies (recommended)
-pip install -r requirements-extended.txt
+# For legacy FastAPI mode
+USE_FASTAPI=true ./run_server.py
 
-# Full installation (all features)
-pip install -r requirements.txt
+# Show version
+./run_server.py --version
 ```
 
 ### Configuration
@@ -114,123 +115,37 @@ Configure your Shopify credentials in `.env`:
 ```bash
 SHOPIFY_SHOP_NAME=your-shop-name
 SHOPIFY_ACCESS_TOKEN=your-access-token
-SHOPIFY_API_VERSION=2024-01
+SHOPIFY_API_VERSION=2025-04
 ```
 
 See [Environment Setup Guide](docs/configuration/environment.md) for detailed instructions.
 
-## 🛠️ Available Tools
+## 🛠️ Available MCP Tools
 
-### REST API Tools
-- `get_orders_summary`: Order statistics and revenue
-- `get_sales_analytics`: Sales trends and analytics
-- `get_product_performance`: Top performing products
-- `get_rate_limit_stats`: Monitor API rate limit usage (v0.2.1+)
+### Order Analytics
+- `get_orders_summary`: Order statistics and revenue with visualization
+- `get_sales_analytics`: Sales trends and analytics with charts
+- `get_product_performance`: Top performing products analysis
 
-### GraphQL API Tools
-- `get_shop_info_graphql`: Comprehensive shop information
-- `get_products_graphql`: Efficient product data fetching  
-- `get_inventory_levels_graphql`: Location-aware inventory tracking
+### Shop Information
+- `get_shop_info_graphql`: Comprehensive shop information via GraphQL
 
-### Google Analytics API Tools (v0.3.0+)
-- `run_ga_report`: Execute Google Analytics reports
-- `get_realtime_data`: Real-time visitor analytics
-- `get_conversion_funnel`: Analyze conversion paths
-- `get_user_segments`: Compare user segments
-
-### TypeScript Services
-- `ServiceRegistry`: Centralized service management with dependency injection
-- `AnalysisAgent`: AI-powered data analysis for e-commerce data
-- `DataService`: Data access and transformation services
-- `VectorDBService`: Vector database integration for semantic search
-- `ECIntegrationService`: Multi-platform e-commerce integration
-
-### Type Definitions
-
-The project uses TypeScript for strong typing. Key type definitions:
-
-- `UnifiedProduct`: Standardized product format across platforms
-- `Order`, `Customer`: Core e-commerce data types
-- `AnalysisRequest`/`ECAnalysisRequest`: Data analysis request formats
-- `AnalysisResult`/`ECAnalysisResult`: AI analysis result formats
-
-See [Type Definitions Document](docs/TypeDefinitions.md) for complete type reference.
-
-### When to Use Which?
-
-**Use GraphQL for:**
-- Complex queries with related data
-- Mobile apps with bandwidth constraints
-- Selective field fetching
-
-**Use REST for:**
-- Simple CRUD operations
-- Cached content
-- Legacy integrations
-
-See [GraphQL vs REST Guide](docs/user-guide/graphql-vs-rest.md) for detailed comparisons.
+### Monitoring
+- `get_rate_limit_stats`: Monitor API rate limit usage statistics
 
 ## 🧪 Testing
 
-### Python Tests
-
-Prepare the test environment and run the suite:
+### Running Tests
 
 ```bash
-# Copy example variables for testing
-cp .env.test.example .env.test
-# Install dependencies in a virtualenv
-./setup_test_env.sh
-
-# Run all tests with automatic dependency detection
-python run_adaptive_tests.py
+# Run all tests
+python -m pytest tests/
 
 # Run with coverage report
-./run_tests.sh --coverage
+python -m pytest tests/ --cov=shopify_mcp_server
 
 # Run specific test file
-python -m pytest test_graphql_client.py
-
-# Check environment and dependencies
-python test_imports.py
-```
-
-To run the end-to-end tests with Playwright:
-
-```bash
-export E2E_BASE_URL=http://localhost:8000
-python run_e2e_tests.py
-python scripts/generate_mock_data.py  # optional deterministic test DB
-```
-
-### TypeScript Tests
-
-For testing the TypeScript components:
-
-```bash
-# Install dependencies
-npm install
-
-# Run unit tests
-npm test
-
-# Run with coverage report
-npm test -- --coverage
-
-# Run specific test file
-npm test -- tests/unit/ServiceRegistry.test.ts
-```
-
-### Type Checking
-
-Run TypeScript type checking:
-
-```bash
-# Check types
-npm run build:ts
-
-# Build the TypeScript code
-npm run build
+python -m pytest tests/test_mcp.py
 ```
 
 ## 🔧 Troubleshooting
@@ -240,9 +155,9 @@ npm run build
 If you encounter dependency installation failures:
 
 1. **Check proxy settings**: `export PIP_PROXY=http://proxy:port`
-2. **Increase timeout**: `INSTALL_TIMEOUT=300 ./setup_test_env.sh`
-3. **Use offline mode**: See [docs/NETWORK_TROUBLESHOOTING.md](docs/NETWORK_TROUBLESHOOTING.md)
-4. **Disable retries**: `INSTALL_RETRY_DISABLED=1 ./setup_test_env.sh`
+2. **Increase timeout**: `INSTALL_TIMEOUT=300 ./setup_env.sh`
+3. **Use offline mode**: `OFFLINE_MODE=1 ./setup_env.sh`
+4. **Disable retries**: `INSTALL_RETRY=0 ./setup_env.sh`
 
 ### API Rate Limiting
 
@@ -256,13 +171,6 @@ If you experience rate limiting issues with Shopify API:
    ```
 2. **Monitor rate limit usage**: Use the `get_rate_limit_stats` MCP tool
 3. **Check rate limit headers**: Review logs for "Shopify API Rate Limit" warnings
-
-### Common Issues
-
-- **Import errors**: Run `python test_imports.py` for specific instructions
-- **SSL errors**: Update certificates or use trusted sources
-- **Timeout errors**: Increase `INSTALL_TIMEOUT` environment variable
-- **Rate limit errors**: Adjust rate limit settings as described above
 
 ## 🐳 Docker Support
 
@@ -278,34 +186,6 @@ docker-compose -f docker-compose.prod.yml up
 
 See [Docker Configuration](docs/configuration/docker.md) for details.
 
-## 📊 Google Analytics Integration
-
-### Setup
-1. Configure GA credentials in `.env`:
-```bash
-GA_CREDENTIALS_PATH=/path/to/service-account.json
-GA_PROPERTY_ID=123456789
-```
-
-2. Start Redis for caching:
-```bash
-docker-compose -f docker-compose.ga.yml up redis
-```
-
-3. Run the GA server:
-```bash
-python -m src.google_analytics.main
-```
-
-### Features
-- Real-time visitor tracking
-- Custom report generation
-- Conversion funnel analysis
-- Multi-property support
-- Intelligent caching with Redis
-
-See [Google Analytics Guide](docs/GOOGLE_ANALYTICS_GUIDE.md) for detailed documentation.
-
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guide](docs/contributing/README.md) for:
@@ -314,39 +194,6 @@ We welcome contributions! Please see our [Contributing Guide](docs/contributing/
 - Code style guidelines
 - Pull request process
 - Release procedures
-
-### CI/CD Pipeline
-
-Our project uses GitHub Actions for continuous integration and deployment:
-
-- **TypeScript CI**: Type checking, linting, and unit tests for TypeScript code
-- **Python CI**: Testing, linting, and formatting checks for Python code
-- **Combined CI**: Comprehensive workflow including Docker-based integration tests
-
-All pull requests must pass the CI pipeline before merging.
-
-```bash
-# Run TypeScript checks locally
-npm run typecheck
-npm run lint
-npm test
-
-# Run Python checks locally
-pytest tests/
-flake8 src tests
-black src tests
-```
-
-See [CI/CD Workflows](.github/workflows/README.md) for more details.
-
-## 📊 Performance
-
-v0.2.0 brings significant performance improvements:
-
-- **70% reduction** in API calls for complex queries (GraphQL)
-- **40% faster** response times for multi-resource fetches
-- **50% less bandwidth** usage with selective field queries
-- **Network resilient** installation process
 
 ## 🔐 Security
 
@@ -367,12 +214,11 @@ Thanks to all contributors who have helped make this project better!
 ## 📞 Support
 
 - 📖 [Documentation](docs/README.md)
-- 💬 [Discussions](https://github.com/gentacupoftea/shopify-mcp-server/discussions)
-- 🐛 [Issue Tracker](https://github.com/gentacupoftea/shopify-mcp-server/issues)
-- 📧 Email: support@example.com
+- 💬 [Discussions](https://github.com/mourigenta/conea/discussions)
+- 🐛 [Issue Tracker](https://github.com/mourigenta/conea/issues)
 
 ---
 
 <p align="center">
-  Made with ❤️ by the Shopify MCP Server team
+  Made with ❤️ by the Conea team
 </p>
