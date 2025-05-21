@@ -1,4 +1,6 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import authService from '../services/authService';
+import { ConnectionStatus } from '../services/connectionService';
 
 export interface User {
   id: string;
@@ -6,12 +8,16 @@ export interface User {
   name?: string;
   role?: string;
   permissions?: string[];
+  lastLogin?: Date;
+  avatar?: string;
+  settings?: Record<string, any>;
 }
 
 export interface AuthTokens {
   access_token: string;
   refresh_token: string;
   expires_in: number;
+  token_type?: string;
 }
 
 interface AuthContextType {
@@ -23,9 +29,15 @@ interface AuthContextType {
   error: string | null;
   login: (credentials: { email: string; password: string }) => Promise<void>;
   signup: (data: { email: string; password: string; name?: string }) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateUser: (user: User) => void;
   clearError: () => void;
+  refreshToken: () => Promise<boolean>;
+  hasPermission: (permission: string) => boolean;
+  hasRole: (role: string | string[]) => boolean;
+  getProfile: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  setError: (error: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -33,53 +45,123 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
+  const [tokenExpiry, setTokenExpiry] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Initialize auth state from localStorage
   useEffect(() => {
-    const storedToken = localStorage.getItem('authToken');
-    const storedUser = localStorage.getItem('user');
+    const initializeAuth = async () => {
+      setLoading(true);
+      
+      try {
+        const storedToken = localStorage.getItem('auth_access_token');
+        const storedRefreshToken = localStorage.getItem('auth_refresh_token');
+        const storedTokenExpiry = localStorage.getItem('auth_token_expiry');
+        const storedUser = localStorage.getItem('auth_user');
+        
+        if (storedToken && storedRefreshToken && storedUser) {
+          setToken(storedToken);
+          setRefreshToken(storedRefreshToken);
+          
+          if (storedTokenExpiry) {
+            setTokenExpiry(parseInt(storedTokenExpiry));
+            
+            // Check if token is expired and refresh if needed
+            const now = Date.now();
+            if (parseInt(storedTokenExpiry) < now) {
+              await refreshTokenHandler();
+            }
+          }
+          
+          setUser(JSON.parse(storedUser));
+          
+          // Verify token is still valid by fetching current user
+          try {
+            await getProfileHandler();
+          } catch (error) {
+            // If token validation fails, clear auth state
+            console.error('Failed to validate token', error);
+            clearAuthState();
+          }
+        } else {
+          // For development environment only
+          if (process.env.NODE_ENV === 'development' && process.env.REACT_APP_USE_MOCK_AUTH === 'true') {
+            setUser({
+              id: '1',
+              email: 'test@example.com',
+              name: 'Test User',
+              role: 'admin',
+              permissions: ['read:all', 'write:all', 'admin:all']
+            });
+          } else {
+            clearAuthState();
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing auth', error);
+        clearAuthState();
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-    
-    // Set a mock user for development
-    setUser({
-      id: '1',
-      email: 'test@example.com',
-      name: 'Test User',
-    });
-    
-    setLoading(false);
+    initializeAuth();
   }, []);
 
+  // Helper function to clear auth state
+  const clearAuthState = () => {
+    setUser(null);
+    setToken(null);
+    setRefreshToken(null);
+    setTokenExpiry(null);
+    localStorage.removeItem('auth_access_token');
+    localStorage.removeItem('auth_refresh_token');
+    localStorage.removeItem('auth_token_expiry');
+    localStorage.removeItem('auth_user');
+  };
+  
+  // Helper function to save auth state
+  const saveAuthState = (
+    accessToken: string, 
+    refreshTokenValue: string, 
+    expiresIn: number, 
+    userData: User
+  ) => {
+    const expiry = Date.now() + expiresIn * 1000;
+    setToken(accessToken);
+    setRefreshToken(refreshTokenValue);
+    setTokenExpiry(expiry);
+    setUser(userData);
+    
+    localStorage.setItem('auth_access_token', accessToken);
+    localStorage.setItem('auth_refresh_token', refreshTokenValue);
+    localStorage.setItem('auth_token_expiry', expiry.toString());
+    localStorage.setItem('auth_user', JSON.stringify(userData));
+  };
+  
+  // Login handler
   const login = async (credentials: { email: string; password: string }) => {
     setError(null);
     setLoading(true);
     
     try {
-      // This would make an API call to authenticate
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-      });
-
-      const data = await response.json();
+      const response = await authService.login(credentials.email, credentials.password);
       
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+      // Make sure we have all required data
+      if (!response.token || !response.refreshToken || !response.user) {
+        throw new Error('Invalid server response');
       }
       
-      if (data.token && data.user) {
-        setToken(data.token);
-        setUser(data.user);
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-      }
+      // Save auth state
+      saveAuthState(
+        response.token,
+        response.refreshToken,
+        response.expiresIn || 3600, // Default 1 hour if not provided
+        response.user
+      );
+      
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';
       setError(message);
@@ -89,25 +171,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Signup handler
   const signup = async (data: { email: string; password: string; name?: string }) => {
     setError(null);
     setLoading(true);
     
     try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+      const response = await authService.register({
+        email: data.email,
+        password: data.password,
+        name: data.name || '',
       });
-
-      const result = await response.json();
       
-      if (!response.ok) {
-        throw new Error(result.message || 'Signup failed');
+      // Registration in our service automatically logs the user in
+      if (response.token && response.refreshToken && response.user) {
+        saveAuthState(
+          response.token,
+          response.refreshToken,
+          response.expiresIn || 3600,
+          response.user
+        );
+      } else {
+        // If the API doesn't log in automatically, do it manually
+        await login({ email: data.email, password: data.password });
       }
-      
-      // Auto-login after successful signup
-      await login({ email: data.email, password: data.password });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Signup failed';
       setError(message);
@@ -117,24 +204,109 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    setError(null);
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
+  // Logout handler
+  const logout = async () => {
+    try {
+      // Send logout request to server
+      await authService.logout();
+    } catch (error) {
+      console.error('Error during logout', error);
+    } finally {
+      // Clear local state regardless of server response
+      clearAuthState();
+    }
   };
 
+  // Update user data
   const updateUser = (updatedUser: User) => {
-    setUser(updatedUser);
-    localStorage.setItem('user', JSON.stringify(updatedUser));
+    if (!user) return;
+    
+    const newUser = { ...user, ...updatedUser };
+    setUser(newUser);
+    localStorage.setItem('auth_user', JSON.stringify(newUser));
   };
   
+  // Error handling
   const clearError = () => {
     setError(null);
   };
+  
+  // Refresh token handler
+  const refreshTokenHandler = async (): Promise<boolean> => {
+    if (!refreshToken) return false;
+    
+    try {
+      const response = await authService.refreshToken(refreshToken);
+      
+      if (response.token && response.refreshToken) {
+        saveAuthState(
+          response.token,
+          response.refreshToken,
+          response.expiresIn || 3600,
+          response.user || user as User
+        );
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Token refresh failed', error);
+      clearAuthState();
+      return false;
+    }
+  };
+  
+  // Get user profile
+  const getProfileHandler = async (): Promise<void> => {
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+    
+    try {
+      const userData = await authService.getCurrentUser();
+      setUser(userData);
+      localStorage.setItem('auth_user', JSON.stringify(userData));
+    } catch (error) {
+      console.error('Failed to fetch user profile', error);
+      throw error;
+    }
+  };
+  
+  // Reset password
+  const resetPasswordHandler = async (email: string): Promise<void> => {
+    setError(null);
+    setLoading(true);
+    
+    try {
+      await authService.resetPassword(email);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Password reset failed';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Permission checking
+  const hasPermission = (permission: string): boolean => {
+    if (!user || !user.permissions) return false;
+    
+    // Check for admin permission which grants all access
+    if (user.permissions.includes('admin:all')) return true;
+    
+    return user.permissions.includes(permission);
+  };
+  
+  // Role checking
+  const hasRole = (role: string | string[]): boolean => {
+    if (!user || !user.role) return false;
+    
+    const roles = Array.isArray(role) ? role : [role];
+    return roles.includes(user.role);
+  };
 
-  const isAuthenticated = true; // Temporarily set to true for development
+  // Check if user is authenticated
+  const isAuthenticated = !!user && !!token;
   const isLoading = loading;
 
   const value: AuthContextType = {
@@ -149,6 +321,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     logout,
     updateUser,
     clearError,
+    refreshToken: refreshTokenHandler,
+    hasPermission,
+    hasRole,
+    getProfile: getProfileHandler,
+    resetPassword: resetPasswordHandler,
+    setError,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

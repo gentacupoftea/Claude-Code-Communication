@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Provider } from 'react-redux';
 import { store } from './store';
 import { AuthProvider } from './contexts/AuthContext';
+import { ConnectionProvider } from './contexts/ConnectionContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ThemeWrapper from './components/layout/ThemeWrapper';
@@ -23,6 +24,8 @@ import { Customers } from './pages/Customers/Customers';
 import { Profile } from './pages/Profile/Profile';
 import { ProfileEdit } from './pages/Profile/ProfileEdit';
 import { Notifications } from './pages/Notifications/Notifications';
+import ServerConnectionPage from './pages/ServerConnection/ServerConnectionPage';
+import { UserProfilePage } from './pages/User';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -40,8 +43,9 @@ const App: React.FC = () => {
       <ThemeWrapper>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <Router>
-              <Routes>
+            <ConnectionProvider>
+              <Router>
+                <Routes>
                 {/* Public routes */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
@@ -51,6 +55,7 @@ const App: React.FC = () => {
                   <Route element={<DashboardLayout />}>
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/server-connection" element={<ServerConnectionPage />} />
                     <Route path="/orders" element={<OrdersPage />} />
                     <Route path="/customers" element={<Customers />} />
                     <Route path="/analytics" element={<AnalyticsDashboard />} />
@@ -61,7 +66,7 @@ const App: React.FC = () => {
                     <Route path="/saved-dashboards" element={<SavedDashboards />} />
                     <Route path="/reports" element={<Reports />} />
                     <Route path="/settings" element={<Settings />} />
-                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/profile" element={<UserProfilePage />} />
                     <Route path="/profile/edit" element={<ProfileEdit />} />
                     <Route path="/notifications" element={<Notifications />} />
                   </Route>
@@ -70,7 +75,8 @@ const App: React.FC = () => {
                 {/* Catch all */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
-            </Router>
+              </Router>
+            </ConnectionProvider>
           </AuthProvider>
         </QueryClientProvider>
       </ThemeWrapper>
