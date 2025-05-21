@@ -1,26 +1,36 @@
-# Shopify MCP Server v0.3.0 Release Notes
+# Conea (Shopify MCP Server) v0.3.0 Release Notes
 
-**Release Date**: May 31, 2025  
+**Release Date**: May 21, 2025  
 **Version**: 0.3.0  
 **Status**: Production Ready
 
 ## 🎉 Overview
 
-We are excited to announce the release of Shopify MCP Server v0.3.0! This major release brings significant enhancements to data visualization, internationalization support, export capabilities, and API optimization. Our focus has been on improving performance, expanding global reach, and providing better analytics tools for omnichannel commerce management.
+We are excited to announce the release of Conea (formerly Shopify MCP Server) v0.3.0! This major release introduces native Model Context Protocol (MCP) integration for Claude Desktop, along with significant enhancements to data visualization, internationalization support, export capabilities, and API optimization. Our focus has been on improving performance, expanding global reach, and providing better analytics tools for omnichannel commerce management.
 
 ## 🚀 Major Features
 
-### 1. Advanced Data Visualization Components
+### 1. Native MCP Server Implementation
+
+Complete integration with Claude Desktop's Model Context Protocol:
+
+- **Native MCP Architecture**: Purpose-built for Claude Desktop integration
+- **Embedded Data Visualization**: Rich charts and tables directly in Claude's interface
+- **Interactive Analytics**: Dynamic data exploration within Claude
+- **Stateless Operation**: Efficient request handling with minimal resource usage
+- **Cloud Desktop Integration**: Seamless operation with Claude Desktop's UI
+
+### 2. Advanced Data Visualization Components
 
 Enhanced analytics dashboard with interactive charts and real-time data visualization:
 
 - **New Analytics Dashboard** with responsive design and themeable components
 - **Chart Components**: Line charts, bar charts, pie charts, and custom visualizations
-- **Real-time Updates**: Live data streaming with WebSocket integration
-- **Performance Optimizations**: 30% faster rendering with virtualized components
+- **Real-time Updates**: Live data streaming with optimized data flow
+- **Performance Optimizations**: 30% faster rendering with memory-optimized data processing
 - **Accessibility**: Full ARIA support and keyboard navigation
 
-### 2. Internationalization (i18n) Support
+### 3. Internationalization (i18n) Support
 
 Complete internationalization implementation supporting multiple languages:
 
@@ -30,7 +40,7 @@ Complete internationalization implementation supporting multiple languages:
 - **Dynamic Language Switching**: Seamless language changes without page reload
 - **Translation Coverage**: 100% coverage for all UI elements and messages
 
-### 3. Comprehensive Export Functionality
+### 4. Comprehensive Export Functionality
 
 Multiple export formats for data portability and reporting:
 
@@ -41,7 +51,7 @@ Multiple export formats for data portability and reporting:
 - **Batch Export**: Export multiple datasets simultaneously
 - **Scheduled Exports**: Automated export scheduling with email delivery
 
-### 4. Shopify GraphQL API Optimization
+### 5. Shopify GraphQL API Optimization
 
 Major performance improvements for API interactions:
 
@@ -123,96 +133,80 @@ Major performance improvements for API interactions:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/shopify-mcp-server.git
-cd shopify-mcp-server
+git clone https://github.com/mourigenta/conea.git
+cd conea
 
-# Install dependencies
-npm install
-pip install -r requirements.txt
+# Install dependencies and configure environment
+./setup_env.sh
 
-# Configure environment
-cp .env.example .env
-# Edit .env with your settings
+# Edit .env with your settings if needed
+nano .env
 
-# Run migrations
-python manage.py migrate
-
-# Start the server
-npm run build
-python manage.py runserver
+# Start the MCP server
+./run_server.py
 ```
 
 ### Upgrade from v0.2.x
 
 ```bash
-# Backup your data
-python manage.py backup
+# Backup your configuration
+cp .env .env.backup
 
 # Pull latest changes
 git pull origin main
 git checkout v0.3.0
 
-# Update dependencies
-npm update
-pip install -r requirements.txt --upgrade
+# Install new dependencies
+./setup_env.sh
 
-# Run migrations
-python manage.py migrate
+# Merge your previous configuration if needed
+nano .env
 
-# Clear cache
-python manage.py clear_cache
-
-# Restart services
-npm run build
-supervisorctl restart all
+# Start the MCP server
+./run_server.py
 ```
 
 ## 📂 Migration Guide
 
-### Database Migration
-```bash
-# Check pending migrations
-python manage.py showmigrations
-
-# Apply migrations
-python manage.py migrate
-
-# Verify migration
-python manage.py check
-```
-
 ### Configuration Updates
 ```bash
 # New required environment variables
-SHOPIFY_USE_OPTIMIZATIONS=true
-REDIS_URL=redis://localhost:6379
-ENABLE_I18N=true
-DEFAULT_LANGUAGE=en
-EXPORT_TIMEOUT=300
+HOST=127.0.0.1
+PORT=5000
+MCP_SERVER_NAME=shopify-mcp-server
+MCP_SERVER_DESCRIPTION=Shopify API integration with Claude Desktop
+MCP_SERVER_VERSION=0.3.0
+SHOPIFY_USE_GRAPHQL=true
+SHOPIFY_BATCH_QUERIES=true
+RATE_LIMIT_ENABLED=true
 ```
 
 ## 🔄 Changelog
 
 ### Added
+- Native MCP server implementation
 - Advanced data visualization components
 - Internationalization support (EN, JA, FR)
 - Comprehensive export functionality
 - GraphQL API optimization
 - Performance monitoring dashboard
+- Memory-optimized data processing
+- Rate limit statistics monitoring
 - Automated testing suite
 - Documentation in multiple languages
 
 ### Changed
+- Complete project restructuring as a Python package
 - Improved API response format
 - Enhanced error handling
-- Optimized database queries
-- Updated UI components to React 18
-- Migrated to TypeScript strict mode
+- Memory-optimized data types
+- Optimized caching system
+- Adaptive rate limiting implementation
 
 ### Deprecated
-- Legacy REST API endpoints (use GraphQL)
-- Old authentication system (migrate to JWT)
-- Custom chart library (use new components)
+- Legacy FastAPI mode (still available with USE_FASTAPI=true)
+- Old configuration format (use new environment variables)
+- Custom rate limiting implementations (use built-in system)
 
 ### Removed
 - Deprecated v1 API endpoints
@@ -231,11 +225,11 @@ Special thanks to all contributors who made this release possible:
 
 ## 📚 Documentation
 
-- [User Guide](https://docs.shopify-mcp.com/user-guide)
-- [API Reference](https://docs.shopify-mcp.com/api)
-- [Migration Guide](https://docs.shopify-mcp.com/migration)
-- [Performance Tuning](https://docs.shopify-mcp.com/performance)
-- [Security Best Practices](https://docs.shopify-mcp.com/security)
+- [User Guide](docs/README.md)
+- [Configuration Guide](docs/configuration/environment.md)
+- [MCP Tools Reference](shopify_mcp_server/README.md)
+- [GraphQL Guide](docs/user-guide/graphql-vs-rest.md)
+- [Docker Configuration](docs/configuration/docker.md)
 
 ## 🔜 Next Release Preview (v0.4.0)
 
@@ -248,10 +242,9 @@ Special thanks to all contributors who made this release possible:
 
 ## 📞 Support
 
-- **Documentation**: https://docs.shopify-mcp.com
-- **Issue Tracker**: https://github.com/your-org/shopify-mcp-server/issues
-- **Community Forum**: https://community.shopify-mcp.com
-- **Enterprise Support**: support@shopify-mcp.com
+- **Documentation**: [docs/README.md](docs/README.md)
+- **Issue Tracker**: https://github.com/mourigenta/conea/issues
+- **MCP Tools Reference**: [shopify_mcp_server/README.md](shopify_mcp_server/README.md) (will be renamed in v0.3.1)
 
 ## 📄 License
 
@@ -259,6 +252,21 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Thank you for using Shopify MCP Server!** We're committed to continuously improving the platform based on your feedback. Please don't hesitate to reach out with suggestions, bug reports, or feature requests.
+**Thank you for using Conea!** We're committed to continuously improving the platform based on your feedback. Please don't hesitate to reach out with suggestions, bug reports, or feature requests.
 
-Happy Selling! 🛍️
+Happy Analytics with Claude Desktop! 🛍️📊
+
+## 🔄 プロジェクト名変更に関する重要なお知らせ
+
+v0.3.0より、プロジェクト名を「Shopify MCP Server」から「Conea」に変更する第一段階を実施しています。この名称変更は、Shopifyだけでなく、楽天やAmazonなど複数のECプラットフォームに対応するよう拡張されたプロジェクトの範囲を反映しています。
+
+### ユーザーへの影響
+- **設定変更**: 現時点での設定変更は不要です。既存の設定ファイルはそのまま使用できます。
+- **ドキュメント参照**: ドキュメントは新しい名称に更新されていますが、内容は互換性があります。
+- **APIとパッケージ名**: v0.3.0では内部API名とパッケージ名は変更されていません。これらは将来のリリースで段階的に変更されます。
+
+### 今後の予定
+- **v0.3.1 (6/15予定)**: パッケージ名と内部モジュール構造の変更
+- **v0.3.2 (6/30予定)**: リポジトリ名とCI/CD設定の変更
+
+詳細は[名称変更マイグレーション計画](docs/RENAME_MIGRATION.md)を参照してください。移行期間中に質問や問題がある場合は、[Issueトラッカー](https://github.com/mourigenta/conea/issues)で報告してください。

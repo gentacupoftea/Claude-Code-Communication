@@ -1,6 +1,6 @@
-# Shopify MCP Server API リファレンス
+# Conea（旧Shopify MCP Server） API リファレンス
 
-このドキュメントは、Shopify MCP Serverが提供するすべてのAPI機能の詳細なリファレンスです。
+このドキュメントは、Conea（旧Shopify MCP Server）が提供するすべてのAPI機能の詳細なリファレンスです。
 
 ## 目次
 
@@ -15,7 +15,7 @@
 
 ## 概要
 
-Shopify MCP Serverは、MCP (Model Context Protocol) を通じてShopify Admin APIとGoogle Analytics APIへの統一されたアクセスを提供します。
+Coneaは、MCP (Model Context Protocol) を通じて複数のECプラットフォームAPI（Shopify、楽天、Amazon）とGoogle Analytics APIへの統一されたアクセスを提供します。
 
 ### ベースURL
 
@@ -653,11 +653,11 @@ Retry-After: 2.0
 
 ```python
 import asyncio
-from shopify_mcp_server import ShopifyMCPServer
+from shopify_mcp_server import ShopifyMCPServer  # v0.3.1以降は 'from conea import ConeaServer' に変更予定
 
 async def analyze_store_performance():
     """ストアのパフォーマンスを分析"""
-    server = ShopifyMCPServer()
+    server = ShopifyMCPServer()  # v0.3.1以降は ConeaServer() に変更予定
     
     # 注文データの取得
     orders = await server.get_orders_summary(
@@ -702,6 +702,6 @@ results = asyncio.run(analyze_store_performance())
 
 ## サポート
 
-- GitHub Issues: [github.com/mourigenta/shopify-mcp-server/issues](https://github.com/mourigenta/shopify-mcp-server/issues)
+- GitHub Issues: [github.com/mourigenta/conea/issues](https://github.com/mourigenta/conea/issues)
 - ドキュメント: [完全なドキュメント](../README.md)
-- コミュニティ: [Discord Server](https://discord.gg/shopify-mcp)
+- コミュニティ: [Discord Server](https://discord.gg/conea)

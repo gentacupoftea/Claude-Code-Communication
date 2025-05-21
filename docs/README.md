@@ -1,11 +1,11 @@
-# Shopify MCP Server Documentation
+# Conea Documentation
 
-Welcome to the Shopify MCP Server documentation. This guide provides comprehensive information for users, developers, and contributors.
+Welcome to the Conea (formerly Shopify MCP Server) documentation. This guide provides comprehensive information for users, developers, and contributors.
 
 ## Documentation Structure
 
 ### 📚 [User Guide](user-guide/README.md)
-For users who want to install and use Shopify MCP Server
+For users who want to install and use Conea
 - [Getting Started](user-guide/getting-started.md)
 - [Basic Usage](user-guide/basic-usage.md)
 - [GraphQL vs REST Guide](user-guide/graphql-vs-rest.md)
@@ -44,7 +44,7 @@ Guidelines for contributors
 - [Main README](../README.md)
 - [Changelog](../CHANGELOG.md)
 - [Latest Release Notes](../RELEASE_NOTES_v0.2.0.md)
-- [GitHub Repository](https://github.com/gentacupoftea/shopify-mcp-server)
+- [GitHub Repository](https://github.com/gentacupoftea/conea)
 
 ## Search Documentation
 
@@ -57,4 +57,8 @@ Use the following keywords to find relevant documentation:
 
 ## Version
 
-This documentation is for Shopify MCP Server v0.2.0 (GraphQL Edition).
+This documentation is for Conea v0.3.0 (MCP Edition).
+
+## Name Change
+
+Starting with v0.3.0, we have begun transitioning from "Shopify MCP Server" to "Conea". This reflects our expanding focus beyond just Shopify to include multiple e-commerce platforms. Please see our [Rename Migration Plan](RENAME_MIGRATION.md) for details on this transition.
