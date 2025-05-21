@@ -46,12 +46,22 @@ import {
   Email,
   Phone,
   Check,
+  CloudOff,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTheme } from '../../hooks';
+import { useSettings } from '../../hooks/useSettings';
 import { mainLayout } from '../../layouts/MainLayout';
 import { Card } from '../../atoms';
+import NotificationSettings from '../../components/notifications/NotificationSettings';
+import {
+  GeneralSettings,
+  SecuritySettings,
+  AppearanceSettings,
+  AdvancedSettings,
+  OfflineSettings
+} from '../../components/settings';
 import { RootState } from '../../store';
 import { setTheme, setLanguage } from '../../store/slices/settingsSlice';
 
@@ -99,6 +109,12 @@ const SettingsComponent: React.FC = () => {
       description: '外観とテーマ',
     },
     {
+      id: 'offline',
+      title: 'オフラインモード',
+      icon: <CloudOff />,
+      description: 'オフライン機能の設定',
+    },
+    {
       id: 'advanced',
       title: '詳細設定',
       icon: <Code />,
@@ -116,357 +132,27 @@ const SettingsComponent: React.FC = () => {
   };
 
   const renderGeneralSettings = () => (
-    <Box>
-      <Typography variant="h6" sx={{ mb: 3 }}>
-        {t('settings.general')}
-      </Typography>
-      
-      <Grid container spacing={3}>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            fullWidth
-            label={t('settings.displayName')}
-            defaultValue="山田太郎"
-            helperText="他のユーザーに表示される名前"
-          />
-        </Grid>
-        
-        <Grid item xs={12} sm={6}>
-          <FormControl fullWidth>
-            <InputLabel>{t('settings.language')}</InputLabel>
-            <Select
-              value={i18n.language || 'ja'}
-              onChange={async (e) => {
-                const lang = e.target.value;
-                try {
-                  if (i18n && typeof i18n.changeLanguage === 'function') {
-                    await i18n.changeLanguage(lang);
-                  }
-                  dispatch(setLanguage(lang as 'ja' | 'en'));
-                } catch (error) {
-                  console.error('Language change error:', error);
-                }
-              }}
-              label={t('settings.language')}
-            >
-              <MenuItem value="ja">日本語</MenuItem>
-              <MenuItem value="en">English</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-        
-        <Grid item xs={12} sm={6}>
-          <FormControl fullWidth>
-            <InputLabel>{t('settings.timezone')}</InputLabel>
-            <Select defaultValue="Asia/Tokyo" label={t('settings.timezone')}>
-              <MenuItem value="Asia/Tokyo">東京 (GMT+9)</MenuItem>
-              <MenuItem value="America/New_York">ニューヨーク (GMT-5)</MenuItem>
-              <MenuItem value="Europe/London">ロンドン (GMT+0)</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-        
-        <Grid item xs={12} sm={6}>
-          <FormControl fullWidth>
-            <InputLabel>{t('settings.currency')}</InputLabel>
-            <Select defaultValue="JPY" label={t('settings.currency')}>
-              <MenuItem value="JPY">日本円 (¥)</MenuItem>
-              <MenuItem value="USD">米ドル ($)</MenuItem>
-              <MenuItem value="EUR">ユーロ (€)</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-        
-        <Grid item xs={12}>
-          <TextField
-            fullWidth
-            multiline
-            rows={3}
-            label="自己紹介"
-            placeholder="プロフィールに表示される自己紹介文"
-            helperText="最大500文字"
-          />
-        </Grid>
-      </Grid>
-    </Box>
+    <GeneralSettings />
   );
 
   const renderNotificationSettings = () => (
-    <Box>
-      <Typography variant="h6" sx={{ mb: 3 }}>
-        {t('settings.notifications')}
-      </Typography>
-      
-      <List>
-        <ListItem>
-          <ListItemIcon>
-            <Email />
-          </ListItemIcon>
-          <ListItemText
-            primary="メール通知"
-            secondary="重要な更新をメールで受け取る"
-          />
-          <Switch defaultChecked />
-        </ListItem>
-        
-        <ListItem>
-          <ListItemIcon>
-            <AttachMoney />
-          </ListItemIcon>
-          <ListItemText
-            primary="売上通知"
-            secondary="日次・週次の売上レポートを受け取る"
-          />
-          <Switch defaultChecked />
-        </ListItem>
-        
-        <ListItem>
-          <ListItemIcon>
-            <Storage />
-          </ListItemIcon>
-          <ListItemText
-            primary="在庫アラート"
-            secondary="在庫が少なくなったときに通知"
-          />
-          <Switch defaultChecked />
-        </ListItem>
-        
-        <ListItem>
-          <ListItemIcon>
-            <Timer />
-          </ListItemIcon>
-          <ListItemText
-            primary="レポート完了通知"
-            secondary="レポート生成が完了したときに通知"
-          />
-          <Switch />
-        </ListItem>
-      </List>
-      
-      <Divider sx={{ my: 3 }} />
-      
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        通知の配信先
-      </Typography>
-      
-      <Grid container spacing={2}>
-        <Grid item xs={12}>
-          <TextField
-            fullWidth
-            label="メールアドレス"
-            defaultValue="user@example.com"
-            InputProps={{
-              endAdornment: (
-                <IconButton>
-                  <Check color="success" />
-                </IconButton>
-              ),
-            }}
-          />
-        </Grid>
-        
-        <Grid item xs={12}>
-          <TextField
-            fullWidth
-            label="電話番号（SMS）"
-            placeholder="+81 90-1234-5678"
-            InputProps={{
-              endAdornment: (
-                <Button size="small">認証</Button>
-              ),
-            }}
-          />
-        </Grid>
-      </Grid>
-    </Box>
+    <NotificationSettings />
   );
 
   const renderSecuritySettings = () => (
-    <Box>
-      <Typography variant="h6" sx={{ mb: 3 }}>
-        {t('settings.security')}
-      </Typography>
-      
-      <List>
-        <ListItem>
-          <ListItemButton onClick={() => setChangePasswordDialog(true)}>
-            <ListItemIcon>
-              <VpnKey />
-            </ListItemIcon>
-            <ListItemText
-              primary={t('settings.changePassword')}
-              secondary="パスワードを変更します"
-            />
-          </ListItemButton>
-        </ListItem>
-        
-        <ListItem>
-          <ListItemButton onClick={() => setTwoFactorDialog(true)}>
-            <ListItemIcon>
-              <Security />
-            </ListItemIcon>
-            <ListItemText
-              primary={t('settings.twoFactorAuth')}
-              secondary="2段階認証を設定します"
-            />
-          </ListItemButton>
-        </ListItem>
-        
-        <ListItem>
-          <ListItemIcon>
-            <Timer />
-          </ListItemIcon>
-          <ListItemText
-            primary="セッションタイムアウト"
-            secondary="非アクティブ時の自動ログアウト時間"
-          />
-          <Select size="small" defaultValue={30}>
-            <MenuItem value={15}>15分</MenuItem>
-            <MenuItem value={30}>30分</MenuItem>
-            <MenuItem value={60}>1時間</MenuItem>
-            <MenuItem value={0}>無効</MenuItem>
-          </Select>
-        </ListItem>
-      </List>
-      
-      <Divider sx={{ my: 3 }} />
-      
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        ログイン履歴
-      </Typography>
-      
-      <Alert severity="info" sx={{ mb: 2 }}>
-        最終ログイン: 2024年1月20日 14:30 (東京)
-      </Alert>
-      
-      <Button variant="outlined" fullWidth>
-        すべてのデバイスからログアウト
-      </Button>
-    </Box>
+    <SecuritySettings />
   );
 
   const renderAppearanceSettings = () => (
-    <Box>
-      <Typography variant="h6" sx={{ mb: 3 }}>
-        {t('settings.appearance')}
-      </Typography>
-      
-      <List>
-        <ListItem>
-          <ListItemIcon>
-            {theme.palette.mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
-          </ListItemIcon>
-          <ListItemText
-            primary={t('settings.theme')}
-            secondary={theme.palette.mode === 'dark' ? 'ダークモード' : 'ライトモード'}
-          />
-          <Switch
-            checked={theme.palette.mode === 'dark'}
-            onChange={toggleTheme}
-          />
-        </ListItem>
-        
-        <ListItem>
-          <ListItemIcon>
-            <Palette />
-          </ListItemIcon>
-          <ListItemText
-            primary="アクセントカラー"
-            secondary="UIのメインカラーを選択"
-          />
-          <Select size="small" defaultValue="blue">
-            <MenuItem value="blue">ブルー</MenuItem>
-            <MenuItem value="green">グリーン</MenuItem>
-            <MenuItem value="purple">パープル</MenuItem>
-            <MenuItem value="orange">オレンジ</MenuItem>
-          </Select>
-        </ListItem>
-      </List>
-      
-      <Divider sx={{ my: 3 }} />
-      
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        表示設定
-      </Typography>
-      
-      <List>
-        <ListItem>
-          <ListItemText
-            primary="コンパクト表示"
-            secondary="情報をより密に表示します"
-          />
-          <Switch />
-        </ListItem>
-        
-        <ListItem>
-          <ListItemText
-            primary="アニメーション"
-            secondary="UI要素のアニメーションを有効化"
-          />
-          <Switch defaultChecked />
-        </ListItem>
-      </List>
-    </Box>
+    <AppearanceSettings />
   );
 
   const renderAdvancedSettings = () => (
-    <Box>
-      <Typography variant="h6" sx={{ mb: 3 }}>
-        詳細設定
-      </Typography>
-      
-      <Alert severity="warning" sx={{ mb: 3 }}>
-        これらの設定を変更すると、システムの動作に影響を与える可能性があります。
-      </Alert>
-      
-      <List>
-        <ListItem>
-          <ListItemIcon>
-            <Storage />
-          </ListItemIcon>
-          <ListItemText
-            primary="キャッシュ設定"
-            secondary="データキャッシュの有効期限"
-          />
-          <Select size="small" defaultValue={300}>
-            <MenuItem value={60}>1分</MenuItem>
-            <MenuItem value={300}>5分</MenuItem>
-            <MenuItem value={900}>15分</MenuItem>
-            <MenuItem value={3600}>1時間</MenuItem>
-          </Select>
-        </ListItem>
-        
-        <ListItem>
-          <ListItemIcon>
-            <Backup />
-          </ListItemIcon>
-          <ListItemText
-            primary="自動バックアップ"
-            secondary="データの自動バックアップ設定"
-          />
-          <Switch defaultChecked />
-        </ListItem>
-      </List>
-      
-      <Divider sx={{ my: 3 }} />
-      
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        データ管理
-      </Typography>
-      
-      <Grid container spacing={2}>
-        <Grid item xs={12} sm={6}>
-          <Button variant="outlined" fullWidth>
-            データをエクスポート
-          </Button>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <Button variant="outlined" color="error" fullWidth>
-            すべてのデータを削除
-          </Button>
-        </Grid>
-      </Grid>
-    </Box>
+    <AdvancedSettings />
+  );
+  
+  const renderOfflineSettings = () => (
+    <OfflineSettings />
   );
 
   const getCurrentSectionContent = () => {
@@ -479,6 +165,8 @@ const SettingsComponent: React.FC = () => {
         return renderSecuritySettings();
       case 'appearance':
         return renderAppearanceSettings();
+      case 'offline':
+        return renderOfflineSettings();
       case 'advanced':
         return renderAdvancedSettings();
       default:

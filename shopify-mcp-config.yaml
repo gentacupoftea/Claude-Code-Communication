@@ -1,0 +1,61 @@
+# Shopify MCP Server Configuration
+# This is a YAML configuration file for the Shopify MCP Server
+
+# Database Configuration
+database:
+  host: localhost
+  port: 5432
+  name: shopify_mcp
+  user: postgres
+  password: postgres_password  # In production, use environment variables instead
+  pool_size: 5
+  max_overflow: 10
+  echo: false
+
+# API Configuration
+api:
+  host: 0.0.0.0
+  port: 8000
+  debug: false
+  base_path: /api
+  version: v1
+  workers: 4
+  timeout: 60
+  cors_origins:
+    - "*"  # In production, restrict to specific domains
+
+# Shopify API Configuration
+shopify:
+  api_key: your_shopify_api_key  # Replace with your Shopify API key or use env vars
+  api_secret: your_shopify_api_secret  # Replace with your Shopify API secret or use env vars
+  api_version: 2023-10
+  scopes: read_products,read_orders,read_customers,write_orders
+  shop_domain: null  # Set at runtime
+  webhook_secret: null  # Set if using webhooks
+
+# Cache Configuration
+cache:
+  enabled: true
+  ttl: 3600  # 1 hour
+  redis_host: localhost
+  redis_port: 6379
+  redis_db: 0
+  redis_password: null
+  max_items: 10000
+
+# Logging Configuration
+logging:
+  level: INFO  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: logs/shopify-mcp-server.log
+  syslog: false
+  json_format: false
+
+# Security Configuration
+security:
+  secret_key: replace_with_your_secret_key  # At least 32 chars, use env vars in production
+  jwt_algorithm: HS256
+  jwt_expires: 1440  # 24 hours
+  bcrypt_rounds: 12
+  allowed_hosts:
+    - "*"  # In production, restrict to specific hosts

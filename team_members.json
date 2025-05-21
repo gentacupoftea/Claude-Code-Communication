@@ -1,0 +1,65 @@
+{
+  "members": [
+    {
+      "name": "佐藤 健太",
+      "github_username": "kenta-sato",
+      "expertise": ["backend", "python", "api", "database", "architecture"],
+      "secondary_skills": ["testing", "performance"],
+      "workload": 0
+    },
+    {
+      "name": "鈴木 優子",
+      "github_username": "yuko-suzuki",
+      "expertise": ["frontend", "typescript", "react", "css", "ui/ux"],
+      "secondary_skills": ["documentation", "accessibility"],
+      "workload": 0
+    },
+    {
+      "name": "田中 誠",
+      "github_username": "makoto-tanaka",
+      "expertise": ["devops", "ci-cd", "docker", "kubernetes", "infrastructure"],
+      "secondary_skills": ["security", "monitoring"],
+      "workload": 0
+    },
+    {
+      "name": "伊藤 雄太",
+      "github_username": "yuta-ito",
+      "expertise": ["testing", "qa", "automation", "python", "javascript"],
+      "secondary_skills": ["documentation", "api"],
+      "workload": 0
+    },
+    {
+      "name": "山田 美咲",
+      "github_username": "misaki-yamada",
+      "expertise": ["security", "auth", "api", "database", "cryptography"],
+      "secondary_skills": ["backend", "performance"],
+      "workload": 0
+    },
+    {
+      "name": "中村 大輔",
+      "github_username": "daisuke-nakamura",
+      "expertise": ["architecture", "design", "refactoring", "performance", "code quality"],
+      "secondary_skills": ["mentoring", "documentation"],
+      "workload": 0
+    },
+    {
+      "name": "小林 直子",
+      "github_username": "naoko-kobayashi",
+      "expertise": ["documentation", "internationalization", "localization", "testing"],
+      "secondary_skills": ["frontend", "accessibility"],
+      "workload": 0
+    }
+  ],
+  "expertise_keywords": {
+    "frontend": ["react", "typescript", "javascript", "css", "html", "ui", "component", "frontend", "interface", "jsx", "tsx"],
+    "backend": ["python", "api", "server", "endpoint", "database", "model", "backend", "service", "middleware"],
+    "devops": ["ci", "cd", "deploy", "docker", "kubernetes", "pipeline", "github actions", "infrastructure", "workflow"],
+    "testing": ["test", "junit", "pytest", "cypress", "jest", "coverage", "mock", "stub", "assertion"],
+    "documentation": ["docs", "readme", "markdown", "guide", "tutorial", "comment", "jsdoc", "docstring"],
+    "security": ["auth", "authentication", "authorization", "encrypt", "token", "secure", "permission", "role"],
+    "performance": ["optimize", "performance", "speed", "benchmark", "profile", "latency", "memory", "cpu"],
+    "refactoring": ["refactor", "restructure", "rename", "clean", "debt", "improve", "maintainability"],
+    "architecture": ["design", "pattern", "architecture", "structure", "framework", "component", "module"],
+    "internationalization": ["i18n", "translate", "language", "locale", "internationalization", "multilingual"]
+  }
+}

@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: conea/frontend:staging
+    build:
+      context: ../../frontend
+      dockerfile: ../deployment/staging/frontend.Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - REACT_APP_API_URL=http://localhost:8080/api
+      - REACT_APP_WS_URL=ws://localhost:8080/ws
+    networks:
+      - conea-network
+
+  backend:
+    image: conea/backend:staging
+    build:
+      context: ../../backend
+      dockerfile: ../deployment/staging/backend.Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongo
+      - redis
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - MONGO_URI=mongodb://mongo:27017/conea
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=stagingSecretKey123
+      - CORS_ORIGIN=http://localhost:3000
+    networks:
+      - conea-network
+    volumes:
+      - backend-logs:/app/logs
+
+  mongo:
+    image: mongo:5.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=conea
+    networks:
+      - conea-network
+
+  redis:
+    image: redis:6.2-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - conea-network
+
+  nginx:
+    image: nginx:1.21-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/certs:/etc/nginx/certs
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+    networks:
+      - conea-network
+
+networks:
+  conea-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+  redis-data:
+  backend-logs:

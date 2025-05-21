@@ -1,0 +1,140 @@
+{
+  "timestamp": "2025-05-21T16:50:00.000Z",
+  "conflicts": [
+    {
+      "pr1": {
+        "number": 143,
+        "title": "Implement package rename from shopify-mcp-server to conea"
+      },
+      "pr2": {
+        "number": 146,
+        "title": "Implement improved caching mechanism"
+      },
+      "overlapping_files": [
+        "src/utils/cache.py",
+        "src/config.py"
+      ],
+      "conflict_level": "medium"
+    },
+    {
+      "pr1": {
+        "number": 143,
+        "title": "Implement package rename from shopify-mcp-server to conea"
+      },
+      "pr2": {
+        "number": 147,
+        "title": "Update documentation for v0.3.0 release"
+      },
+      "overlapping_files": [
+        "README.md",
+        "README_ja.md",
+        "docs/RELEASE-NOTES-v0.3.0.md",
+        "docs/RELEASE-NOTES-v0.3.0-JA.md"
+      ],
+      "conflict_level": "high"
+    },
+    {
+      "pr1": {
+        "number": 143,
+        "title": "Implement package rename from shopify-mcp-server to conea"
+      },
+      "pr2": {
+        "number": 150,
+        "title": "Fix CI workflow issues for Phase 2 rename"
+      },
+      "overlapping_files": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/test.yml",
+        ".github/workflows/e2e.yml",
+        ".github/workflows/pr-validation.yml"
+      ],
+      "conflict_level": "high"
+    },
+    {
+      "pr1": {
+        "number": 144,
+        "title": "Add Amazon credential rotation mechanism"
+      },
+      "pr2": {
+        "number": 149,
+        "title": "Add support for new Amazon Marketplace countries"
+      },
+      "overlapping_files": [
+        "src/api/amazon.py",
+        "tests/api/test_amazon.py"
+      ],
+      "conflict_level": "medium"
+    },
+    {
+      "pr1": {
+        "number": 144,
+        "title": "Add Amazon credential rotation mechanism"
+      },
+      "pr2": {
+        "number": 145,
+        "title": "Fix critical security issue in authentication module"
+      },
+      "overlapping_files": [
+        "src/utils/security.py"
+      ],
+      "conflict_level": "low"
+    },
+    {
+      "pr1": {
+        "number": 142,
+        "title": "Fix issue with Rakuten API response handling"
+      },
+      "pr2": {
+        "number": 143,
+        "title": "Implement package rename from shopify-mcp-server to conea"
+      },
+      "overlapping_files": [
+        "src/api/rakuten.py",
+        "examples/rakuten_example.py"
+      ],
+      "conflict_level": "medium"
+    }
+  ],
+  "mergeable_states": {
+    "142": {
+      "mergeable": true,
+      "mergeable_state": "clean"
+    },
+    "143": {
+      "mergeable": false,
+      "mergeable_state": "dirty"
+    },
+    "144": {
+      "mergeable": true,
+      "mergeable_state": "clean"
+    },
+    "145": {
+      "mergeable": true,
+      "mergeable_state": "clean"
+    },
+    "146": {
+      "mergeable": true,
+      "mergeable_state": "clean"
+    },
+    "147": {
+      "mergeable": false,
+      "mergeable_state": "behind"
+    },
+    "148": {
+      "mergeable": true,
+      "mergeable_state": "clean"
+    },
+    "149": {
+      "mergeable": false,
+      "mergeable_state": "dirty"
+    },
+    "150": {
+      "mergeable": false,
+      "mergeable_state": "dirty"
+    },
+    "151": {
+      "mergeable": true,
+      "mergeable_state": "clean"
+    }
+  }
+}

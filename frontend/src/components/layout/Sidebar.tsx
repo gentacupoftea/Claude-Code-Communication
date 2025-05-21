@@ -26,6 +26,8 @@ import {
   LinkIcon,
   UserIcon,
   BellIcon,
+  BeakerIcon,
+  QuestionMarkCircleIcon as HelpIcon,
 } from '@heroicons/react/24/outline';
 
 interface NavItem {
@@ -53,6 +55,9 @@ const navigation: NavItem[] = [
   { name: 'Profile', path: '/profile', icon: UserIcon },
   { name: 'Notifications', path: '/notifications', icon: BellIcon },
   { name: 'Settings', path: '/settings', icon: CogIcon },
+  { name: 'Demo Components', path: '/demo/data-components', icon: BeakerIcon },
+  { name: 'Debug Demo', path: '/debug', icon: BeakerIcon },
+  { name: 'Help System', path: '/help', icon: HelpIcon },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant }) => {

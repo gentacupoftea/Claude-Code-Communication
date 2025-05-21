@@ -1,0 +1,80 @@
+{
+  "timestamp": "2025-05-21T16:55:00.000Z",
+  "dependencies": [
+    {
+      "source": 144,
+      "target": 146,
+      "type": "depends_on",
+      "description": "Amazon credential rotation depends on improved caching mechanism"
+    },
+    {
+      "source": 147,
+      "target": 143,
+      "type": "depends_on",
+      "description": "Documentation update depends on package rename implementation"
+    },
+    {
+      "source": 149,
+      "target": 144,
+      "type": "depends_on",
+      "description": "New Amazon countries support depends on credential rotation"
+    },
+    {
+      "source": 150,
+      "target": 143,
+      "type": "depends_on",
+      "description": "CI workflow fixes depend on package rename implementation"
+    }
+  ],
+  "dependency_chains": [
+    {
+      "chain": [149, 144, 146],
+      "description": "PR #149 depends on #144 which depends on #146"
+    },
+    {
+      "chain": [150, 143],
+      "description": "PR #150 depends on #143"
+    },
+    {
+      "chain": [147, 143],
+      "description": "PR #147 depends on #143"
+    }
+  ],
+  "blocking_prs": [
+    {
+      "pr": 143,
+      "blocks": [147, 150],
+      "impact": "high",
+      "description": "Package rename is blocking 2 PRs"
+    },
+    {
+      "pr": 146,
+      "blocks": [144, 149],
+      "impact": "medium",
+      "description": "Caching mechanism is indirectly blocking 2 PRs"
+    },
+    {
+      "pr": 144,
+      "blocks": [149],
+      "impact": "low",
+      "description": "Amazon credential rotation is blocking 1 PR"
+    }
+  ],
+  "merge_order_recommendation": [
+    {
+      "tier": 1,
+      "prs": [142, 145, 146, 148, 151],
+      "description": "Independent PRs with no dependencies or conflicts"
+    },
+    {
+      "tier": 2,
+      "prs": [143, 144],
+      "description": "PRs with dependencies on tier 1"
+    },
+    {
+      "tier": 3,
+      "prs": [147, 149, 150],
+      "description": "PRs with dependencies on tier 2"
+    }
+  ]
+}

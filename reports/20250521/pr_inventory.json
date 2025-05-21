@@ -1,0 +1,506 @@
+{
+  "timestamp": "2025-05-21T16:35:00.000Z",
+  "repository": "conea/conea",
+  "pull_requests": [
+    {
+      "number": 142,
+      "title": "Fix issue with Rakuten API response handling",
+      "url": "https://github.com/conea/conea/pull/142",
+      "author": "dev-yamada",
+      "created_at": "2025-05-18T09:15:00.000Z",
+      "updated_at": "2025-05-20T14:32:00.000Z",
+      "created_days_ago": 3,
+      "updated_days_ago": 1,
+      "draft": false,
+      "size": {
+        "additions": 245,
+        "deletions": 67,
+        "changed_files": 4
+      },
+      "complexity": 6,
+      "dependencies": [],
+      "linked_issues": ["127"],
+      "conflicts": [],
+      "reviews": {
+        "status": "Approved",
+        "approved": 2,
+        "changes_requested": 0,
+        "commented": 1
+      },
+      "ci_status": {
+        "status": "Success",
+        "details": []
+      },
+      "rename_impact": {
+        "score": 3,
+        "details": ["File impacts package structure: src/api/rakuten.py"]
+      },
+      "files": [
+        "src/api/rakuten.py",
+        "src/api/utils.py",
+        "tests/api/test_rakuten.py",
+        "examples/rakuten_example.py"
+      ]
+    },
+    {
+      "number": 143,
+      "title": "Implement package rename from shopify-mcp-server to conea",
+      "url": "https://github.com/conea/conea/pull/143",
+      "author": "dev-tanaka",
+      "created_at": "2025-05-19T10:30:00.000Z",
+      "updated_at": "2025-05-21T08:45:00.000Z",
+      "created_days_ago": 2,
+      "updated_days_ago": 0,
+      "draft": false,
+      "size": {
+        "additions": 890,
+        "deletions": 734,
+        "changed_files": 42
+      },
+      "complexity": 10,
+      "dependencies": [],
+      "linked_issues": ["139"],
+      "conflicts": [
+        {
+          "status": "Conflicting",
+          "message": "This PR conflicts with the base branch"
+        }
+      ],
+      "reviews": {
+        "status": "Changes Requested",
+        "approved": 0,
+        "changes_requested": 1,
+        "commented": 2
+      },
+      "ci_status": {
+        "status": "Failure",
+        "details": []
+      },
+      "rename_impact": {
+        "score": 10,
+        "details": [
+          "File impacts package structure: setup.py",
+          "File impacts package structure: shopify_mcp_server/__init__.py",
+          "Keyword 'rename' found in PR title/description",
+          "Keyword 'conea' found in PR title/description",
+          "Package name references modified in multiple files"
+        ]
+      },
+      "files": [
+        "setup.py",
+        "shopify_mcp_server/__init__.py",
+        "shopify_mcp_server/core.py",
+        "shopify_mcp_server/api/__init__.py",
+        "tests/test_imports.py",
+        "README.md",
+        "README_ja.md",
+        "requirements.txt",
+        "docker/Dockerfile",
+        "docker-compose.yml",
+        ".github/workflows/ci.yml",
+        ".github/workflows/test.yml",
+        ".github/workflows/e2e.yml",
+        ".github/workflows/pr-validation.yml",
+        ".env.example",
+        "src/config.py",
+        "src/api/auth.py",
+        "src/api/amazon.py",
+        "src/api/rakuten.py",
+        "src/api/shopify.py",
+        "src/utils/logger.py",
+        "src/utils/cache.py",
+        "examples/basic_example.py",
+        "examples/amazon_example.py",
+        "examples/rakuten_example.py",
+        "docs/RELEASE-NOTES-v0.3.0.md",
+        "docs/RELEASE-NOTES-v0.3.0-JA.md"
+      ]
+    },
+    {
+      "number": 144,
+      "title": "Add Amazon credential rotation mechanism",
+      "url": "https://github.com/conea/conea/pull/144",
+      "author": "dev-sato",
+      "created_at": "2025-05-19T14:20:00.000Z",
+      "updated_at": "2025-05-20T16:10:00.000Z",
+      "created_days_ago": 2,
+      "updated_days_ago": 1,
+      "draft": false,
+      "size": {
+        "additions": 345,
+        "deletions": 28,
+        "changed_files": 7
+      },
+      "complexity": 7,
+      "dependencies": ["146"],
+      "linked_issues": ["135"],
+      "conflicts": [],
+      "reviews": {
+        "status": "Approved",
+        "approved": 2,
+        "changes_requested": 0,
+        "commented": 1
+      },
+      "ci_status": {
+        "status": "Success",
+        "details": []
+      },
+      "rename_impact": {
+        "score": 4,
+        "details": [
+          "File impacts package structure: src/api/amazon.py",
+          "File impacts configuration: .env.example"
+        ]
+      },
+      "files": [
+        "src/api/amazon.py",
+        "src/utils/security.py",
+        "src/utils/key_rotation.py",
+        "tests/api/test_amazon.py",
+        "tests/utils/test_key_rotation.py",
+        ".env.example",
+        "docs/SECURITY_TESTING_GUIDE.md"
+      ]
+    },
+    {
+      "number": 145,
+      "title": "Fix critical security issue in authentication module",
+      "url": "https://github.com/conea/conea/pull/145",
+      "author": "security-team",
+      "created_at": "2025-05-20T09:05:00.000Z",
+      "updated_at": "2025-05-21T11:30:00.000Z",
+      "created_days_ago": 1,
+      "updated_days_ago": 0,
+      "draft": false,
+      "size": {
+        "additions": 78,
+        "deletions": 32,
+        "changed_files": 3
+      },
+      "complexity": 6,
+      "dependencies": [],
+      "linked_issues": ["141"],
+      "conflicts": [],
+      "reviews": {
+        "status": "Approved",
+        "approved": 3,
+        "changes_requested": 0,
+        "commented": 0
+      },
+      "ci_status": {
+        "status": "Success",
+        "details": []
+      },
+      "rename_impact": {
+        "score": 2,
+        "details": []
+      },
+      "files": [
+        "src/api/auth.py",
+        "src/utils/security.py",
+        "tests/api/test_auth.py"
+      ]
+    },
+    {
+      "number": 146,
+      "title": "Implement improved caching mechanism",
+      "url": "https://github.com/conea/conea/pull/146",
+      "author": "dev-takahashi",
+      "created_at": "2025-05-18T16:45:00.000Z",
+      "updated_at": "2025-05-19T13:20:00.000Z",
+      "created_days_ago": 3,
+      "updated_days_ago": 2,
+      "draft": false,
+      "size": {
+        "additions": 423,
+        "deletions": 156,
+        "changed_files": 9
+      },
+      "complexity": 8,
+      "dependencies": [],
+      "linked_issues": ["132"],
+      "conflicts": [],
+      "reviews": {
+        "status": "Partially Approved",
+        "approved": 1,
+        "changes_requested": 0,
+        "commented": 2
+      },
+      "ci_status": {
+        "status": "Success",
+        "details": []
+      },
+      "rename_impact": {
+        "score": 6,
+        "details": [
+          "File impacts package structure: src/utils/cache.py",
+          "Keyword 'package' found in PR description",
+          "Package name references modified in src/utils/cache.py"
+        ]
+      },
+      "files": [
+        "src/utils/cache.py",
+        "src/utils/redis_client.py",
+        "src/utils/memcached_client.py",
+        "src/config.py",
+        "tests/utils/test_cache.py",
+        "tests/utils/test_redis_client.py",
+        "tests/utils/test_memcached_client.py",
+        "examples/caching_example.py",
+        "docs/README_CACHE.md"
+      ]
+    },
+    {
+      "number": 147,
+      "title": "Update documentation for v0.3.0 release",
+      "url": "https://github.com/conea/conea/pull/147",
+      "author": "doc-team",
+      "created_at": "2025-05-20T15:30:00.000Z",
+      "updated_at": "2025-05-21T10:15:00.000Z",
+      "created_days_ago": 1,
+      "updated_days_ago": 0,
+      "draft": false,
+      "size": {
+        "additions": 876,
+        "deletions": 234,
+        "changed_files": 12
+      },
+      "complexity": 4,
+      "dependencies": ["143"],
+      "linked_issues": ["140"],
+      "conflicts": [],
+      "reviews": {
+        "status": "Not Reviewed",
+        "approved": 0,
+        "changes_requested": 0,
+        "commented": 1
+      },
+      "ci_status": {
+        "status": "Success",
+        "details": []
+      },
+      "rename_impact": {
+        "score": 8,
+        "details": [
+          "Keyword 'rename' found in PR description",
+          "Keyword 'conea' found in PR description",
+          "Package name references modified in multiple documentation files"
+        ]
+      },
+      "files": [
+        "README.md",
+        "README_ja.md",
+        "docs/RELEASE-NOTES-v0.3.0.md",
+        "docs/RELEASE-NOTES-v0.3.0-JA.md",
+        "docs/README_CACHE.md",
+        "docs/SECURITY_TESTING_GUIDE.md",
+        "docs/INTEGRATION_TEST_PLAN.md",
+        "docs/PR_CREATION_GUIDE.md",
+        "docs/TEST-PLAN-v0.3.0.md",
+        "docs/V0.3.0_RELEASE_TIMELINE.md",
+        "examples/README.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "number": 148,
+      "title": "Optimize GraphQL query performance",
+      "url": "https://github.com/conea/conea/pull/148",
+      "author": "dev-suzuki",
+      "created_at": "2025-05-17T11:25:00.000Z",
+      "updated_at": "2025-05-20T10:40:00.000Z",
+      "created_days_ago": 4,
+      "updated_days_ago": 1,
+      "draft": false,
+      "size": {
+        "additions": 187,
+        "deletions": 102,
+        "changed_files": 5
+      },
+      "complexity": 6,
+      "dependencies": [],
+      "linked_issues": ["128"],
+      "conflicts": [],
+      "reviews": {
+        "status": "Partially Approved",
+        "approved": 1,
+        "changes_requested": 0,
+        "commented": 2
+      },
+      "ci_status": {
+        "status": "Success",
+        "details": []
+      },
+      "rename_impact": {
+        "score": 3,
+        "details": ["File impacts package structure: src/graphql/resolvers.py"]
+      },
+      "files": [
+        "src/graphql/resolvers.py",
+        "src/graphql/schema.py",
+        "src/utils/optimizations.py",
+        "tests/graphql/test_resolvers.py",
+        "tests/graphql/test_query_performance.py"
+      ]
+    },
+    {
+      "number": 149,
+      "title": "Add support for new Amazon Marketplace countries",
+      "url": "https://github.com/conea/conea/pull/149",
+      "author": "dev-kobayashi",
+      "created_at": "2025-05-21T08:30:00.000Z",
+      "updated_at": "2025-05-21T14:20:00.000Z",
+      "created_days_ago": 0,
+      "updated_days_ago": 0,
+      "draft": false,
+      "size": {
+        "additions": 312,
+        "deletions": 18,
+        "changed_files": 6
+      },
+      "complexity": 7,
+      "dependencies": ["144"],
+      "linked_issues": ["138"],
+      "conflicts": [
+        {
+          "status": "Conflicting",
+          "message": "This PR conflicts with PR #144"
+        }
+      ],
+      "reviews": {
+        "status": "Not Reviewed",
+        "approved": 0,
+        "changes_requested": 0,
+        "commented": 0
+      },
+      "ci_status": {
+        "status": "Success",
+        "details": []
+      },
+      "rename_impact": {
+        "score": 3,
+        "details": ["File impacts package structure: src/api/amazon.py"]
+      },
+      "files": [
+        "src/api/amazon.py",
+        "src/api/constants.py",
+        "src/utils/country_codes.py",
+        "tests/api/test_amazon.py",
+        "tests/utils/test_country_codes.py",
+        "examples/amazon_marketplace_example.py"
+      ]
+    },
+    {
+      "number": 150,
+      "title": "Fix CI workflow issues for Phase 2 rename",
+      "url": "https://github.com/conea/conea/pull/150",
+      "author": "dev-yamamoto",
+      "created_at": "2025-05-21T09:10:00.000Z",
+      "updated_at": "2025-05-21T12:45:00.000Z",
+      "created_days_ago": 0,
+      "updated_days_ago": 0,
+      "draft": false,
+      "size": {
+        "additions": 145,
+        "deletions": 89,
+        "changed_files": 4
+      },
+      "complexity": 5,
+      "dependencies": ["143"],
+      "linked_issues": ["143"],
+      "conflicts": [],
+      "reviews": {
+        "status": "Not Reviewed",
+        "approved": 0,
+        "changes_requested": 0,
+        "commented": 1
+      },
+      "ci_status": {
+        "status": "Pending",
+        "details": []
+      },
+      "rename_impact": {
+        "score": 9,
+        "details": [
+          "Keyword 'rename' found in PR title/description",
+          "Keyword 'Phase 2' found in PR title/description",
+          "File impacts CI configuration: .github/workflows/ci.yml",
+          "Package name references modified in CI workflow files"
+        ]
+      },
+      "files": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/test.yml",
+        ".github/workflows/e2e.yml",
+        ".github/workflows/pr-validation.yml"
+      ]
+    },
+    {
+      "number": 151,
+      "title": "Implement PR triage CI/CD pipeline integration",
+      "url": "https://github.com/conea/conea/pull/151",
+      "author": "dev-mouri",
+      "created_at": "2025-05-21T16:00:00.000Z",
+      "updated_at": "2025-05-21T16:30:00.000Z",
+      "created_days_ago": 0,
+      "updated_days_ago": 0,
+      "draft": false,
+      "size": {
+        "additions": 542,
+        "deletions": 0,
+        "changed_files": 4
+      },
+      "complexity": 6,
+      "dependencies": [],
+      "linked_issues": ["142"],
+      "conflicts": [],
+      "reviews": {
+        "status": "Not Reviewed",
+        "approved": 0,
+        "changes_requested": 0,
+        "commented": 0
+      },
+      "ci_status": {
+        "status": "Pending",
+        "details": []
+      },
+      "rename_impact": {
+        "score": 2,
+        "details": []
+      },
+      "files": [
+        ".github/workflows/pr-triage.yml",
+        "scripts/generate_pr_comment.py",
+        "docs/PR_TRIAGE_CI_INTEGRATION.md",
+        "scripts/tests/test_pr_triage_ci.py"
+      ]
+    }
+  ],
+  "dependency_graph": {
+    "nodes": [
+      {"id": "142", "name": "PR #142", "title": "Fix issue with Rakuten API response handling", "complexity": 6, "rename_impact": 3},
+      {"id": "143", "name": "PR #143", "title": "Implement package rename from shopify-mcp-server to conea", "complexity": 10, "rename_impact": 10},
+      {"id": "144", "name": "PR #144", "title": "Add Amazon credential rotation mechanism", "complexity": 7, "rename_impact": 4},
+      {"id": "145", "name": "PR #145", "title": "Fix critical security issue in authentication module", "complexity": 6, "rename_impact": 2},
+      {"id": "146", "name": "PR #146", "title": "Implement improved caching mechanism", "complexity": 8, "rename_impact": 6},
+      {"id": "147", "name": "PR #147", "title": "Update documentation for v0.3.0 release", "complexity": 4, "rename_impact": 8},
+      {"id": "148", "name": "PR #148", "title": "Optimize GraphQL query performance", "complexity": 6, "rename_impact": 3},
+      {"id": "149", "name": "PR #149", "title": "Add support for new Amazon Marketplace countries", "complexity": 7, "rename_impact": 3},
+      {"id": "150", "name": "PR #150", "title": "Fix CI workflow issues for Phase 2 rename", "complexity": 5, "rename_impact": 9},
+      {"id": "151", "name": "PR #151", "title": "Implement PR triage CI/CD pipeline integration", "complexity": 6, "rename_impact": 2}
+    ],
+    "links": [
+      {"source": "144", "target": "146", "value": 1},
+      {"source": "147", "target": "143", "value": 1},
+      {"source": "149", "target": "144", "value": 1},
+      {"source": "150", "target": "143", "value": 1}
+    ]
+  },
+  "summary": {
+    "total": 10,
+    "draft": 0,
+    "conflicts": 2,
+    "approved": 3,
+    "changes_requested": 1
+  }
+}

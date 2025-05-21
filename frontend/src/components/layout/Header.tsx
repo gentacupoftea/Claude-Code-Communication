@@ -9,6 +9,7 @@ import {
   Menu,
   MenuItem,
   Divider,
+  Tooltip,
 } from '@mui/material';
 import {
   Bars3Icon as MenuIcon,
@@ -17,12 +18,16 @@ import {
   ArrowRightOnRectangleIcon,
   SunIcon,
   MoonIcon,
+  ServerIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/MockAuthContext';
-import { NotificationPopup } from '../notifications/NotificationPopup';
+import { EnhancedNotificationPopup } from '../notifications';
+import { OfflineIndicator } from '../offline';
 import { useTheme } from '../../hooks';
 import { useNavigate } from 'react-router-dom';
 import { ConeaLogo } from '../branding/ConeaLogo';
+import { ConnectionStatus } from '../Connection';
+import { useConnectionContext } from '../../contexts/ConnectionContext';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -33,6 +38,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, isMobile = false }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { toggleTheme, theme } = useTheme();
+  const { isConnected, apiStatus, wsStatus } = useConnectionContext();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -56,6 +62,10 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, isMobile = false }) => {
   const handleSettings = () => {
     navigate('/settings');
     handleProfileMenuClose();
+  };
+  
+  const handleServerConnection = () => {
+    navigate('/server-connection');
   };
 
   return (
@@ -82,6 +92,16 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, isMobile = false }) => {
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* サーバー接続状態 */}
+          <Tooltip title="Server Connection Settings">
+            <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={handleServerConnection}>
+              <ConnectionStatus variant="badge" />
+            </Box>
+          </Tooltip>
+
+          {/* オフライン状態表示 */}
+          <OfflineIndicator />
+
           {/* テーマ切り替えボタン */}
           <IconButton onClick={toggleTheme} color="inherit">
             {theme.palette.mode === 'dark' ? 
@@ -91,7 +111,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, isMobile = false }) => {
           </IconButton>
 
           {/* 通知ボタン */}
-          <NotificationPopup />
+          <EnhancedNotificationPopup />
 
           {/* プロフィールメニュー */}
           <IconButton
