@@ -88,6 +88,52 @@ eコマースプラットフォーム間の連携において、大量のデー�
 └──────────────────┘    └──────────────────┘    └──────────────────┘
 ```
 
+## 国際化（I18N）対応計画
+
+現在のインテリジェント中間処理機能は日本語のパターンのみをサポートしていますが、将来のリリースで多言語対応を実装する予定です：
+
+### 多言語対応ロードマップ
+
+1. **v0.3.1 (6/15予定)**
+   - 英語パターンの追加
+   - 言語検出機能の基本実装
+
+2. **v0.3.2 (6/30予定)**
+   - 言語固有の処理モジュールの分離
+   - ユーザー設定による言語選択オプション
+
+3. **v3.0 以降**
+   - 複数言語の同時処理
+   - 自動言語検出と切り替え
+   - ローカライズ可能なレスポンス生成
+
+### 実装アプローチ
+
+言語固有のパターンとルールは個別のモジュールに分離し、ファクトリーパターンで適切な処理を選択します：
+
+```python
+class LanguageProcessor:
+    def __init__(self, language='auto'):
+        self.language = language
+        self.processors = {
+            'ja': JapaneseProcessor(),
+            'en': EnglishProcessor(),
+            # 他の言語プロセッサ
+        }
+    
+    def detect_language(self, text):
+        # 言語検出ロジック
+        pass
+        
+    def process(self, text):
+        lang = self.language
+        if lang == 'auto':
+            lang = self.detect_language(text)
+            
+        processor = self.processors.get(lang, self.processors['en'])
+        return processor.process(text)
+```
+
 ## 実装計画
 
 ### v0.3.1: 基本インターフェースとプロトタイプ実装

@@ -39,13 +39,25 @@ else
 fi
 
 # Set environment variables based on environment
+# 後方互換性のために旧変数名もサポート
+SHOPIFY_MCP_PROJECT_ID="${SHOPIFY_MCP_PROJECT_ID:-${PROJECT_ID}}"
+SHOPIFY_MCP_SERVICE_NAME="${SHOPIFY_MCP_SERVICE_NAME:-${SERVICE_NAME}}"
+
 if [ "$ENVIRONMENT" == "production" ]; then
   PROJECT_ID="${PROJECT_ID:-conea-prod}"
+  PROJECT_ID="${SHOPIFY_MCP_PROJECT_ID:-$PROJECT_ID}"  # 旧変数名をサポート
+  
   SERVICE_NAME="${SERVICE_NAME:-conea}"
+  SERVICE_NAME="${SHOPIFY_MCP_SERVICE_NAME:-$SERVICE_NAME}"  # 旧変数名をサポート
+  
   PREVIOUS_VERSION="${PREVIOUS_VERSION:-v0.2.1}"
 elif [ "$ENVIRONMENT" == "staging" ]; then
   PROJECT_ID="${PROJECT_ID:-conea-staging}"
+  PROJECT_ID="${SHOPIFY_MCP_PROJECT_ID:-$PROJECT_ID}"  # 旧変数名をサポート
+  
   SERVICE_NAME="${SERVICE_NAME:-conea-staging}"
+  SERVICE_NAME="${SHOPIFY_MCP_SERVICE_NAME:-$SERVICE_NAME}"  # 旧変数名をサポート
+  
   PREVIOUS_VERSION="${PREVIOUS_VERSION:-v0.2.1}"
 else
   error "Invalid environment: ${ENVIRONMENT}. Must be 'staging' or 'production'."
@@ -53,7 +65,9 @@ else
 fi
 
 REGION="${REGION:-asia-northeast1}"
-IMAGE_NAME="${IMAGE_NAME:-${REGION}-docker.pkg.dev/${PROJECT_ID}/conea-repo/conea}"
+# リポジトリ名の後方互換性
+SHOPIFY_REPO="${SHOPIFY_REPO:-conea-repo}"
+IMAGE_NAME="${IMAGE_NAME:-${REGION}-docker.pkg.dev/${PROJECT_ID}/${SHOPIFY_REPO}/conea}"
 
 # Display rollback parameters
 echo "Rollback parameters:"

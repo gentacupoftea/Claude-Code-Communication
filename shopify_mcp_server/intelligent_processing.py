@@ -63,6 +63,16 @@ class IntentAnalyzer:
         Returns:
             意図オブジェクト（データリクエスト、期間、プラットフォーム等）
         """
+        """
+        プロンプトから意図を抽出する
+        
+        Args:
+            prompt: ユーザープロンプト文字列
+            context: 過去の会話コンテキスト（オプショナル）
+            
+        Returns:
+            意図オブジェクト（データリクエスト、期間、プラットフォーム等）
+        """
         # 基本的な意図オブジェクトの初期化
         intent = {
             "data_request": True,
@@ -76,8 +86,9 @@ class IntentAnalyzer:
             "raw_prompt": prompt
         }
         
-        # 実装予定: 高度なNLPベースの意図分析
-        # 現段階では簡易的なパターンマッチングを使用
+        try:
+            # 実装予定: 高度なNLPベースの意図分析
+            # 現段階では簡易的なパターンマッチングを使用
         
         # 時間表現の抽出
         for pattern, value in self.time_patterns.items():
@@ -112,8 +123,34 @@ class IntentAnalyzer:
         if any(word in prompt for word in ["実行", "設定", "更新", "変更"]):
             intent["action_request"] = True
         
-        logger.debug(f"抽出された意図: {intent}")
-        return intent
+            logger.debug(f"抽出された意図: {intent}")
+            
+            # 結果の検証
+            if not intent.get("analysis_type") and not intent.get("platforms"):
+                # 最低限のデフォルト値を設定
+                intent["confidence"] = 0.5
+                intent.setdefault("analysis_type", ["sales"])  # デフォルト分析タイプ
+                intent.setdefault("fallback", True)  # フォールバックフラグ
+            else:
+                intent["confidence"] = 0.8
+                
+            return intent
+            
+        except Exception as e:
+            # エラーログ記録
+            logger.error(f"Intent analysis error: {str(e)}")
+            
+            # フォールバック値を返す
+            return {
+                "data_request": True,
+                "analysis_request": False, 
+                "time_period": "recent",
+                "platforms": ["all"],
+                "analysis_type": ["sales"],
+                "confidence": 0.3,
+                "error": str(e),
+                "fallback": True
+            }
 
 
 class DataProcessor:
@@ -413,8 +450,14 @@ class ResponseOptimizer:
 class IntelligentProcessor:
     """インテリジェント処理のメインクラス"""
     
-    def __init__(self):
-        """すべてのコンポーネントを初期化"""
+    def __init__(self, language: str = "ja"):
+        """
+        すべてのコンポーネントを初期化
+        
+        Args:
+            language: 使用する言語コード ("ja", "en", etc.)
+        """
+        self.language = language
         self.intent_analyzer = IntentAnalyzer()
         self.data_processor = DataProcessor()
         self.data_summarizer = DataSummarizer()
