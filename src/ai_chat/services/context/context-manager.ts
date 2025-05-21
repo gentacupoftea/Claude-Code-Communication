@@ -30,10 +30,10 @@ export class ContextManager {
    * Set the active AI provider
    * @param provider The new AI provider
    */
-  setProvider(provider: AIProvider) {
+  async setProvider(provider: AIProvider) {
     this.activeProvider = provider;
     // Recalculate token count with new provider's tokenizer
-    this.recalculateTokenCount();
+    await this.recalculateTokenCount();
   }
   
   /**
@@ -41,7 +41,7 @@ export class ContextManager {
    * @param message The message to add
    * @returns true if message was added, false if summarization is needed
    */
-  addMessage(message: ChatMessage): boolean {
+  async addMessage(message: ChatMessage): Promise<boolean> {
     // Add timestamp if not provided
     const messageWithTimestamp = {
       ...message,
@@ -49,7 +49,7 @@ export class ContextManager {
     };
     
     // Calculate tokens for this message
-    const messageTokens = this.activeProvider.getTokenCount(message.content);
+    const messageTokens = await this.activeProvider.getTokenCount(message.content);
     const newTokenCount = this.tokenCount + messageTokens;
     const maxTokens = this.activeProvider.getMaxTokens();
     
@@ -103,10 +103,10 @@ export class ContextManager {
   /**
    * Recalculate token count using current provider
    */
-  private recalculateTokenCount() {
+  private async recalculateTokenCount() {
     this.tokenCount = 0;
     for (const message of this.messages) {
-      this.tokenCount += this.activeProvider.getTokenCount(message.content);
+      this.tokenCount += await this.activeProvider.getTokenCount(message.content);
     }
   }
   

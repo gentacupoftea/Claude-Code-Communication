@@ -4,6 +4,8 @@
  * Detects and extracts chart commands from AI messages
  */
 
+import { validateChartData } from '../../utils/security';
+
 export interface ChartCommand {
   command: string;
   data: any;
@@ -33,9 +35,18 @@ export class ChartCommandDetector {
       .map(match => {
         const chartData = match[1];
         try {
+          const parsedData = JSON.parse(chartData);
+          
+          // Apply security validation
+          const sanitizedData = validateChartData(parsedData);
+          if (sanitizedData === null) {
+            console.warn('Chart data failed security validation');
+            return null;
+          }
+          
           return {
             command: match[0],
-            data: JSON.parse(chartData)
+            data: sanitizedData
           };
         } catch (e) {
           console.error('Failed to parse chart data:', e);
@@ -51,6 +62,7 @@ export class ChartCommandDetector {
    * @returns True if valid, false otherwise
    */
   validateChartData(chartData: any): boolean {
+    // First perform basic validation
     // Basic validation to ensure we have necessary properties
     if (!chartData || typeof chartData !== 'object') {
       return false;
@@ -78,6 +90,9 @@ export class ChartCommandDetector {
       }
     }
     
-    return true;
+    // Apply additional security validation
+    // If the security validation fails, it will return null
+    const sanitizedData = validateChartData(chartData);
+    return sanitizedData !== null;
   }
 }

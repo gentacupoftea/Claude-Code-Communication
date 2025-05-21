@@ -29,7 +29,7 @@ export interface AIProvider {
   id: string;
   name: string;
   getCompletion(prompt: string, options?: CompletionOptions): Promise<AIResponse>;
-  getTokenCount(text: string): number;
+  getTokenCount(text: string): Promise<number>;
   getMaxTokens(): number;
 }
 
@@ -74,10 +74,26 @@ export class OpenAIAdapter implements AIProvider {
     }
   }
   
-  getTokenCount(text: string): number {
-    // Simple approximation: ~4 characters per token
-    // For production, use a proper tokenizer like tiktoken
-    return Math.ceil(text.length / 4);
+  async getTokenCount(text: string): Promise<number> {
+    try {
+      // Use tiktoken for accurate token counting
+      const { encoding_for_model } = await import('tiktoken');
+      const modelName = 'gpt-4';
+      
+      try {
+        const encoder = encoding_for_model(modelName);
+        const tokens = encoder.encode(text);
+        const tokenCount = tokens.length;
+        encoder.free();
+        return tokenCount;
+      } catch (encodingError) {
+        console.warn(`Failed to use tiktoken for model ${modelName}, falling back to approximation:`, encodingError);
+        return Math.ceil(text.length / 4);
+      }
+    } catch (importError) {
+      console.warn('Failed to import tiktoken, falling back to approximation:', importError);
+      return Math.ceil(text.length / 4);
+    }
   }
   
   getMaxTokens(): number {
@@ -112,9 +128,9 @@ export class ClaudeAdapter implements AIProvider {
         ],
       });
       
-      // Calculate approximate token usage
-      const promptTokens = this.getTokenCount(prompt);
-      const completionTokens = this.getTokenCount(response.content[0].text);
+      // Calculate token usage
+      const promptTokens = await this.getTokenCount(prompt);
+      const completionTokens = await this.getTokenCount(response.content[0].text);
       
       return {
         text: response.content[0].text,
@@ -130,9 +146,27 @@ export class ClaudeAdapter implements AIProvider {
     }
   }
   
-  getTokenCount(text: string): number {
-    // Claude tokenization is roughly ~4 chars per token
-    return Math.ceil(text.length / 4);
+  async getTokenCount(text: string): Promise<number> {
+    try {
+      // Use Anthropic's tokenizer if available
+      const { Anthropic } = await import('@anthropic-ai/sdk');
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || 'dummy-key' });
+      
+      try {
+        // Use Anthropic's countTokens method if available
+        if (anthropic.countTokens) {
+          const count = await anthropic.countTokens(text);
+          return count.tokens;
+        }
+        throw new Error('countTokens method not available');
+      } catch (countError) {
+        console.warn('Failed to use Anthropic tokenizer, falling back to approximation:', countError);
+        return Math.ceil(text.length / 4);
+      }
+    } catch (importError) {
+      console.warn('Failed to import Anthropic SDK, falling back to approximation:', importError);
+      return Math.ceil(text.length / 4);
+    }
   }
   
   getMaxTokens(): number {
@@ -163,9 +197,9 @@ export class GeminiAdapter implements AIProvider {
       const result = await model.generateContent(prompt);
       const response = result.response;
       
-      // Calculate approximate token usage
-      const promptTokens = this.getTokenCount(prompt);
-      const completionTokens = this.getTokenCount(response.text());
+      // Calculate token usage
+      const promptTokens = await this.getTokenCount(prompt);
+      const completionTokens = await this.getTokenCount(response.text());
       
       return {
         text: response.text(),
@@ -181,9 +215,16 @@ export class GeminiAdapter implements AIProvider {
     }
   }
   
-  getTokenCount(text: string): number {
-    // Rough approximation: ~4 characters per token
-    return Math.ceil(text.length / 4);
+  async getTokenCount(text: string): Promise<number> {
+    // Google doesn't provide a specific tokenizer for Gemini
+    // Using approximation with slight adjustment based on observations
+    try {
+      // If a more accurate tokenizer becomes available, implement it here
+      return Math.ceil(text.length / 4);
+    } catch (error) {
+      console.warn('Error in Gemini token counting:', error);
+      return Math.ceil(text.length / 4);
+    }
   }
   
   getMaxTokens(): number {

@@ -63,7 +63,7 @@ export class ContextTransferManager {
     const { summary, messages } = await this.prepareContextTransfer();
     
     // Add summary as system message
-    targetManager.addMessage({
+    await targetManager.addMessage({
       role: 'system',
       content: `これまでの会話の要約: ${summary}`
     });
@@ -74,12 +74,12 @@ export class ContextTransferManager {
       if (msg.content.startsWith('これまでの会話の要約:')) {
         continue; // Skip old summaries
       }
-      targetManager.addMessage(msg);
+      await targetManager.addMessage(msg);
     }
     
     // Add recent messages
     for (const msg of messages) {
-      targetManager.addMessage(msg);
+      await targetManager.addMessage(msg);
     }
     
     return targetManager;

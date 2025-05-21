@@ -6,12 +6,15 @@
 
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
 import { ChartConfiguration } from 'chart.js';
+import { generateChartHash } from '../../utils/security';
 
 export class ChartRenderer {
   private readonly width = 800;
   private readonly height = 600;
   private readonly backgroundColour = 'white';
   private readonly chartJSNodeCanvas: ChartJSNodeCanvas;
+  private readonly chartCache: Map<string, string> = new Map();
+  private readonly CACHE_MAX_SIZE = 100;
   
   constructor() {
     this.chartJSNodeCanvas = new ChartJSNodeCanvas({
@@ -33,6 +36,17 @@ export class ChartRenderer {
    */
   async renderChart(chartData: any): Promise<string> {
     try {
+      // Generate a hash for this chart data for caching
+      const chartHash = generateChartHash(chartData);
+      
+      // Check if we have this chart in cache
+      if (this.chartCache.has(chartHash)) {
+        console.log('Chart cache hit');
+        return this.chartCache.get(chartHash)!;
+      }
+      
+      console.log('Chart cache miss, rendering new chart');
+      
       // Convert chart data to ChartJS configuration
       const configuration = this.convertToChartJSConfig(chartData);
       
@@ -40,7 +54,12 @@ export class ChartRenderer {
       const image = await this.chartJSNodeCanvas.renderToBuffer(configuration);
       
       // Convert to base64 for embedding in response
-      return `data:image/png;base64,${image.toString('base64')}`;
+      const chartImage = `data:image/png;base64,${image.toString('base64')}`;
+      
+      // Add to cache
+      this.addToCache(chartHash, chartImage);
+      
+      return chartImage;
     } catch (error) {
       console.error('Chart rendering failed:', error);
       throw new Error(`Failed to render chart: ${error.message}`);
@@ -52,6 +71,36 @@ export class ChartRenderer {
    * @param chartData Chart data to convert
    * @returns ChartJS configuration object
    */
+  /**
+   * Adds a chart image to the cache
+   * @param hash The hash key for the chart
+   * @param imageData The base64 image data
+   */
+  private addToCache(hash: string, imageData: string): void {
+    // If cache is full, remove oldest item
+    if (this.chartCache.size >= this.CACHE_MAX_SIZE) {
+      const oldestKey = this.chartCache.keys().next().value;
+      this.chartCache.delete(oldestKey);
+    }
+    
+    // Add to cache
+    this.chartCache.set(hash, imageData);
+  }
+  
+  /**
+   * Clear the chart cache
+   */
+  public clearCache(): void {
+    this.chartCache.clear();
+  }
+  
+  /**
+   * Get the current cache size
+   */
+  public getCacheSize(): number {
+    return this.chartCache.size;
+  }
+  
   private convertToChartJSConfig(chartData: any): ChartConfiguration {
     // Extract chart properties
     const { type, data, options } = chartData;

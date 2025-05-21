@@ -10,6 +10,7 @@ import { ChatMessage, ContextManager } from '../services/context/context-manager
 import { ChartProcessor } from '../services/chart/chart-processor';
 import { ContextTransferManager } from '../services/context/transfer-manager';
 import { ConversationSummarizer } from '../services/summary/summarizer';
+import { sanitizeInput, sanitizeOutput } from '../utils/security';
 
 export class AIChatController {
   private providerManager: AIProviderManager;
@@ -27,7 +28,7 @@ export class AIChatController {
     );
     
     // Add initial system message
-    this.contextManager.addMessage({
+    await this.contextManager.addMessage({
       role: 'system',
       content: 'You are a helpful assistant integrated with Conea, a modern e-commerce analytics platform focused on Shopify integrations. Provide concise, accurate responses and help users understand their business data. You have the ability to generate charts when requested using specific syntax.'
     });
@@ -45,22 +46,25 @@ export class AIChatController {
         return res.status(400).json({ error: 'Message is required' });
       }
       
+      // Sanitize user input
+      const sanitizedMessage = sanitizeInput(message);
+      
       // Handle provider change if requested
       if (providerId && providerId !== this.providerManager.getActiveProvider().id) {
         await this.changeProvider(providerId);
       }
       
-      // Create user message
+      // Create user message with sanitized content
       const userMessage: ChatMessage = {
         role: 'user',
-        content: message
+        content: sanitizedMessage
       };
       
       // Check if we need summarization
-      const canAddDirectly = this.contextManager.addMessage(userMessage);
+      const canAddDirectly = await this.contextManager.addMessage(userMessage);
       if (!canAddDirectly) {
         await this.summarizeAndResetContext();
-        this.contextManager.addMessage(userMessage);
+        await this.contextManager.addMessage(userMessage);
       }
       
       // Get all messages for the AI
@@ -75,19 +79,20 @@ export class AIChatController {
         {}
       );
       
-      // Create assistant message
+      // Create assistant message with sanitized content
+      const sanitizedResponse = sanitizeOutput(aiResponse.text);
       const assistantMessage: ChatMessage = {
         role: 'assistant',
-        content: aiResponse.text
+        content: sanitizedResponse
       };
       
       // Add to context
-      this.contextManager.addMessage(assistantMessage);
+      await this.contextManager.addMessage(assistantMessage);
       
-      // Process charts in the response
-      const processedResponse = await this.chartProcessor.processText(aiResponse.text);
+      // Process charts in the sanitized response
+      const processedResponse = await this.chartProcessor.processText(sanitizedResponse);
       
-      // Send response
+      // Send sanitized and processed response
       res.json({
         message: processedResponse,
         provider: this.providerManager.getActiveProvider().name,
@@ -161,7 +166,7 @@ export class AIChatController {
       
       // Add back system messages
       for (const msg of systemMessages) {
-        this.contextManager.addMessage(msg);
+        await this.contextManager.addMessage(msg);
       }
       
       res.json({ success: true, message: 'Conversation cleared' });
@@ -235,7 +240,7 @@ export class AIChatController {
     }
     
     // Add summary as system message
-    this.contextManager.addMessage({
+    await this.contextManager.addMessage({
       role: 'system',
       content: `これまでの会話の要約: ${summary}`
     });
