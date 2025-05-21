@@ -1,8 +1,8 @@
-# Shopify MCP Server - システムアーキテクチャ
+# Conea（旧Shopify MCP Server） - システムアーキテクチャ
 
 ## 概要
 
-Shopify MCP Serverは、Model Context Protocol (MCP)を使用してShopify APIとClaude Desktopを統合するサーバーです。
+Conea（旧Shopify MCP Server）は、Model Context Protocol (MCP)を使用して複数のECプラットフォーム（Shopify、楽天、Amazon）とClaude Desktopを統合するサーバーです。
 
 ## アーキテクチャ図
 
@@ -23,13 +23,13 @@ Shopify MCP Serverは、Model Context Protocol (MCP)を使用してShopify API�
 
 ## コンポーネント
 
-### 1. MCP Server Core
+### 1. Conea Server Core
 - **FastMCP**: MCPサーバーのコアフレームワーク
 - **stdio_server**: Claude Desktopとの通信インターフェース
 - **非同期処理**: asyncioベースの非同期実行
 
-### 2. Shopify API Client
-- **REST API連携**: Shopify Admin APIとの通信
+### 2. ECプラットフォーム API Clients
+- **REST API連携**: Shopify、楽天、AmazonのAPIとの通信
 - **認証**: Access Tokenベースの認証
 - **エラーハンドリング**: リトライ機構と例外処理
 

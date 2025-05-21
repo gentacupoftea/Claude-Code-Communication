@@ -256,6 +256,17 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Happy Analytics with Claude Desktop! 🛍️📊
 
-## 🔄 Name Change Announcement
+## 🔄 プロジェクト名変更に関する重要なお知らせ
 
-With this release, we're beginning the transition from "Shopify MCP Server" to our new name "Conea". This name change reflects our expanding focus beyond just Shopify to include multiple e-commerce platforms. The current release includes partial rebranding in documentation, with full code rebranding coming in v0.3.1 and v0.3.2. See our [Rename Migration Plan](docs/RENAME_MIGRATION.md) for details.
+v0.3.0より、プロジェクト名を「Shopify MCP Server」から「Conea」に変更する第一段階を実施しています。この名称変更は、Shopifyだけでなく、楽天やAmazonなど複数のECプラットフォームに対応するよう拡張されたプロジェクトの範囲を反映しています。
+
+### ユーザーへの影響
+- **設定変更**: 現時点での設定変更は不要です。既存の設定ファイルはそのまま使用できます。
+- **ドキュメント参照**: ドキュメントは新しい名称に更新されていますが、内容は互換性があります。
+- **APIとパッケージ名**: v0.3.0では内部API名とパッケージ名は変更されていません。これらは将来のリリースで段階的に変更されます。
+
+### 今後の予定
+- **v0.3.1 (6/15予定)**: パッケージ名と内部モジュール構造の変更
+- **v0.3.2 (6/30予定)**: リポジトリ名とCI/CD設定の変更
+
+詳細は[名称変更マイグレーション計画](docs/RENAME_MIGRATION.md)を参照してください。移行期間中に質問や問題がある場合は、[Issueトラッカー](https://github.com/mourigenta/conea/issues)で報告してください。

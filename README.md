@@ -1,6 +1,6 @@
-# Conea: Shopify MCP Server
+# Conea（旧Shopify MCP Server）
 
-Conea is a Model Context Protocol (MCP) server for integrating e-commerce platforms (Shopify, Rakuten, Amazon) with Claude Desktop for real-time analytics and data visualization.
+Conea（旧Shopify MCP Server）は、複数のECプラットフォーム（Shopify、楽天、Amazon）とClaude Desktopを連携するためのModel Context Protocol（MCP）サーバーで、リアルタイム分析とデータ可視化機能を提供します。
 
 **Version**: v0.3.0 (Analytics & MCP Edition)  
 **Status**: Production Ready  
