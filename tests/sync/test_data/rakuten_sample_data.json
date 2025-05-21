@@ -1,0 +1,220 @@
+{
+  "orders": [
+    {
+      "orderId": "rakuten_order_1",
+      "orderNumber": "123456789",
+      "orderDate": "2025-05-20T12:30:45+09:00",
+      "orderStatus": "新規受付",
+      "totalPrice": 5980,
+      "shippingFee": 550,
+      "paymentMethod": "クレジットカード",
+      "customerName": "楽天 太郎",
+      "customerEmail": "taro.rakuten@example.jp",
+      "shippingAddress": {
+        "postalCode": "123-4567",
+        "prefecture": "東京都",
+        "city": "新宿区",
+        "addressLine1": "新宿1-1-1",
+        "addressLine2": "楽天マンション101",
+        "phoneNumber": "03-1234-5678"
+      },
+      "items": [
+        {
+          "itemId": "rakuten_item_1",
+          "itemName": "高品質ビジネスシャツ（白）",
+          "quantity": 2,
+          "price": 2490,
+          "taxRate": 10,
+          "options": [
+            {"name": "サイズ", "value": "M"},
+            {"name": "カラー", "value": "ホワイト"}
+          ]
+        },
+        {
+          "itemId": "rakuten_item_2",
+          "itemName": "ネクタイ（ストライプ）",
+          "quantity": 1,
+          "price": 1000,
+          "taxRate": 10,
+          "options": [
+            {"name": "パターン", "value": "ブルーストライプ"}
+          ]
+        }
+      ]
+    },
+    {
+      "orderId": "rakuten_order_2",
+      "orderNumber": "123456790",
+      "orderDate": "2025-05-19T15:12:33+09:00",
+      "orderStatus": "発送済み",
+      "totalPrice": 12800,
+      "shippingFee": 0,
+      "paymentMethod": "楽天ペイ",
+      "customerName": "楽天 花子",
+      "customerEmail": "hanako.rakuten@example.jp",
+      "shippingAddress": {
+        "postalCode": "456-7890",
+        "prefecture": "大阪府",
+        "city": "大阪市",
+        "addressLine1": "中央区1-2-3",
+        "addressLine2": "",
+        "phoneNumber": "06-8765-4321"
+      },
+      "items": [
+        {
+          "itemId": "rakuten_item_3",
+          "itemName": "高級レザーバッグ",
+          "quantity": 1,
+          "price": 12800,
+          "taxRate": 10,
+          "options": [
+            {"name": "カラー", "value": "ブラック"}
+          ]
+        }
+      ]
+    },
+    {
+      "orderId": "rakuten_order_3",
+      "orderNumber": "123456791",
+      "orderDate": "2025-05-18T09:45:21+09:00",
+      "orderStatus": "キャンセル",
+      "totalPrice": 5400,
+      "shippingFee": 550,
+      "paymentMethod": "代金引換",
+      "customerName": "楽天 次郎",
+      "customerEmail": "jiro.rakuten@example.jp",
+      "shippingAddress": {
+        "postalCode": "789-0123",
+        "prefecture": "愛知県",
+        "city": "名古屋市",
+        "addressLine1": "中区3-4-5",
+        "addressLine2": "楽天ハイツ202",
+        "phoneNumber": "052-345-6789"
+      },
+      "items": [
+        {
+          "itemId": "rakuten_item_4",
+          "itemName": "ランニングシューズ",
+          "quantity": 1,
+          "price": 4850,
+          "taxRate": 10,
+          "options": [
+            {"name": "サイズ", "value": "26.5cm"},
+            {"name": "カラー", "value": "ブルー"}
+          ]
+        }
+      ],
+      "cancellationReason": "顧客都合によるキャンセル"
+    }
+  ],
+  "products": [
+    {
+      "itemId": "rakuten_item_1",
+      "itemName": "高品質ビジネスシャツ（白）",
+      "itemPrice": 2490,
+      "itemDescription": "上質な素材を使用した、着心地の良いビジネスシャツです。",
+      "itemUrl": "https://example.rakuten.co.jp/items/rakuten_item_1",
+      "categories": ["メンズ", "トップス", "シャツ"],
+      "brandName": "ビジネススタイル",
+      "images": [
+        "https://example.rakuten.co.jp/images/shirt_white_1.jpg",
+        "https://example.rakuten.co.jp/images/shirt_white_2.jpg"
+      ],
+      "options": [
+        {
+          "name": "サイズ",
+          "values": ["S", "M", "L", "XL"]
+        },
+        {
+          "name": "カラー",
+          "values": ["ホワイト"]
+        }
+      ],
+      "stockQuantity": 50,
+      "shippingInfo": {
+        "weight": 0.3,
+        "dimensions": "30x25x5",
+        "shippingDays": "1-2"
+      }
+    },
+    {
+      "itemId": "rakuten_item_2",
+      "itemName": "ネクタイ（ストライプ）",
+      "itemPrice": 1000,
+      "itemDescription": "ビジネスシーンに最適なストライプネクタイです。",
+      "itemUrl": "https://example.rakuten.co.jp/items/rakuten_item_2",
+      "categories": ["メンズ", "アクセサリー", "ネクタイ"],
+      "brandName": "ビジネススタイル",
+      "images": [
+        "https://example.rakuten.co.jp/images/tie_stripe_1.jpg"
+      ],
+      "options": [
+        {
+          "name": "パターン",
+          "values": ["ブルーストライプ", "レッドストライプ"]
+        }
+      ],
+      "stockQuantity": 100,
+      "shippingInfo": {
+        "weight": 0.1,
+        "dimensions": "20x10x5",
+        "shippingDays": "1-2"
+      }
+    },
+    {
+      "itemId": "rakuten_item_3",
+      "itemName": "高級レザーバッグ",
+      "itemPrice": 12800,
+      "itemDescription": "本革を使用した高級感あるビジネスバッグです。",
+      "itemUrl": "https://example.rakuten.co.jp/items/rakuten_item_3",
+      "categories": ["メンズ", "バッグ", "ビジネスバッグ"],
+      "brandName": "プレミアムレザー",
+      "images": [
+        "https://example.rakuten.co.jp/images/leather_bag_1.jpg",
+        "https://example.rakuten.co.jp/images/leather_bag_2.jpg",
+        "https://example.rakuten.co.jp/images/leather_bag_3.jpg"
+      ],
+      "options": [
+        {
+          "name": "カラー",
+          "values": ["ブラック", "ブラウン"]
+        }
+      ],
+      "stockQuantity": 15,
+      "shippingInfo": {
+        "weight": 1.2,
+        "dimensions": "45x35x15",
+        "shippingDays": "2-3"
+      }
+    },
+    {
+      "itemId": "rakuten_item_4",
+      "itemName": "ランニングシューズ",
+      "itemPrice": 4850,
+      "itemDescription": "クッション性に優れた軽量ランニングシューズです。",
+      "itemUrl": "https://example.rakuten.co.jp/items/rakuten_item_4",
+      "categories": ["スポーツ", "ランニング", "シューズ"],
+      "brandName": "スポーツプラス",
+      "images": [
+        "https://example.rakuten.co.jp/images/running_shoes_1.jpg",
+        "https://example.rakuten.co.jp/images/running_shoes_2.jpg"
+      ],
+      "options": [
+        {
+          "name": "サイズ",
+          "values": ["25.0cm", "25.5cm", "26.0cm", "26.5cm", "27.0cm", "27.5cm"]
+        },
+        {
+          "name": "カラー",
+          "values": ["ブルー", "ブラック", "レッド"]
+        }
+      ],
+      "stockQuantity": 30,
+      "shippingInfo": {
+        "weight": 0.8,
+        "dimensions": "35x25x15",
+        "shippingDays": "1-3"
+      }
+    }
+  ]
+}
