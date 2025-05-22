@@ -66,14 +66,15 @@ import {
   TrendingUp as TrendingUpIcon,
   SmartToy as SmartToyIcon,
   Code as CodeIcon,
-  PullRequest as PullRequestIcon,
+  CallMerge as PullRequestIcon,
   ExpandMore as ExpandMoreIcon,
   CalendarToday as CalendarIcon,
   AccessTime as AccessTimeIcon
 } from '@mui/icons-material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+// Date picker temporarily disabled - will be added when @mui/x-date-pickers is installed
+// import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+// import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+// import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 // Types and Interfaces
 interface TeamMember {
@@ -801,8 +802,7 @@ const ProjectBoxes: React.FC = () => {
   };
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3 }}>
         {/* Header */}
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Typography variant="h4" component="h1">
@@ -980,7 +980,6 @@ const ProjectBoxes: React.FC = () => {
           </Alert>
         </Snackbar>
       </Box>
-    </LocalizationProvider>
   );
 };
 

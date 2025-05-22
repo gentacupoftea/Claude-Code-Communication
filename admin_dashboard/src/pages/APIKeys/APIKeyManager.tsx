@@ -50,7 +50,6 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  ListItemSecondary,
 } from '@mui/material';
 import {
   Visibility,

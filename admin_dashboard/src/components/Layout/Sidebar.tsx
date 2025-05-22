@@ -19,7 +19,7 @@ import {
   Dashboard as DashboardIcon,
   SmartToy as AgentIcon,
   VpnKey as KeyIcon,
-  Monitoring as MonitoringIcon,
+  Monitor as MonitoringIcon,
   FolderSpecial as ProjectIcon,
   Receipt as BillingIcon,
   Settings as SettingsIcon,
@@ -69,7 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
       path: '/monitoring',
       label: '監視・分析',
       icon: <MonitoringIcon />,
-      badge: stats.alertCount > 0 ? stats.alertCount.toString() : undefined,
+      badge: (stats.alertCount && stats.alertCount > 0) ? stats.alertCount.toString() : undefined,
       color: 'warning',
     },
     {

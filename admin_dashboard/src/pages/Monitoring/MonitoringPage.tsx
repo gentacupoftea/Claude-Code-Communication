@@ -32,7 +32,7 @@ import {
   ListItemSecondaryAction,
 } from '@mui/material';
 import {
-  Smart_toy as ClaudeIcon,
+  SmartToy as ClaudeIcon,
   Psychology as OpenAIIcon,
   AutoAwesome as GeminiIcon,
   Circle,
@@ -552,7 +552,7 @@ const MonitoringPage: React.FC = () => {
   // Render Chat Message
   const renderChatMessage = (message: ChatMessage) => {
     const isUser = message.agentType === 'user';
-    const config = !isUser ? agentConfigs[message.agentType] : null;
+    const config = !isUser && message.agentType !== 'user' ? agentConfigs[message.agentType as keyof typeof agentConfigs] : null;
 
     return (
       <Box
