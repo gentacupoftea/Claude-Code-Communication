@@ -39,7 +39,7 @@ cd frontend
 
 # 依存関係のインストール
 log_info "依存関係をインストールしています..."
-npm ci || { log_error "npm ci に失敗しました"; exit 1; }
+npm ci --legacy-peer-deps || { log_error "npm ci に失敗しました"; exit 1; }
 
 # 環境変数の設定
 log_info "ステージング環境変数を読み込んでいます..."
@@ -47,7 +47,7 @@ cp ../.env.staging .env.production.local || { log_error "環境変数ファイ�
 
 # プロダクションビルド
 log_info "フロントエンドをビルドしています..."
-npm run build || { log_error "フロントエンドのビルドに失敗しました"; exit 1; }
+npm run build --legacy-peer-deps || { log_error "フロントエンドのビルドに失敗しました"; exit 1; }
 
 # バックエンドのビルド準備
 cd ..

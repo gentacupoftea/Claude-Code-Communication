@@ -1,0 +1,218 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>エクスポート機能テストレポート</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { background-color: #f0f0f0; padding: 20px; }
+        .success { color: green; }
+        .failure { color: red; }
+        .test-results { margin-top: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        pre { background-color: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>エクスポート機能テストレポート</h1>
+        <p>実行日時: 2025-05-19 18:58:53</p>
+        <p>総実行時間: 11.27秒</p>
+    </div>
+    
+    <div class="test-results">
+        <h2>テスト結果</h2>
+        <table>
+            <tr>
+                <th>テストスイート</th>
+                <th>状態</th>
+                <th>実行時間</th>
+                <th>詳細</th>
+            </tr>
+
+            <tr>
+                <td>単体テスト</td>
+                <td class="failure">❌ 失敗</td>
+                <td>3.84秒</td>
+                <td>
+                    <details>
+                        <summary>詳細を表示</summary>
+                        <pre>============================= test session starts ==============================
+platform darwin -- Python 3.9.6, pytest-8.3.5, pluggy-1.6.0 -- /Library/Developer/CommandLineTools/usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/mourigenta/shopify-mcp-server
+configfile: pytest.ini
+plugins: anyio-4.9.0, asyncio-0.26.0, cov-6.1.1
+asyncio: mode=strict, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 0 items / 1 error
+
+==================================== ERRORS ====================================
+________ ERROR collecting tests/analytics/test_export_functionality.py _________
+ImportError while importing test module '/Users/mourigenta/shopify-mcp-server/tests/analytics/test_export_functionality.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/importlib/__init__.py:127: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/analytics/test_export_functionality.py:13: in <module>
+    from src.analytics.dashboard.analytics_processor import AnalyticsProcessor
+src/analytics/__init__.py:3: in <module>
+    from .dashboard.analytics_processor import AnalyticsProcessor
+src/analytics/dashboard/__init__.py:3: in <module>
+    from .analytics_processor import AnalyticsProcessor
+src/analytics/dashboard/analytics_processor.py:9: in <module>
+    from ...api.shopify_api import ShopifyAPI
+src/api/shopify_api.py:16: in <module>
+    from .shopify_graphql import ShopifyGraphQLAPI
+src/api/shopify_graphql.py:11: in <module>
+    import backoff
+E   ModuleNotFoundError: No module named 'backoff'
+- generated xml file: /Users/mourigenta/shopify-mcp-server/test_results/test_export_functionality.py.xml -
+================================ tests coverage ================================
+_______________ coverage: platform darwin, python 3.9.6-final-0 ________________
+
+Name                                                      Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------------------
+src/analytics/__init__.py                                     3      2    33%   4-6
+src/analytics/api/__init__.py                                 2      2     0%   3-5
+src/analytics/api/analytics_routes.py                        80     80     0%   3-170
+src/analytics/api/analytics_routes_enhanced.py               67     67     0%   3-137
+src/analytics/dashboard/__init__.py                           2      1    50%   5
+src/analytics/dashboard/analytics_processor.py              116    110     5%   10-314
+src/analytics/dashboard/analytics_processor_enhanced.py     113    113     0%   3-228
+---------------------------------------------------------------------------------------
+TOTAL                                                       383    375     2%
+=========================== short test summary info ============================
+ERROR tests/analytics/test_export_functionality.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+=============================== 1 error in 1.91s ===============================
+</pre>
+                    </details>
+                </td>
+            </tr>
+
+            <tr>
+                <td>統合テスト</td>
+                <td class="failure">❌ 失敗</td>
+                <td>4.16秒</td>
+                <td>
+                    <details>
+                        <summary>詳細を表示</summary>
+                        <pre>============================= test session starts ==============================
+platform darwin -- Python 3.9.6, pytest-8.3.5, pluggy-1.6.0 -- /Library/Developer/CommandLineTools/usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/mourigenta/shopify-mcp-server
+configfile: pytest.ini
+plugins: anyio-4.9.0, asyncio-0.26.0, cov-6.1.1
+asyncio: mode=strict, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 0 items / 1 error
+
+==================================== ERRORS ====================================
+________ ERROR collecting tests/integration/test_export_integration.py _________
+ImportError while importing test module '/Users/mourigenta/shopify-mcp-server/tests/integration/test_export_integration.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/importlib/__init__.py:127: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/integration/test_export_integration.py:14: in <module>
+    from src.main import app
+src/main.py:10: in <module>
+    from .auth.routes import router as auth_router
+src/auth/routes.py:10: in <module>
+    from sqlalchemy.orm import Session
+E   ModuleNotFoundError: No module named 'sqlalchemy'
+- generated xml file: /Users/mourigenta/shopify-mcp-server/test_results/test_export_integration.py.xml -
+================================ tests coverage ================================
+_______________ coverage: platform darwin, python 3.9.6-final-0 ________________
+
+Name                                                      Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------------------
+src/analytics/__init__.py                                     3      3     0%   3-6
+src/analytics/api/__init__.py                                 2      2     0%   3-5
+src/analytics/api/analytics_routes.py                        80     80     0%   3-170
+src/analytics/api/analytics_routes_enhanced.py               67     67     0%   3-137
+src/analytics/dashboard/__init__.py                           2      2     0%   3-5
+src/analytics/dashboard/analytics_processor.py              116    116     0%   3-314
+src/analytics/dashboard/analytics_processor_enhanced.py     113    113     0%   3-228
+---------------------------------------------------------------------------------------
+TOTAL                                                       383    383     0%
+=========================== short test summary info ============================
+ERROR tests/integration/test_export_integration.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+=============================== 1 error in 3.12s ===============================
+</pre>
+                    </details>
+                </td>
+            </tr>
+
+            <tr>
+                <td>パフォーマンステスト</td>
+                <td class="failure">❌ 失敗</td>
+                <td>3.27秒</td>
+                <td>
+                    <details>
+                        <summary>詳細を表示</summary>
+                        <pre>============================= test session starts ==============================
+platform darwin -- Python 3.9.6, pytest-8.3.5, pluggy-1.6.0 -- /Library/Developer/CommandLineTools/usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/mourigenta/shopify-mcp-server
+configfile: pytest.ini
+plugins: anyio-4.9.0, asyncio-0.26.0, cov-6.1.1
+asyncio: mode=strict, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 0 items / 1 error
+
+==================================== ERRORS ====================================
+________ ERROR collecting tests/performance/test_export_performance.py _________
+ImportError while importing test module '/Users/mourigenta/shopify-mcp-server/tests/performance/test_export_performance.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/importlib/__init__.py:127: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/performance/test_export_performance.py:18: in <module>
+    from src.analytics.dashboard.analytics_processor import AnalyticsProcessor
+src/analytics/__init__.py:3: in <module>
+    from .dashboard.analytics_processor import AnalyticsProcessor
+src/analytics/dashboard/__init__.py:3: in <module>
+    from .analytics_processor import AnalyticsProcessor
+src/analytics/dashboard/analytics_processor.py:9: in <module>
+    from ...api.shopify_api import ShopifyAPI
+src/api/shopify_api.py:16: in <module>
+    from .shopify_graphql import ShopifyGraphQLAPI
+src/api/shopify_graphql.py:11: in <module>
+    import backoff
+E   ModuleNotFoundError: No module named 'backoff'
+- generated xml file: /Users/mourigenta/shopify-mcp-server/test_results/test_export_performance.py.xml -
+================================ tests coverage ================================
+_______________ coverage: platform darwin, python 3.9.6-final-0 ________________
+
+Name                                                      Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------------------
+src/analytics/__init__.py                                     3      2    33%   4-6
+src/analytics/api/__init__.py                                 2      2     0%   3-5
+src/analytics/api/analytics_routes.py                        80     80     0%   3-170
+src/analytics/api/analytics_routes_enhanced.py               67     67     0%   3-137
+src/analytics/dashboard/__init__.py                           2      1    50%   5
+src/analytics/dashboard/analytics_processor.py              116    110     5%   10-314
+src/analytics/dashboard/analytics_processor_enhanced.py     113    113     0%   3-228
+---------------------------------------------------------------------------------------
+TOTAL                                                       383    375     2%
+=========================== short test summary info ============================
+ERROR tests/performance/test_export_performance.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+=============================== 1 error in 2.32s ===============================
+</pre>
+                    </details>
+                </td>
+            </tr>
+
+        </table>
+    </div>
+    
+    <div class="coverage">
+        <h2>カバレッジ情報</h2>
+        <p>※ 各テストの出力を参照してください</p>
+    </div>
+</body>
+</html>

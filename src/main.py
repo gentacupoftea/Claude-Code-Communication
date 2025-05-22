@@ -2,18 +2,25 @@
 Main FastAPI application entry point
 """
 import logging
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from .auth.middleware import setup_middleware
 from .auth.routes import router as auth_router
 from .auth.database import init_db
+from .environment.routes import router as environment_router
+from .environment.database import init_db as init_environment_db
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Rate limiting setup
+limiter = Limiter(key_func=get_remote_address)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,6 +28,7 @@ async def lifespan(app: FastAPI):
     logger.info("Starting application...")
     # Initialize database
     init_db()
+    init_environment_db()
     logger.info("Database initialized")
     
     yield
@@ -36,11 +44,16 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Add rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # Setup middleware
 setup_middleware(app)
 
 # Include routers
 app.include_router(auth_router)
+app.include_router(environment_router, prefix="/api/v1")
 
 # Health check endpoint
 @app.get("/health")

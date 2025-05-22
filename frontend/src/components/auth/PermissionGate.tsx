@@ -2,7 +2,7 @@
  * 権限ベースでUIを制御するコンポーネント
  */
 import React, { ReactNode } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/MockAuthContext';
 
 interface PermissionGateProps {
   /**
@@ -50,8 +50,8 @@ export const PermissionGate: React.FC<PermissionGateProps> = ({
     return <>{fallback}</>;
   }
   
-  // スーパーユーザー（管理者）は常にアクセス可能
-  if (user.is_superuser) {
+  // 管理者は常にアクセス可能
+  if (user.role === 'admin' || user.permissions?.includes('admin:all')) {
     return <>{children}</>;
   }
   
@@ -92,8 +92,8 @@ export const RoleGate: React.FC<RoleGateProps> = ({ roles, children, fallback = 
     return <>{fallback}</>;
   }
   
-  // スーパーユーザー（管理者）は常にアクセス可能
-  if (user.is_superuser) {
+  // 管理者は常にアクセス可能
+  if (user.role === 'admin' || user.permissions?.includes('admin:all')) {
     return <>{children}</>;
   }
   

@@ -242,3 +242,5 @@ export const NotificationPopup: React.FC = () => {
     </>
   );
 };
+
+export default NotificationPopup;

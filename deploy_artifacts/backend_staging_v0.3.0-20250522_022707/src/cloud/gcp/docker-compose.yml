@@ -1,0 +1,205 @@
+version: '3.8'
+
+services:
+  # Auth Service
+  auth:
+    build:
+      context: .
+      dockerfile: services/Dockerfile.auth
+    ports:
+      - "3001:3001"
+    environment:
+      - PROJECT_ID=${GCP_PROJECT_ID}
+      - SERVICE_NAME=auth-service
+      - ENVIRONMENT=development
+      - JWT_SECRET=${JWT_SECRET}
+      - REDIS_HOST=redis
+      - FIRESTORE_EMULATOR_HOST=firestore:8080
+    depends_on:
+      - redis
+      - firestore
+    networks:
+      - shopify-mcp
+
+  # Shopify Service
+  shopify:
+    build:
+      context: .
+      dockerfile: services/Dockerfile.shopify
+    ports:
+      - "3002:3002"
+    environment:
+      - PROJECT_ID=${GCP_PROJECT_ID}
+      - SERVICE_NAME=shopify-service
+      - ENVIRONMENT=development
+      - SHOPIFY_API_KEY=${SHOPIFY_API_KEY}
+      - SHOPIFY_API_SECRET=${SHOPIFY_API_SECRET}
+      - REDIS_HOST=redis
+      - FIRESTORE_EMULATOR_HOST=firestore:8080
+      - BIGQUERY_EMULATOR_HOST=bigquery:9050
+    depends_on:
+      - redis
+      - firestore
+      - bigquery
+    networks:
+      - shopify-mcp
+
+  # Analytics Service
+  analytics:
+    build:
+      context: .
+      dockerfile: services/Dockerfile.analytics
+    ports:
+      - "3006:3006"
+    environment:
+      - PROJECT_ID=${GCP_PROJECT_ID}
+      - SERVICE_NAME=analytics-service
+      - ENVIRONMENT=development
+      - REDIS_HOST=redis
+      - FIRESTORE_EMULATOR_HOST=firestore:8080
+      - BIGQUERY_EMULATOR_HOST=bigquery:9050
+    depends_on:
+      - redis
+      - firestore
+      - bigquery
+    networks:
+      - shopify-mcp
+
+  # Export Service
+  export:
+    build:
+      context: .
+      dockerfile: services/Dockerfile.export
+    ports:
+      - "3007:3007"
+    environment:
+      - PROJECT_ID=${GCP_PROJECT_ID}
+      - SERVICE_NAME=export-service
+      - ENVIRONMENT=development
+      - REDIS_HOST=redis
+      - FIRESTORE_EMULATOR_HOST=firestore:8080
+      - BIGQUERY_EMULATOR_HOST=bigquery:9050
+      - STORAGE_EMULATOR_HOST=http://storage:9023
+    depends_on:
+      - redis
+      - firestore
+      - bigquery
+      - storage
+    networks:
+      - shopify-mcp
+
+  # Service Gateway
+  gateway:
+    build:
+      context: .
+      dockerfile: core/Dockerfile.gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - PROJECT_ID=${GCP_PROJECT_ID}
+      - SERVICE_NAME=gateway
+      - ENVIRONMENT=development
+      - AUTH_SERVICE_URL=http://auth:3001
+      - SHOPIFY_SERVICE_URL=http://shopify:3002
+      - ANALYTICS_SERVICE_URL=http://analytics:3006
+      - EXPORT_SERVICE_URL=http://export:3007
+    depends_on:
+      - auth
+      - shopify
+      - analytics
+      - export
+    networks:
+      - shopify-mcp
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - shopify-mcp
+
+  # Firestore Emulator
+  firestore:
+    image: google/cloud-sdk:latest
+    command: gcloud beta emulators firestore start --host-port=0.0.0.0:8080
+    ports:
+      - "8080:8080"
+    environment:
+      - FIRESTORE_PROJECT_ID=${GCP_PROJECT_ID}
+    networks:
+      - shopify-mcp
+
+  # BigQuery Emulator
+  bigquery:
+    image: ghcr.io/goccy/bigquery-emulator:latest
+    ports:
+      - "9050:9050"
+    environment:
+      - BIGQUERY_EMULATOR_PROJECT=${GCP_PROJECT_ID}
+    networks:
+      - shopify-mcp
+
+  # Storage Emulator
+  storage:
+    image: fsouza/fake-gcs-server
+    ports:
+      - "9023:9023"
+    volumes:
+      - storage-data:/data
+    command: -scheme http -public-host localhost:9023
+    networks:
+      - shopify-mcp
+
+  # Pub/Sub Emulator
+  pubsub:
+    image: google/cloud-sdk:latest
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
+    ports:
+      - "8085:8085"
+    environment:
+      - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
+    networks:
+      - shopify-mcp
+
+  # Monitoring (Prometheus)
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - shopify-mcp
+
+  # Visualization (Grafana)
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    networks:
+      - shopify-mcp
+
+networks:
+  shopify-mcp:
+    driver: bridge
+
+volumes:
+  redis-data:
+  storage-data:
+  prometheus-data:
+  grafana-data:

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   frontend:
     image: conea/frontend:staging
@@ -21,8 +19,8 @@ services:
   backend:
     image: conea/backend:staging
     build:
-      context: ../../backend
-      dockerfile: ../deployment/staging/backend.Dockerfile
+      context: ../..
+      dockerfile: ./deployment/staging/backend.Dockerfile
     ports:
       - "8080:8080"
     depends_on:

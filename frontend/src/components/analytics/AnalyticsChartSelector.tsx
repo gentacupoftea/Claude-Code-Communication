@@ -129,7 +129,7 @@ const AnalyticsChartSelector: React.FC<ChartSelectorProps> = ({
   const [showGridLines, setShowGridLines] = useState(true);
   
   // チャートタイプのアイコンマップ
-  const chartIconMap: Record<ChartType, React.ReactNode> = {
+  const chartIconMap: Record<ChartType, React.ReactElement> = {
     bar: <BarChartIcon />,
     line: <LineChartIcon />,
     pie: <PieChartIcon />,

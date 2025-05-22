@@ -3,7 +3,7 @@
  */
 import React, { useEffect } from 'react';
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/MockAuthContext';
 
 interface AuthGuardProps {
   requireAuth?: boolean; // true: 認証が必要, false: 非認証用ルート（ログイン済みならリダイレクト）
@@ -14,15 +14,8 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   requireAuth = true,
   requiredPermissions = []
 }) => {
-  const { isAuthenticated, isLoading, user, refreshToken } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
-  
-  // リロード後のトークンリフレッシュ試行
-  useEffect(() => {
-    if (!isAuthenticated && !isLoading) {
-      refreshToken();
-    }
-  }, [isAuthenticated, isLoading, refreshToken]);
 
   // ローディング中
   if (isLoading) {

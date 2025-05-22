@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "conea-48fcf"
+  },
+  "targets": {
+    "conea-48fcf": {
+      "hosting": {
+        "staging-conea-ai": [
+          "staging-conea-ai"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

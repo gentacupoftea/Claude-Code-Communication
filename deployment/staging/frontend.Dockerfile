@@ -5,7 +5,7 @@ WORKDIR /app
 
 # 依存関係をコピーしてインストール
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # ソースコードをコピー
 COPY . .
@@ -19,6 +19,11 @@ ENV REACT_APP_WS_URL=${REACT_APP_WS_URL}
 ENV REACT_APP_VERSION=${REACT_APP_VERSION:-staging}
 ENV NODE_ENV=production
 
+# Create a specific .env file for the build to avoid recursive interpolation issues
+RUN echo "REACT_APP_API_URL=${REACT_APP_API_URL}" > .env \
+    && echo "REACT_APP_WS_URL=${REACT_APP_WS_URL}" >> .env \
+    && echo "REACT_APP_VERSION=${REACT_APP_VERSION:-staging}" >> .env
+
 # アプリケーションをビルド
 RUN npm run build
 
@@ -29,7 +34,7 @@ FROM nginx:1.21-alpine
 COPY --from=build /app/build /usr/share/nginx/html
 
 # Nginx設定ファイルをコピー
-COPY ./deployment/staging/nginx.conf /etc/nginx/conf.d/default.conf
+COPY ./nginx.conf /etc/nginx/conf.d/default.conf
 
 # コンテナ起動時にReactルーターをサポートするための設定を追加
 RUN echo 'location / { \

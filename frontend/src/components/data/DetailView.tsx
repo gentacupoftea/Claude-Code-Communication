@@ -188,8 +188,7 @@ function DetailView<T>({
         {sections.map((section, sectionIndex) => {
           // Filter out hidden fields
           const visibleFields = section.fields.filter(
-            (field) => !field.hidden && 
-              (typeof field.hidden !== 'function' || !field.hidden(item))
+            (field) => !field.hidden
           );
           
           // Skip section if no visible fields

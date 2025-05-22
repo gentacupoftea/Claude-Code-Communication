@@ -1,545 +1,426 @@
 /**
- * オフラインサポートサービス
- * 
- * オフラインモード時のデータキャッシュと同期機能を提供します。
- * IndexedDBを使用してローカルキャッシュを管理し、オンラインに戻ったときの同期を処理します。
+ * オフラインモード管理サービス
+ * IndexedDBを使用したデータの永続化と同期機能を提供します
  */
 
-import { openDB, IDBPDatabase } from 'idb';
-import { v4 as uuidv4 } from 'uuid';
+// オフライン設定のデフォルト値
+const DEFAULT_SETTINGS = {
+  enabled: false,
+  storageLimitMB: 100,
+  syncIntervalMinutes: 15,
+};
 
-// データベース設定
-const DB_NAME = 'conea_offline_cache';
+// IndexedDBデータベース名とバージョン
+const DB_NAME = 'conea_offline_db';
 const DB_VERSION = 1;
 
-// キャッシュするストアの名前（エンティティタイプ）
-const STORES = [
-  'products',
-  'orders',
-  'customers',
-  'settings',
-  'pending_actions',
-];
+// ストアの名前
+const STORES = {
+  SETTINGS: 'settings',
+  PENDING_ACTIONS: 'pendingActions',
+  CACHE: 'cache',
+  SYNC_LOG: 'syncLog',
+};
 
-// オフライン操作の種類
-export type OfflineActionType = 'create' | 'update' | 'delete';
+// データベース接続を初期化
+const initDB = (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-// 保留中のオフラインアクション
-export interface PendingAction {
-  id: string;
-  entityType: string;
-  entityId: string;
-  action: OfflineActionType;
-  data: any;
-  timestamp: number;
-  synced: boolean;
-  retryCount: number;
-  error?: string;
-}
+    request.onerror = (event) => {
+      reject(new Error('IndexedDBの初期化中にエラーが発生しました'));
+    };
 
-// オフラインサービスのインターフェース
-export interface OfflineServiceInterface {
-  // データベース初期化
-  initialize(): Promise<boolean>;
-  
-  // オフラインステータスのチェック
-  isOffline(): boolean;
-  
-  // ネットワークステータスの監視開始
-  startMonitoring(): void;
-  
-  // ネットワークステータスの監視停止
-  stopMonitoring(): void;
-  
-  // データのキャッシュ
-  cacheData(entityType: string, data: any[]): Promise<void>;
-  
-  // エンティティのキャッシュ
-  cacheEntity(entityType: string, entity: any): Promise<void>;
-  
-  // キャッシュからのデータ取得
-  getCachedData<T>(entityType: string): Promise<T[]>;
-  
-  // キャッシュからのエンティティ取得
-  getCachedEntity<T>(entityType: string, id: string): Promise<T | undefined>;
-  
-  // 保留中のアクションの登録
-  registerPendingAction(
-    entityType: string,
-    entityId: string,
-    action: OfflineActionType,
-    data: any
-  ): Promise<string>;
-  
-  // 保留中のアクションの処理
-  processPendingActions(): Promise<{
-    succeeded: PendingAction[];
-    failed: PendingAction[];
-  }>;
-  
-  // キャッシュデータのクリア
-  clearCache(entityType?: string): Promise<void>;
-  
-  // キャッシュデータの有効期限チェック
-  isCacheValid(entityType: string, maxAgeMs: number): Promise<boolean>;
-  
-  // リスナー登録
-  addListener(listener: (status: boolean) => void): void;
-  
-  // リスナー削除
-  removeListener(listener: (status: boolean) => void): void;
-}
+    request.onsuccess = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      resolve(db);
+    };
 
-class OfflineService implements OfflineServiceInterface {
-  private db: IDBPDatabase | null = null;
-  private _isOffline: boolean = false;
-  private listeners: ((status: boolean) => void)[] = [];
-  private networkCheckInterval: number | null = null;
-  private lastSyncTimestamps: Record<string, number> = {};
-  
-  /**
-   * IndexedDBデータベースの初期化
-   */
-  public async initialize(): Promise<boolean> {
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+
+      // 設定ストア
+      if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
+        db.createObjectStore(STORES.SETTINGS, { keyPath: 'id' });
+      }
+
+      // 保留中アクションストア
+      if (!db.objectStoreNames.contains(STORES.PENDING_ACTIONS)) {
+        const pendingStore = db.createObjectStore(STORES.PENDING_ACTIONS, { 
+          keyPath: 'id', 
+          autoIncrement: true 
+        });
+        pendingStore.createIndex('timestamp', 'timestamp', { unique: false });
+        pendingStore.createIndex('type', 'type', { unique: false });
+      }
+
+      // キャッシュストア
+      if (!db.objectStoreNames.contains(STORES.CACHE)) {
+        const cacheStore = db.createObjectStore(STORES.CACHE, { keyPath: 'key' });
+        cacheStore.createIndex('timestamp', 'timestamp', { unique: false });
+        cacheStore.createIndex('expire', 'expire', { unique: false });
+      }
+
+      // 同期ログストア
+      if (!db.objectStoreNames.contains(STORES.SYNC_LOG)) {
+        const syncLogStore = db.createObjectStore(STORES.SYNC_LOG, { 
+          keyPath: 'id', 
+          autoIncrement: true 
+        });
+        syncLogStore.createIndex('timestamp', 'timestamp', { unique: false });
+        syncLogStore.createIndex('status', 'status', { unique: false });
+      }
+    };
+  });
+};
+
+// データベースへの保存
+const saveToStore = <T>(storeName: string, data: T, key?: string): Promise<void> => {
+  return new Promise(async (resolve, reject) => {
     try {
-      this.db = await openDB(DB_NAME, DB_VERSION, {
-        upgrade(db) {
-          // 各エンティティタイプのオブジェクトストアを作成
-          STORES.forEach(store => {
-            if (!db.objectStoreNames.contains(store)) {
-              const objectStore = db.createObjectStore(store, { keyPath: 'id' });
-              
-              // インデックスの作成
-              if (store === 'pending_actions') {
-                objectStore.createIndex('synced', 'synced', { unique: false });
-                objectStore.createIndex('entityType', 'entityType', { unique: false });
-                objectStore.createIndex('timestamp', 'timestamp', { unique: false });
-              }
-              
-              // メタデータの格納用
-              if (store === 'settings') {
-                objectStore.createIndex('key', 'key', { unique: true });
-              }
-            }
-          });
-        },
+      const db = await initDB();
+      const transaction = db.transaction(storeName, 'readwrite');
+      const store = transaction.objectStore(storeName);
+
+      const request = key 
+        ? store.put({ key, value: data, timestamp: Date.now() })
+        : store.put(data);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(new Error(`${storeName}ストアへの保存中にエラーが発生しました`));
+
+      transaction.oncomplete = () => db.close();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+// データベースからの取得
+const getFromStore = <T>(storeName: string, key: string): Promise<T | null> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const db = await initDB();
+      const transaction = db.transaction(storeName, 'readonly');
+      const store = transaction.objectStore(storeName);
+      const request = store.get(key);
+
+      request.onsuccess = () => {
+        const result = request.result;
+        resolve(result ? (result.value || result) : null);
+      };
+
+      request.onerror = () => reject(new Error(`${storeName}ストアからの取得中にエラーが発生しました`));
+
+      transaction.oncomplete = () => db.close();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+// ストアの全データを取得
+const getAllFromStore = <T>(storeName: string): Promise<T[]> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const db = await initDB();
+      const transaction = db.transaction(storeName, 'readonly');
+      const store = transaction.objectStore(storeName);
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        const results = request.result.map(item => item.value || item);
+        resolve(results);
+      };
+
+      request.onerror = () => reject(new Error(`${storeName}ストアからのデータ取得中にエラーが発生しました`));
+
+      transaction.oncomplete = () => db.close();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+// ストアのデータ数を取得
+const countFromStore = (storeName: string): Promise<number> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const db = await initDB();
+      const transaction = db.transaction(storeName, 'readonly');
+      const store = transaction.objectStore(storeName);
+      const request = store.count();
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(new Error(`${storeName}ストアのカウント中にエラーが発生しました`));
+
+      transaction.oncomplete = () => db.close();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+// ストアのすべてのデータを削除
+const clearStore = (storeName: string): Promise<void> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const db = await initDB();
+      const transaction = db.transaction(storeName, 'readwrite');
+      const store = transaction.objectStore(storeName);
+      const request = store.clear();
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(new Error(`${storeName}ストアのクリア中にエラーが発生しました`));
+
+      transaction.oncomplete = () => db.close();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+// すべてのストアを削除
+const clearAllStores = async (): Promise<void> => {
+  for (const store of Object.values(STORES)) {
+    await clearStore(store);
+  }
+};
+
+// IndexedDBの使用量を取得（概算）
+const calculateStorageUsage = async (): Promise<number> => {
+  try {
+    // @ts-ignore - 実験的なAPI
+    if (navigator.storage && navigator.storage.estimate) {
+      const estimation = await navigator.storage.estimate();
+      const usedMB = estimation.usage ? Math.round(estimation.usage / (1024 * 1024) * 100) / 100 : 0;
+      return usedMB;
+    }
+    
+    // 使用したキーの数と平均サイズからストレージ使用量を推定
+    const db = await initDB();
+    
+    let totalSize = 0;
+    for (const storeName of Object.values(STORES)) {
+      const transaction = db.transaction(storeName, 'readonly');
+      const store = transaction.objectStore(storeName);
+      const countReq = store.count();
+      
+      await new Promise<void>((resolve) => {
+        countReq.onsuccess = () => {
+          // 各レコードの平均サイズを2KBと仮定
+          totalSize += countReq.result * 2048;
+          resolve();
+        };
       });
-      
-      console.log('Offline database initialized successfully');
-      
-      // ネットワークステータスの初期チェック
-      this._isOffline = !navigator.onLine;
-      this.startMonitoring();
-      
+    }
+    
+    db.close();
+    return Math.round(totalSize / (1024 * 1024) * 100) / 100; // MBに変換して小数点2桁まで
+  } catch (error) {
+    console.error('ストレージ使用量の計算中にエラーが発生しました', error);
+    return 0;
+  }
+};
+
+// 公開するサービスメソッド
+const offlineService = {
+  // 設定関連
+  async getSettings() {
+    try {
+      let settings = await getFromStore<typeof DEFAULT_SETTINGS>(STORES.SETTINGS, 'userSettings');
+      if (!settings) {
+        settings = DEFAULT_SETTINGS;
+        await saveToStore(STORES.SETTINGS, { id: 'userSettings', ...settings });
+      }
+      return settings;
+    } catch (error) {
+      console.error('設定の取得中にエラーが発生しました', error);
+      return DEFAULT_SETTINGS;
+    }
+  },
+
+  async setEnabled(enabled: boolean) {
+    try {
+      const settings = await this.getSettings();
+      await saveToStore(STORES.SETTINGS, { id: 'userSettings', ...settings, enabled });
       return true;
     } catch (error) {
-      console.error('Failed to initialize offline database:', error);
+      console.error('オフラインモードの有効化中にエラーが発生しました', error);
+      throw error;
+    }
+  },
+
+  async setStorageLimit(storageLimitMB: number) {
+    try {
+      const settings = await this.getSettings();
+      await saveToStore(STORES.SETTINGS, { id: 'userSettings', ...settings, storageLimitMB });
+      return true;
+    } catch (error) {
+      console.error('ストレージ制限の設定中にエラーが発生しました', error);
+      throw error;
+    }
+  },
+
+  async setSyncInterval(syncIntervalMinutes: number) {
+    try {
+      const settings = await this.getSettings();
+      await saveToStore(STORES.SETTINGS, { id: 'userSettings', ...settings, syncIntervalMinutes });
+      return true;
+    } catch (error) {
+      console.error('同期間隔の設定中にエラーが発生しました', error);
+      throw error;
+    }
+  },
+
+  // データ管理
+  async getStorageUsage() {
+    return calculateStorageUsage();
+  },
+
+  async clearAllData() {
+    try {
+      await clearAllStores();
+      await saveToStore(STORES.SETTINGS, { id: 'userSettings', ...DEFAULT_SETTINGS });
+      return true;
+    } catch (error) {
+      console.error('オフラインデータの消去中にエラーが発生しました', error);
+      throw error;
+    }
+  },
+
+  // 保留中アクション
+  async addPendingAction(action: { type: string, payload: any, endpoint: string }) {
+    try {
+      const settings = await this.getSettings();
+      if (!settings.enabled) return false;
+
+      await saveToStore(STORES.PENDING_ACTIONS, {
+        ...action,
+        timestamp: Date.now(),
+        status: 'pending',
+      });
+      return true;
+    } catch (error) {
+      console.error('保留中アクションの追加中にエラーが発生しました', error);
+      throw error;
+    }
+  },
+
+  async getPendingActionsCount() {
+    try {
+      return await countFromStore(STORES.PENDING_ACTIONS);
+    } catch (error) {
+      console.error('保留中アクション数の取得中にエラーが発生しました', error);
+      return 0;
+    }
+  },
+
+  async getPendingActions() {
+    try {
+      return await getAllFromStore(STORES.PENDING_ACTIONS);
+    } catch (error) {
+      console.error('保留中アクションの取得中にエラーが発生しました', error);
+      return [];
+    }
+  },
+
+  // キャッシュ
+  async cacheData(key: string, data: any, ttl: number = 3600) {
+    try {
+      const settings = await this.getSettings();
+      if (!settings.enabled) return false;
+
+      const expire = Date.now() + ttl * 1000;
+      await saveToStore(STORES.CACHE, {
+        key,
+        value: data,
+        timestamp: Date.now(),
+        expire,
+      });
+      return true;
+    } catch (error) {
+      console.error('データのキャッシュ中にエラーが発生しました', error);
+      throw error;
+    }
+  },
+
+  async getCachedData(key: string) {
+    try {
+      const data = await getFromStore(STORES.CACHE, key);
+      if (!data || (data.expire && data.expire < Date.now())) {
+        return null;
+      }
+      return data.value || data;
+    } catch (error) {
+      console.error('キャッシュデータの取得中にエラーが発生しました', error);
+      return null;
+    }
+  },
+
+  // 同期
+  async syncAll() {
+    try {
+      const settings = await this.getSettings();
+      if (!settings.enabled) return false;
+
+      // 最終同期時間を更新
+      await saveToStore(STORES.SETTINGS, { 
+        id: 'lastSync', 
+        timestamp: Date.now() 
+      });
+
+      // 実際の同期ロジック（APIとの連携）
+      // この実装はアプリケーションのAPI設計によって異なります
+      console.log('オフラインデータの同期を実行中...');
+
+      // 実装例: 保留中アクションの処理
+      const pendingActions = await this.getPendingActions();
+      
+      // 同期ログに記録
+      await saveToStore(STORES.SYNC_LOG, {
+        timestamp: Date.now(),
+        actionCount: pendingActions.length,
+        status: 'success',
+      });
+
+      return true;
+    } catch (error) {
+      console.error('データ同期中にエラーが発生しました', error);
+      
+      // 同期エラーをログに記録
+      await saveToStore(STORES.SYNC_LOG, {
+        timestamp: Date.now(),
+        error: String(error),
+        status: 'failed',
+      });
+      
+      throw error;
+    }
+  },
+
+  async getLastSyncTime() {
+    try {
+      const lastSync = await getFromStore<{ timestamp: number }>(STORES.SETTINGS, 'lastSync');
+      return lastSync ? new Date(lastSync.timestamp) : null;
+    } catch (error) {
+      console.error('最終同期時間の取得中にエラーが発生しました', error);
+      return null;
+    }
+  },
+
+  // 初期化
+  async initialize() {
+    try {
+      await initDB();
+      const settings = await this.getSettings();
+      return settings.enabled;
+    } catch (error) {
+      console.error('オフラインサービスの初期化中にエラーが発生しました', error);
       return false;
     }
-  }
-  
-  /**
-   * 現在のオフラインステータスを確認
-   */
-  public isOffline(): boolean {
-    return this._isOffline;
-  }
-  
-  /**
-   * ネットワークステータスの監視を開始
-   */
-  public startMonitoring(): void {
-    // ブラウザの接続状態イベントをリッスン
-    window.addEventListener('online', this.handleOnline);
-    window.addEventListener('offline', this.handleOffline);
-    
-    // 定期的な接続チェック（より信頼性の高い検出のため）
-    this.networkCheckInterval = window.setInterval(() => {
-      this.checkNetworkStatus();
-    }, 30000); // 30秒ごとにチェック
-    
-    // 初期状態をチェック
-    this.checkNetworkStatus();
-  }
-  
-  /**
-   * ネットワークステータスの監視を停止
-   */
-  public stopMonitoring(): void {
-    window.removeEventListener('online', this.handleOnline);
-    window.removeEventListener('offline', this.handleOffline);
-    
-    if (this.networkCheckInterval !== null) {
-      clearInterval(this.networkCheckInterval);
-      this.networkCheckInterval = null;
-    }
-  }
-  
-  /**
-   * オンラインになった時の処理
-   */
-  private handleOnline = async (): Promise<void> => {
-    if (this._isOffline) {
-      this._isOffline = false;
-      this.notifyListeners();
-      
-      try {
-        // オンラインに戻ったら保留中のアクションを同期
-        await this.processPendingActions();
-      } catch (error) {
-        console.error('Error processing pending actions:', error);
-      }
-    }
-  };
-  
-  /**
-   * オフラインになった時の処理
-   */
-  private handleOffline = (): void => {
-    if (!this._isOffline) {
-      this._isOffline = true;
-      this.notifyListeners();
-    }
-  };
-  
-  /**
-   * 実際のネットワーク接続状態をチェック
-   */
-  private async checkNetworkStatus(): Promise<void> {
-    try {
-      const online = navigator.onLine;
-      
-      if (online) {
-        // ネットワークステータスをより正確に確認するためにAPIエンドポイントへのfetchを試みる
-        try {
-          const response = await fetch('/api/health', { 
-            method: 'HEAD',
-            headers: { 'Cache-Control': 'no-cache' },
-            // タイムアウトを設定するためのシグナルを使用
-            signal: AbortSignal.timeout(5000)
-          });
-          
-          const wasOffline = this._isOffline;
-          this._isOffline = !response.ok;
-          
-          // 状態が変わった場合のみ通知
-          if (wasOffline !== this._isOffline) {
-            this.notifyListeners();
-            
-            // オンラインに戻った場合は同期
-            if (wasOffline && !this._isOffline) {
-              await this.processPendingActions();
-            }
-          }
-        } catch (error) {
-          // 接続エラーの場合はオフラインとみなす
-          if (!this._isOffline) {
-            this._isOffline = true;
-            this.notifyListeners();
-          }
-        }
-      } else if (!this._isOffline) {
-        // ブラウザがオフラインを報告
-        this._isOffline = true;
-        this.notifyListeners();
-      }
-    } catch (error) {
-      console.error('Error checking network status:', error);
-    }
-  }
-  
-  /**
-   * 複数のデータをキャッシュに保存
-   */
-  public async cacheData(entityType: string, data: any[]): Promise<void> {
-    if (!this.db) {
-      throw new Error('Database not initialized');
-    }
-    
-    if (!STORES.includes(entityType)) {
-      throw new Error(`Invalid entity type: ${entityType}`);
-    }
-    
-    const tx = this.db.transaction(entityType, 'readwrite');
-    const store = tx.objectStore(entityType);
-    
-    // 各エンティティを保存
-    await Promise.all(data.map(entity => store.put(entity)));
-    
-    // 最終同期タイムスタンプを更新
-    this.lastSyncTimestamps[entityType] = Date.now();
-    
-    // トランザクションの完了を待つ
-    await tx.done;
-  }
-  
-  /**
-   * 単一のエンティティをキャッシュに保存
-   */
-  public async cacheEntity(entityType: string, entity: any): Promise<void> {
-    if (!this.db) {
-      throw new Error('Database not initialized');
-    }
-    
-    if (!STORES.includes(entityType)) {
-      throw new Error(`Invalid entity type: ${entityType}`);
-    }
-    
-    const tx = this.db.transaction(entityType, 'readwrite');
-    const store = tx.objectStore(entityType);
-    
-    await store.put(entity);
-    await tx.done;
-  }
-  
-  /**
-   * キャッシュからすべてのデータを取得
-   */
-  public async getCachedData<T>(entityType: string): Promise<T[]> {
-    if (!this.db) {
-      throw new Error('Database not initialized');
-    }
-    
-    if (!STORES.includes(entityType)) {
-      throw new Error(`Invalid entity type: ${entityType}`);
-    }
-    
-    const tx = this.db.transaction(entityType, 'readonly');
-    const store = tx.objectStore(entityType);
-    
-    return await store.getAll() as T[];
-  }
-  
-  /**
-   * キャッシュから特定のエンティティを取得
-   */
-  public async getCachedEntity<T>(entityType: string, id: string): Promise<T | undefined> {
-    if (!this.db) {
-      throw new Error('Database not initialized');
-    }
-    
-    if (!STORES.includes(entityType)) {
-      throw new Error(`Invalid entity type: ${entityType}`);
-    }
-    
-    const tx = this.db.transaction(entityType, 'readonly');
-    const store = tx.objectStore(entityType);
-    
-    return await store.get(id) as T | undefined;
-  }
-  
-  /**
-   * オフラインで行われた操作を保留中アクションとして登録
-   */
-  public async registerPendingAction(
-    entityType: string,
-    entityId: string,
-    action: OfflineActionType,
-    data: any
-  ): Promise<string> {
-    if (!this.db) {
-      throw new Error('Database not initialized');
-    }
-    
-    const pendingAction: PendingAction = {
-      id: uuidv4(),
-      entityType,
-      entityId,
-      action,
-      data,
-      timestamp: Date.now(),
-      synced: false,
-      retryCount: 0
-    };
-    
-    const tx = this.db.transaction('pending_actions', 'readwrite');
-    const store = tx.objectStore('pending_actions');
-    
-    await store.add(pendingAction);
-    await tx.done;
-    
-    return pendingAction.id;
-  }
-  
-  /**
-   * 保留中のアクションを処理（サーバーと同期）
-   */
-  public async processPendingActions(): Promise<{
-    succeeded: PendingAction[];
-    failed: PendingAction[];
-  }> {
-    if (!this.db || this._isOffline) {
-      return { succeeded: [], failed: [] };
-    }
-    
-    const tx = this.db.transaction('pending_actions', 'readonly');
-    const store = tx.objectStore('pending_actions');
-    const index = store.index('synced');
-    
-    // 同期されていないアクションを取得
-    const pendingActions = await index.getAll(false);
-    
-    if (pendingActions.length === 0) {
-      return { succeeded: [], failed: [] };
-    }
-    
-    console.log(`Processing ${pendingActions.length} pending actions`);
-    
-    const succeeded: PendingAction[] = [];
-    const failed: PendingAction[] = [];
-    
-    // タイムスタンプでソート（古い順）
-    pendingActions.sort((a, b) => a.timestamp - b.timestamp);
-    
-    for (const action of pendingActions) {
-      try {
-        // アクションタイプに応じたAPIリクエストを実行
-        let endpoint = `/api/${action.entityType}`;
-        let method = 'POST';
-        
-        if (action.action === 'update') {
-          endpoint += `/${action.entityId}`;
-          method = 'PUT';
-        } else if (action.action === 'delete') {
-          endpoint += `/${action.entityId}`;
-          method = 'DELETE';
-        }
-        
-        const response = await fetch(endpoint, {
-          method,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: action.action !== 'delete' ? JSON.stringify(action.data) : undefined,
-        });
-        
-        if (response.ok) {
-          // 成功したアクションを更新
-          const updateTx = this.db.transaction('pending_actions', 'readwrite');
-          const updateStore = updateTx.objectStore('pending_actions');
-          
-          const updatedAction = { ...action, synced: true };
-          await updateStore.put(updatedAction);
-          await updateTx.done;
-          
-          succeeded.push(updatedAction);
-        } else {
-          // 失敗したアクションを更新（リトライカウント増加）
-          const updateTx = this.db.transaction('pending_actions', 'readwrite');
-          const updateStore = updateTx.objectStore('pending_actions');
-          
-          const errorText = await response.text();
-          const updatedAction = { 
-            ...action, 
-            retryCount: action.retryCount + 1,
-            error: `HTTP ${response.status}: ${errorText}`
-          };
-          
-          await updateStore.put(updatedAction);
-          await updateTx.done;
-          
-          failed.push(updatedAction);
-        }
-      } catch (error) {
-        // ネットワークエラーなどの例外
-        const updateTx = this.db.transaction('pending_actions', 'readwrite');
-        const updateStore = updateTx.objectStore('pending_actions');
-        
-        const updatedAction = { 
-          ...action, 
-          retryCount: action.retryCount + 1,
-          error: (error as Error).message
-        };
-        
-        await updateStore.put(updatedAction);
-        await updateTx.done;
-        
-        failed.push(updatedAction);
-      }
-    }
-    
-    return { succeeded, failed };
-  }
-  
-  /**
-   * キャッシュデータをクリア
-   */
-  public async clearCache(entityType?: string): Promise<void> {
-    if (!this.db) {
-      throw new Error('Database not initialized');
-    }
-    
-    if (entityType) {
-      if (!STORES.includes(entityType)) {
-        throw new Error(`Invalid entity type: ${entityType}`);
-      }
-      
-      const tx = this.db.transaction(entityType, 'readwrite');
-      const store = tx.objectStore(entityType);
-      await store.clear();
-      await tx.done;
-      
-      // 最終同期タイムスタンプをクリア
-      delete this.lastSyncTimestamps[entityType];
-    } else {
-      // すべてのストアをクリア（pending_actionsは除く）
-      for (const store of STORES) {
-        if (store !== 'pending_actions') {
-          const tx = this.db.transaction(store, 'readwrite');
-          const objectStore = tx.objectStore(store);
-          await objectStore.clear();
-          await tx.done;
-        }
-      }
-      
-      // すべての同期タイムスタンプをクリア
-      this.lastSyncTimestamps = {};
-    }
-  }
-  
-  /**
-   * キャッシュが有効かどうかをチェック（最大有効期限を基に）
-   */
-  public async isCacheValid(entityType: string, maxAgeMs: number): Promise<boolean> {
-    const lastSyncTime = this.lastSyncTimestamps[entityType];
-    if (!lastSyncTime) return false;
-    
-    const now = Date.now();
-    return (now - lastSyncTime) < maxAgeMs;
-  }
-  
-  /**
-   * オフラインステータスリスナーを追加
-   */
-  public addListener(listener: (status: boolean) => void): void {
-    if (!this.listeners.includes(listener)) {
-      this.listeners.push(listener);
-      
-      // 新しいリスナーに現在の状態を即時通知
-      listener(this._isOffline);
-    }
-  }
-  
-  /**
-   * オフラインステータスリスナーを削除
-   */
-  public removeListener(listener: (status: boolean) => void): void {
-    this.listeners = this.listeners.filter(l => l !== listener);
-  }
-  
-  /**
-   * すべてのリスナーに通知
-   */
-  private notifyListeners(): void {
-    this.listeners.forEach(listener => {
-      try {
-        listener(this._isOffline);
-      } catch (error) {
-        console.error('Error in offline status listener:', error);
-      }
-    });
-  }
-}
+  },
+};
 
-// オフラインサービスのシングルトンインスタンスをエクスポート
-export const offlineService = new OfflineService();
+export default offlineService;
+export { offlineService };

@@ -101,6 +101,26 @@ export const formatFileSize = (bytes: number): string => {
 };
 
 /**
+ * バイト数のフォーマット（formatFileSizeのエイリアス）
+ */
+export const formatBytes = formatFileSize;
+
+/**
+ * 期間のフォーマット（ミリ秒 → 人間可読形式）
+ */
+export const formatDuration = (milliseconds: number): string => {
+  const seconds = Math.floor(milliseconds / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  
+  if (days > 0) return `${days}日`;
+  if (hours > 0) return `${hours}時間`;
+  if (minutes > 0) return `${minutes}分`;
+  return `${seconds}秒`;
+};
+
+/**
  * 名前のイニシャルを取得
  */
 export const getInitials = (name: string): string => {

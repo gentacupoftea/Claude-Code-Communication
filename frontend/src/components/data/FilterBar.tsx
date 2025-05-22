@@ -18,6 +18,7 @@ import {
   Switch,
   FormControlLabel,
   FormGroup,
+  Badge,
   Autocomplete,
   useTheme,
 } from '@mui/material';
@@ -271,7 +272,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
                 <em>None</em>
               </MenuItem>
               {field.options?.map((option) => (
-                <MenuItem key={option.value.toString()} value={option.value}>
+                <MenuItem key={option.value.toString()} value={option.value.toString()}>
                   {option.label}
                 </MenuItem>
               ))}

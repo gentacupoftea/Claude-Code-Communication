@@ -1,0 +1,6 @@
+{
+  "version": "staging-20250522024431",
+  "deployedAt": "2025-05-21T17:44:31Z",
+  "environment": "staging",
+  "apiUrl": "https://staging.conea.ai/api"
+}

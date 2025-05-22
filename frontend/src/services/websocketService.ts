@@ -226,3 +226,4 @@ const websocketService = new WebSocketService(
 );
 
 export default websocketService;
+export { websocketService };

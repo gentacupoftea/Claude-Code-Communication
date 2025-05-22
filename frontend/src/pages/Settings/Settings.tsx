@@ -64,6 +64,7 @@ import {
 } from '../../components/settings';
 import { RootState } from '../../store';
 import { setTheme, setLanguage } from '../../store/slices/settingsSlice';
+import MCPSettings from './MCPSettings';
 
 interface SettingSection {
   id: string;
@@ -89,6 +90,12 @@ const SettingsComponent: React.FC = () => {
       title: t('settings.general'),
       icon: <Person />,
       description: '基本的な設定',
+    },
+    {
+      id: 'mcp',
+      title: 'MCPサーバー',
+      icon: <Code />,
+      description: 'MCPサーバー接続設定',
     },
     {
       id: 'notifications',
@@ -155,6 +162,10 @@ const SettingsComponent: React.FC = () => {
     <OfflineSettings />
   );
 
+  const renderMCPSettings = () => (
+    <MCPSettings />
+  );
+
   const getCurrentSectionContent = () => {
     switch (activeSection) {
       case 'general':
@@ -169,6 +180,8 @@ const SettingsComponent: React.FC = () => {
         return renderOfflineSettings();
       case 'advanced':
         return renderAdvancedSettings();
+      case 'mcp':
+        return renderMCPSettings();
       default:
         return renderGeneralSettings();
     }

@@ -32,8 +32,8 @@ jobs:
       - name: Build frontend
         working-directory: ./frontend
         env:
-          REACT_APP_API_URL: https://staging.conea.example.com/api
-          REACT_APP_WS_URL: wss://staging.conea.example.com/ws
+          REACT_APP_API_URL: https://staging.conea.ai/api
+          REACT_APP_WS_URL: wss://staging.conea.ai/ws
           REACT_APP_VERSION: staging
         run: npm run build
         
@@ -69,8 +69,8 @@ jobs:
           push: true
           tags: conea/frontend:staging,conea/frontend:${{ env.VERSION }}
           build-args: |
-            REACT_APP_API_URL=https://staging.conea.example.com/api
-            REACT_APP_WS_URL=wss://staging.conea.example.com/ws
+            REACT_APP_API_URL=https://staging.conea.ai/api
+            REACT_APP_WS_URL=wss://staging.conea.ai/ws
             REACT_APP_VERSION=${{ env.VERSION }}
             
       - name: Create backend directory for Docker
@@ -109,6 +109,10 @@ jobs:
             sed -i 's|conea/frontend:staging|conea/frontend:${{ env.VERSION }}|g' docker-compose.yml
             sed -i 's|conea/backend:staging|conea/backend:${{ env.VERSION }}|g' docker-compose.yml
             
+            # Update environment variables
+            sed -i 's|REACT_APP_API_URL=.*|REACT_APP_API_URL=https://staging.conea.ai/api|g' .env
+            sed -i 's|REACT_APP_WS_URL=.*|REACT_APP_WS_URL=wss://staging.conea.ai/ws|g' .env
+            
             # Restart containers
             docker-compose pull
             docker-compose down
@@ -122,7 +126,7 @@ jobs:
             FRONTEND_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/health.txt || echo "Failed")
             
             if [ "$BACKEND_HEALTH" == "200" ] && [ "$FRONTEND_HEALTH" == "200" ]; then
-              echo "Deployment successful"
+              echo "Deployment successful to https://staging.conea.ai/"
               exit 0
             else
               echo "Health check failed: Backend: $BACKEND_HEALTH, Frontend: $FRONTEND_HEALTH"

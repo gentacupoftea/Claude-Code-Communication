@@ -21,20 +21,20 @@ mkdir -p nginx/certs
 mkdir -p nginx/logs
 
 # 自己署名証明書の生成（本番環境では適切な証明書を使用してください）
-if [ ! -f nginx/certs/staging.conea.example.com.crt ]; then
+if [ ! -f nginx/certs/staging.conea.ai.crt ]; then
   echo "SSL証明書を生成しています..."
   openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout nginx/certs/staging.conea.example.com.key \
-    -out nginx/certs/staging.conea.example.com.crt \
-    -subj "/C=JP/ST=Tokyo/L=Tokyo/O=Conea/OU=Staging/CN=staging.conea.example.com"
+    -keyout nginx/certs/staging.conea.ai.key \
+    -out nginx/certs/staging.conea.ai.crt \
+    -subj "/C=JP/ST=Tokyo/L=Tokyo/O=Conea/OU=Staging/CN=staging.conea.ai"
 fi
 
 # コンテナのビルドとデプロイ
 echo "Dockerイメージをビルドしています..."
 docker-compose build \
   --build-arg REACT_APP_VERSION=$VERSION \
-  --build-arg REACT_APP_API_URL=https://staging.conea.example.com/api \
-  --build-arg REACT_APP_WS_URL=wss://staging.conea.example.com/ws
+  --build-arg REACT_APP_API_URL=https://staging.conea.ai/api \
+  --build-arg REACT_APP_WS_URL=wss://staging.conea.ai/ws
 
 # 古いコンテナを停止して新しいコンテナを起動
 echo "コンテナをデプロイしています..."
@@ -62,4 +62,4 @@ else
 fi
 
 echo "ステージング環境へのデプロイが完了しました"
-echo "アプリケーションは https://staging.conea.example.com でアクセスできます"
+echo "アプリケーションは https://staging.conea.ai でアクセスできます"

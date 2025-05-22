@@ -40,6 +40,7 @@ export interface ChannelCredentials {
   applicationId?: string;
   serviceAccountKey?: string;
   // 他のチャネル固有の認証情報
+  [key: string]: any;
 }
 
 export interface OAuthRedirectParams {

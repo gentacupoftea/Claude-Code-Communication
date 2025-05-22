@@ -1,206 +1,168 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useOffline } from '../contexts/OfflineContext';
-import offlineService from '../services/offlineService';
-import { apiClient } from '../services/apiClient';
+import { offlineService } from '../services/offlineService';
+import { useConnection } from './useConnection';
 
-interface UseOfflineDataOptions<T> {
-  entityType: string;
-  endpoint: string;
-  idField?: string;
-  queryParams?: Record<string, string>;
-  initialData?: T[];
-  forceOnline?: boolean;
-}
-
-export function useOfflineData<T extends Record<string, any>>(
-  options: UseOfflineDataOptions<T>
-) {
-  const { 
-    entityType, 
-    endpoint, 
-    idField = 'id', 
-    queryParams = {},
-    initialData = [],
-    forceOnline = false 
-  } = options;
+/**
+ * オフラインデータ管理のためのカスタムフック
+ * オフラインモードの設定やデータの管理機能を提供します
+ */
+export const useOfflineData = () => {
+  // オフラインモードの有効/無効状態
+  const [isOfflineEnabled, setIsOfflineEnabled] = useState<boolean>(false);
   
-  const { isOffline } = useOffline();
-  const [data, setData] = useState<T[]>(initialData);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [isFromCache, setIsFromCache] = useState(false);
+  // ストレージ制限（MB単位）
+  const [storageLimitMB, setStorageLimitMB] = useState<number>(100);
+  
+  // 同期間隔（分単位）
+  const [syncInterval, setSyncInterval] = useState<number>(15);
+  
+  // 現在のストレージ使用量（MB単位）
+  const [storageUsage, setStorageUsage] = useState<number>(0);
+  
+  // 保留中のアクション数
+  const [pendingActions, setPendingActions] = useState<number>(0);
+  
+  // 最終同期日時
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  
+  // 同期中かどうかのフラグ
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  
+  // 接続状態
+  const { isOnline } = useConnection();
 
-  // Load data considering offline status
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  // 初期化時に設定を読み込む
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const settings = await offlineService.getSettings();
+        setIsOfflineEnabled(settings.enabled);
+        setStorageLimitMB(settings.storageLimitMB);
+        setSyncInterval(settings.syncIntervalMinutes);
+        
+        // ストレージ使用量を取得
+        const usage = await offlineService.getStorageUsage();
+        setStorageUsage(usage);
+        
+        // 保留中のアクション数を取得
+        const pending = await offlineService.getPendingActionsCount();
+        setPendingActions(pending);
+        
+        // 最終同期時間を取得
+        const lastSync = await offlineService.getLastSyncTime();
+        setLastSyncTime(lastSync);
+      } catch (error) {
+        console.error('オフライン設定の読み込み中にエラーが発生しました', error);
+      }
+    };
     
-    try {
-      // Try to fetch from API if online or if forced
-      if (!isOffline || forceOnline) {
-        try {
-          const response = await apiClient.get(endpoint, { params: queryParams });
-          const fetchedData = response.data;
-          
-          setData(fetchedData);
-          setIsFromCache(false);
-          setLastUpdated(new Date());
-          
-          // Cache the fetched data for offline use
-          await offlineService.cacheData(entityType, fetchedData);
-          return;
-        } catch (err) {
-          // If forced online but failed, don't fall back to cache
-          if (forceOnline) {
-            throw err;
-          }
-          // Otherwise continue to try loading from cache
-        }
-      }
-      
-      // If offline or API request failed, try to load from cache
-      const cachedData = await offlineService.getCachedData(entityType);
-      if (cachedData && cachedData.data) {
-        setData(cachedData.data as T[]);
-        setIsFromCache(true);
-        setLastUpdated(new Date(cachedData.timestamp));
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setLoading(false);
-    }
-  }, [isOffline, entityType, endpoint, queryParams, forceOnline]);
+    loadSettings();
+  }, []);
 
-  // Create, update, delete operations with offline support
-  const createItem = useCallback(async (item: Omit<T, typeof idField>) => {
+  // オフラインモードの有効/無効を切り替え
+  const setOfflineEnabled = useCallback(async (enabled: boolean) => {
     try {
-      if (!isOffline) {
-        // Online: Send directly to API
-        const response = await apiClient.post(endpoint, item);
-        const newItem = response.data;
-        
-        setData(prev => [...prev, newItem]);
-        return newItem;
-      } else {
-        // Offline: Register as pending action
-        const tempId = `temp_${Date.now()}`;
-        const tempItem = { ...item, [idField]: tempId } as T;
-        
-        // Register the pending action
-        await offlineService.registerPendingAction(
-          entityType,
-          tempId,
-          'create',
-          item
-        );
-        
-        // Update the local state
-        setData(prev => [...prev, tempItem]);
-        return tempItem;
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-      throw err;
+      await offlineService.setEnabled(enabled);
+      setIsOfflineEnabled(enabled);
+    } catch (error) {
+      console.error('オフラインモードの設定中にエラーが発生しました', error);
+      throw error;
     }
-  }, [isOffline, entityType, endpoint, idField]);
+  }, []);
 
-  const updateItem = useCallback(async (id: string, updates: Partial<T>) => {
+  // ストレージ制限を設定
+  const handleSetStorageLimitMB = useCallback(async (limitMB: number) => {
     try {
-      // Find the item in the current data
-      const currentItem = data.find(item => item[idField] === id);
-      if (!currentItem) {
-        throw new Error(`Item with id ${id} not found`);
-      }
-      
-      const updatedItem = { ...currentItem, ...updates };
-      
-      if (!isOffline) {
-        // Online: Send directly to API
-        const response = await apiClient.put(`${endpoint}/${id}`, updates);
-        const serverUpdatedItem = response.data;
-        
-        setData(prev => prev.map(item => 
-          item[idField] === id ? serverUpdatedItem : item
-        ));
-        return serverUpdatedItem;
-      } else {
-        // Offline: Register as pending action
-        await offlineService.registerPendingAction(
-          entityType,
-          id,
-          'update',
-          updates
-        );
-        
-        // Update the local state
-        setData(prev => prev.map(item => 
-          item[idField] === id ? updatedItem : item
-        ));
-        return updatedItem;
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-      throw err;
+      await offlineService.setStorageLimit(limitMB);
+      setStorageLimitMB(limitMB);
+    } catch (error) {
+      console.error('ストレージ制限の設定中にエラーが発生しました', error);
+      throw error;
     }
-  }, [isOffline, data, entityType, endpoint, idField]);
+  }, []);
 
-  const deleteItem = useCallback(async (id: string) => {
+  // 同期間隔を設定
+  const handleSetSyncInterval = useCallback(async (intervalMinutes: number) => {
     try {
-      if (!isOffline) {
-        // Online: Send directly to API
-        await apiClient.delete(`${endpoint}/${id}`);
-      } else {
-        // Offline: Register as pending action
-        await offlineService.registerPendingAction(
-          entityType,
-          id,
-          'delete',
-          null
-        );
-      }
-      
-      // Update the local state
-      setData(prev => prev.filter(item => item[idField] !== id));
+      await offlineService.setSyncInterval(intervalMinutes);
+      setSyncInterval(intervalMinutes);
+    } catch (error) {
+      console.error('同期間隔の設定中にエラーが発生しました', error);
+      throw error;
+    }
+  }, []);
+
+  // すべてのオフラインデータを消去
+  const clearAllOfflineData = useCallback(async () => {
+    try {
+      await offlineService.clearAllData();
+      setStorageUsage(0);
+      setPendingActions(0);
       return true;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-      throw err;
+    } catch (error) {
+      console.error('オフラインデータの消去中にエラーが発生しました', error);
+      throw error;
     }
-  }, [isOffline, entityType, endpoint, idField]);
+  }, []);
 
-  // Refresh data
-  const refresh = useCallback(() => {
-    return loadData();
-  }, [loadData]);
-
-  // Load data on mount and when dependencies change
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  // Subscribe to offline status changes
-  useEffect(() => {
-    const unsubscribe = offlineService.subscribeToOfflineStatus((status) => {
-      // When coming back online, refresh data
-      if (!status) {
-        loadData();
-      }
-    });
+  // 手動同期を実行
+  const syncNow = useCallback(async () => {
+    if (!isOnline || isSyncing) return false;
     
-    return unsubscribe;
-  }, [loadData]);
+    try {
+      setIsSyncing(true);
+      const result = await offlineService.syncAll();
+      
+      // 同期後に状態を更新
+      const pending = await offlineService.getPendingActionsCount();
+      setPendingActions(pending);
+      
+      const lastSync = await offlineService.getLastSyncTime();
+      setLastSyncTime(lastSync);
+      
+      return result;
+    } catch (error) {
+      console.error('手動同期中にエラーが発生しました', error);
+      throw error;
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isOnline, isSyncing]);
+
+  // 定期的にストレージ使用量を更新
+  useEffect(() => {
+    const updateStorageUsage = async () => {
+      try {
+        const usage = await offlineService.getStorageUsage();
+        setStorageUsage(usage);
+      } catch (error) {
+        console.error('ストレージ使用量の取得中にエラーが発生しました', error);
+      }
+    };
+    
+    const interval = setInterval(updateStorageUsage, 60000); // 1分ごとに更新
+    return () => clearInterval(interval);
+  }, []);
+
+  // オンラインに戻ったときに自動同期
+  useEffect(() => {
+    if (isOnline && isOfflineEnabled && pendingActions > 0 && !isSyncing) {
+      syncNow().catch(console.error);
+    }
+  }, [isOnline, isOfflineEnabled, pendingActions, isSyncing, syncNow]);
 
   return {
-    data,
-    loading,
-    error,
-    isFromCache,
-    lastUpdated,
-    refresh,
-    createItem,
-    updateItem,
-    deleteItem
+    isOfflineEnabled,
+    setOfflineEnabled,
+    storageLimitMB,
+    setStorageLimitMB: handleSetStorageLimitMB,
+    syncInterval,
+    setSyncInterval: handleSetSyncInterval,
+    storageUsage,
+    pendingActions,
+    lastSyncTime,
+    isSyncing,
+    syncNow,
+    clearAllOfflineData
   };
-}
+};

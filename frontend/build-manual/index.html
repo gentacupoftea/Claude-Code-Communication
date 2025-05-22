@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#10B981" />
+  <meta name="description" content="Conea - MCP Platform" />
+  <title>Conea - MCP Platform</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f0fdf4;
+      color: #1f2937;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+      max-width: 90%;
+      width: 600px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .logo {
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+    }
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background-color: #10B981;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 24px;
+    }
+    .logo-text {
+      font-size: 28px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .status {
+      margin: 2rem 0;
+      padding: 1rem;
+      background-color: #f3f4f6;
+      border-radius: 4px;
+    }
+    .status-item {
+      display: flex;
+      align-items: center;
+      margin: 0.5rem 0;
+    }
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 0.75rem;
+    }
+    .connected {
+      background-color: #10B981;
+    }
+    .disconnected {
+      background-color: #EF4444;
+    }
+    .button {
+      background-color: #10B981;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin: 0.5rem;
+    }
+    .button:hover {
+      background-color: #059669;
+    }
+    .button-secondary {
+      background-color: #6B7280;
+    }
+    .button-secondary:hover {
+      background-color: #4B5563;
+    }
+    .version {
+      margin-top: 2rem;
+      color: #9CA3AF;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <div class="logo-icon">C</div>
+      <div class="logo-text">Conea</div>
+    </div>
+    <h1>ステージング環境</h1>
+    <p>Conea MCPプラットフォームのステージング環境へようこそ。</p>
+    
+    <div class="status">
+      <h3>接続状態</h3>
+      <div class="status-item">
+        <div class="status-indicator connected"></div>
+        <div>API: 接続済み</div>
+      </div>
+      <div class="status-item">
+        <div class="status-indicator connected"></div>
+        <div>WebSocket: 接続済み</div>
+      </div>
+      <div class="status-item">
+        <div class="status-indicator connected"></div>
+        <div>データベース: 接続済み</div>
+      </div>
+    </div>
+    
+    <div>
+      <button class="button">ダッシュボードへ</button>
+      <button class="button button-secondary">API確認</button>
+    </div>
+    
+    <div class="version">
+      バージョン: staging-20250522
+    </div>
+  </div>
+</body>
+</html>

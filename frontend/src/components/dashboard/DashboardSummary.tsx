@@ -5,8 +5,10 @@ import {
   ShoppingBag as ShoppingBagIcon,
   People as PeopleIcon,
   Refresh as RefreshIcon,
-  Warning as WarningIcon
+  Warning as WarningIcon,
+  ChatBubble as ChatBubbleIcon
 } from '@mui/icons-material';
+import ChatAssistant from '../chat/ChatAssistant';
 import { useTranslation } from 'react-i18next';
 import { useDashboardSummary } from '../../hooks/useDashboardSummary';
 import { DashboardRequestParams } from '../../api/dashboardService';
@@ -350,10 +352,18 @@ const DashboardSummary: React.FC = () => {
         </Grid>
         
         {/* 最近のアクティビティ */}
-        <Grid item xs={12}>
+        <Grid item xs={12} md={6}>
           <RecentActivity 
             activities={data?.recentActivity || []}
             loading={loading}
+          />
+        </Grid>
+        
+        {/* チャットアシスタント */}
+        <Grid item xs={12} md={6}>
+          <ChatAssistant 
+            title="MCPアシスタント"
+            initialMessage="こんにちは！MCPアシスタントです。ダッシュボードデータや操作方法についてご質問がありましたらお気軽にどうぞ。"
           />
         </Grid>
       </Grid>

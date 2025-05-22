@@ -628,7 +628,7 @@ export const ChannelSettingsForm: React.FC = () => {
                   <input
                     type="text"
                     id="channelType"
-                    value={channel?.type.charAt(0).toUpperCase() + channel?.type.slice(1)}
+                    value={channel?.type ? channel.type.charAt(0).toUpperCase() + channel.type.slice(1) : ''}
                     disabled
                     className="block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   />
