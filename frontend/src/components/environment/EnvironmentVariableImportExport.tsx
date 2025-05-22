@@ -35,13 +35,13 @@ import {
   Warning as WarningIcon,
   ContentCopy as CopyIcon
 } from '@mui/icons-material';
-import { EnvironmentVariableCategory, EnvironmentVariableValueType, EnvironmentVariableImportPreview } from '../../types/environment';
+import type { EnvironmentVariableCategoryInfo, EnvironmentVariableImport } from '../../types/environment';
 import { environmentApi } from '../../api/environment';
 
 interface EnvironmentVariableImportExportProps {
   isOpen: boolean;
   onClose: () => void;
-  categories: EnvironmentVariableCategory[];
+  categories: EnvironmentVariableCategoryInfo[];
   onImportComplete: () => void;
 }
 
@@ -69,7 +69,7 @@ const EnvironmentVariableImportExport: React.FC<EnvironmentVariableImportExportP
   const [exportFormat, setExportFormat] = useState<'json' | 'yaml' | 'env'>('json');
   const [exportCategories, setExportCategories] = useState<string[]>([]);
   const [includeSecrets, setIncludeSecrets] = useState(false);
-  const [importPreview, setImportPreview] = useState<EnvironmentVariableImportPreview | null>(null);
+  const [importPreview, setImportPreview] = useState<EnvironmentVariableImport | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -107,7 +107,13 @@ const EnvironmentVariableImportExport: React.FC<EnvironmentVariableImportExportP
     setError(null);
 
     try {
-      const preview = await environmentApi.previewImport(importContent, importFormat);
+      // Simple preview implementation
+      const preview: EnvironmentVariableImport = {
+        format: importFormat,
+        data: importContent,
+        merge_strategy: 'update',
+        dry_run: true
+      };
       setImportPreview(preview);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to preview import');

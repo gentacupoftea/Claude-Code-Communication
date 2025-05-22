@@ -33,7 +33,7 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 
-import { EnvironmentVariableHistory } from '../../types/environment';
+import type { EnvironmentVariableHistory } from '../../types/environment';
 import { environmentApi } from '../../api/environment';
 
 const StyledDialogTitle = styled(DialogTitle)(({ theme }) => ({

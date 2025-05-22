@@ -95,12 +95,27 @@ const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({ open, onClose }) =>
   const {
     logs,
     summary,
-    appInfo,
-    environment,
     performanceMetrics,
     clearLogs,
     refreshAllDiagnostics
   } = useDiagnostics();
+
+  // Mock app info since it's not provided by the hook
+  const appInfo = {
+    version: process.env.REACT_APP_VERSION || '1.0.0',
+    environment: process.env.NODE_ENV,
+    buildDate: process.env.REACT_APP_BUILD_DATE || new Date().toISOString(),
+    startTime: Date.now()
+  };
+
+  const environment = process.env;
+
+  // Calculate log counts
+  const logCounts = {
+    errorCount: logs.filter(log => log.level === 'error').length,
+    warnCount: logs.filter(log => log.level === 'warn').length,
+    infoCount: logs.filter(log => log.level === 'info').length
+  };
 
   const { 
     isOnline, 
@@ -149,7 +164,7 @@ const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({ open, onClose }) =>
       return (
         log.message.toLowerCase().includes(term) ||
         log.module.toLowerCase().includes(term) ||
-        (log.details && JSON.stringify(log.details).toLowerCase().includes(term))
+        (log.data && JSON.stringify(log.data).toLowerCase().includes(term))
       );
     });
 
@@ -471,9 +486,9 @@ const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({ open, onClose }) =>
                   <ListItem>
                     <ListItemText
                       primary="ログ件数"
-                      secondary={`${logs.length} 件（エラー: ${summary.errorCount || 0}、警告: ${
-                        summary.warnCount || 0
-                      }、情報: ${summary.infoCount || 0}）`}
+                      secondary={`${logs.length} 件（エラー: ${logCounts.errorCount}、警告: ${
+                        logCounts.warnCount
+                      }、情報: ${logCounts.infoCount}）`}
                     />
                   </ListItem>
                   <ListItem>
@@ -496,20 +511,20 @@ const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({ open, onClose }) =>
                 <List dense disablePadding>
                   <ListItem>
                     <ListItemText
-                      primary="メモリ使用量"
-                      secondary={performanceMetrics.memory ? `${Math.round(performanceMetrics.memory)} MB` : '不明'}
+                      primary="長時間タスク"
+                      secondary={performanceMetrics?.longTasks ? `${performanceMetrics.longTasks.length} 件` : '0 件'}
                     />
                   </ListItem>
                   <ListItem>
                     <ListItemText
-                      primary="平均レスポンス時間"
-                      secondary={performanceMetrics.avgResponseTime ? `${performanceMetrics.avgResponseTime} ms` : '不明'}
+                      primary="API呼び出し"
+                      secondary={performanceMetrics?.apiCalls ? `${Object.keys(performanceMetrics.apiCalls).length} エンドポイント` : '0 エンドポイント'}
                     />
                   </ListItem>
                   <ListItem>
                     <ListItemText
-                      primary="API呼び出し回数"
-                      secondary={performanceMetrics.apiCalls !== undefined ? `${performanceMetrics.apiCalls} 回` : '不明'}
+                      primary="コンポーネントレンダー"
+                      secondary={performanceMetrics?.componentRenders ? `${Object.keys(performanceMetrics.componentRenders).length} コンポーネント` : '0 コンポーネント'}
                     />
                   </ListItem>
                 </List>
@@ -681,7 +696,7 @@ const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({ open, onClose }) =>
                       <Typography variant="caption" color="text.secondary">キー一覧:</Typography>
                       <Paper variant="outlined" sx={{ p: 1, bgcolor: 'background.default', mt: 0.5 }}>
                         <Box component="pre" sx={{ m: 0, fontSize: '0.7rem', overflow: 'auto', maxHeight: '100px' }}>
-                          {environment.localStorageKeys.join('\n')}
+                          {Object.keys(localStorage).join('\n')}
                         </Box>
                       </Paper>
                     </Box>
@@ -700,27 +715,16 @@ const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({ open, onClose }) =>
                 "メモリ使用量",
                 <Box>
                   <Typography variant="body2" gutterBottom>
-                    現在の使用量: {performanceMetrics.memory ? `${Math.round(performanceMetrics.memory)} MB` : '不明'}
+                    ブラウザメモリ情報: {(performance as any).memory ? '利用可能' : '不明'}
                   </Typography>
                   
                   <Typography variant="body2" gutterBottom>
-                    ヒープ制限: {performanceMetrics.heapLimit ? `${Math.round(performanceMetrics.heapLimit)} MB` : '不明'}
+                    ページ実行時間: {performance.now ? `${Math.round(performance.now())} ms` : '不明'}
                   </Typography>
                   
-                  {performanceMetrics.memory && performanceMetrics.heapLimit && (
-                    <Box sx={{ mt: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography variant="caption" color="text.secondary">
-                          使用率: {Math.round((performanceMetrics.memory / performanceMetrics.heapLimit) * 100)}%
-                        </Typography>
-                      </Box>
-                      <LinearProgress
-                        variant="determinate"
-                        value={(performanceMetrics.memory / performanceMetrics.heapLimit) * 100}
-                        sx={{ height: 8, borderRadius: 1 }}
-                      />
-                    </Box>
-                  )}
+                  <Typography variant="body2">
+                    長時間タスク: {performanceMetrics?.longTasks ? `${performanceMetrics.longTasks.length} 件` : '0 件'}
+                  </Typography>
                 </Box>
               )}
               
@@ -728,19 +732,19 @@ const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({ open, onClose }) =>
                 "API パフォーマンス",
                 <Box>
                   <Typography variant="body2" gutterBottom>
-                    API呼び出し回数: {performanceMetrics.apiCalls !== undefined ? performanceMetrics.apiCalls : '不明'}
+                    API呼び出し: {performanceMetrics?.apiCalls ? `${Object.keys(performanceMetrics.apiCalls).length} エンドポイント` : '0 エンドポイント'}
                   </Typography>
                   
                   <Typography variant="body2" gutterBottom>
-                    平均レスポンス時間: {performanceMetrics.avgResponseTime ? `${performanceMetrics.avgResponseTime} ms` : '不明'}
+                    平均レスポンス時間: {summary.avgApiLatency ? `${summary.avgApiLatency} ms` : '不明'}
                   </Typography>
                   
                   <Typography variant="body2" gutterBottom>
-                    最大レスポンス時間: {performanceMetrics.maxResponseTime ? `${performanceMetrics.maxResponseTime} ms` : '不明'}
+                    失敗したリクエスト: {summary.failedRequests} 件
                   </Typography>
                   
                   <Typography variant="body2">
-                    API失敗回数: {performanceMetrics.apiErrors !== undefined ? performanceMetrics.apiErrors : '不明'}
+                    WebSocket再接続: {summary.wsReconnects} 回
                   </Typography>
                 </Box>
               )}
@@ -751,19 +755,19 @@ const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({ open, onClose }) =>
                 "レンダリングパフォーマンス",
                 <Box>
                   <Typography variant="body2" gutterBottom>
-                    ページ読み込み時間: {performanceMetrics.pageLoadTime ? `${performanceMetrics.pageLoadTime} ms` : '不明'}
+                    ページ読み込み: {performance.getEntriesByType ? `${performance.getEntriesByType('navigation').length} 件` : '不明'}
                   </Typography>
                   
                   <Typography variant="body2" gutterBottom>
-                    DOM インタラクティブ時間: {performanceMetrics.domInteractive ? `${performanceMetrics.domInteractive} ms` : '不明'}
+                    コンポーネントレンダー: {performanceMetrics?.componentRenders ? `${Object.keys(performanceMetrics.componentRenders).length} コンポーネント` : '0 コンポーネント'}
                   </Typography>
                   
                   <Typography variant="body2" gutterBottom>
-                    DOM コンテンツロード完了時間: {performanceMetrics.domContentLoaded ? `${performanceMetrics.domContentLoaded} ms` : '不明'}
+                    最終描画: {Date.now() ? new Date().toLocaleTimeString() : '不明'}
                   </Typography>
                   
                   <Typography variant="body2">
-                    ページ読み込み完了時間: {performanceMetrics.pageLoadComplete ? `${performanceMetrics.pageLoadComplete} ms` : '不明'}
+                    長時間タスク: {summary.longTasks} 件
                   </Typography>
                 </Box>
               )}
@@ -772,15 +776,15 @@ const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({ open, onClose }) =>
                 "リソース使用量",
                 <Box>
                   <Typography variant="body2" gutterBottom>
-                    ロードされたリソース: {performanceMetrics.resourceCount !== undefined ? performanceMetrics.resourceCount : '不明'} 個
+                    ページロード数: {performanceMetrics?.pageLoads ? `${Object.keys(performanceMetrics.pageLoads).length} ページ` : '0 ページ'}
                   </Typography>
                   
                   <Typography variant="body2" gutterBottom>
-                    合計リソースサイズ: {performanceMetrics.totalResourceSize ? `${Math.round(performanceMetrics.totalResourceSize / 1024)} KB` : '不明'}
+                    LocalStorageキー: {Object.keys(localStorage).length} 個
                   </Typography>
                   
                   <Typography variant="body2">
-                    キャッシュデータサイズ: {performanceMetrics.cacheSize ? `${Math.round(performanceMetrics.cacheSize / 1024)} KB` : '不明'}
+                    現在のメモリ使用量: {(performance as any).memory ? '取得可能' : '不明'}
                   </Typography>
                 </Box>
               )}

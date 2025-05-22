@@ -19,6 +19,7 @@ import {
 // Base API URL with environment-specific configuration
 const getApiUrl = (): string => {
   const env = process.env.NODE_ENV;
+  const customEnv = process.env.REACT_APP_ENV;
   const apiUrl = process.env.REACT_APP_API_URL;
   
   if (apiUrl) {
@@ -26,11 +27,13 @@ const getApiUrl = (): string => {
   }
   
   // Environment-specific defaults
+  if (customEnv === 'staging') {
+    return 'https://staging-api.conea.com';
+  }
+  
   switch (env) {
     case 'production':
       return 'https://api.conea.com';
-    case 'staging':
-      return 'https://staging-api.conea.com';
     case 'development':
     default:
       return 'http://localhost:8000';
