@@ -21,11 +21,12 @@ import ProtectedRoute from './components/Auth/ProtectedRoute';
 // Pages
 import LoginPage from './pages/Auth/LoginPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
-import APIKeyManager from './pages/APIKeys/APIKeyManager';
+import EditableAPIKeyManager from './pages/APIKeys/EditableAPIKeyManager';
 import MonitoringPage from './pages/Monitoring/MonitoringPage';
 import ProjectBoxes from './pages/Projects/ProjectBoxes';
 import BillingPage from './pages/Billing/BillingPage';
 import SettingsPage from './pages/Settings/SettingsPage';
+import SlackIntegration from './pages/SlackIntegration/SlackIntegration';
 
 // Theme configuration
 const theme = createTheme({
@@ -113,7 +114,10 @@ const App: React.FC = () => {
                   <Route path="agents" element={<DashboardPage />} />
                   
                   {/* API キー管理 */}
-                  <Route path="api-keys" element={<APIKeyManager />} />
+                  <Route path="api-keys" element={<EditableAPIKeyManager />} />
+                  
+                  {/* Slack統合 */}
+                  <Route path="slack" element={<SlackIntegration />} />
                   
                   {/* 監視・分析 */}
                   <Route path="monitoring" element={<MonitoringPage />} />

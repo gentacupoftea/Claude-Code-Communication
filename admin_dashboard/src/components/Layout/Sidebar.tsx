@@ -24,6 +24,7 @@ import {
   Receipt as BillingIcon,
   Settings as SettingsIcon,
   Psychology as AIIcon,
+  Chat as SlackIcon,
 } from '@mui/icons-material';
 
 // Hooks
@@ -64,6 +65,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
       path: '/api-keys',
       label: 'API キー管理',
       icon: <KeyIcon />,
+    },
+    {
+      path: '/slack',
+      label: 'Slack統合',
+      icon: <SlackIcon />,
+      badge: stats.slackConnected ? 'ON' : 'OFF',
+      color: stats.slackConnected ? 'primary' : 'warning',
     },
     {
       path: '/monitoring',
