@@ -100,7 +100,9 @@ class ShopifyAuth:
             self.fernet = Fernet(key)
             logger.warning("Generated encryption key. Store this securely: %s", key.decode())
         
-        # OAuth state storage (in production, use Redis or database)
+        # OAuth state storage 
+        # SECURITY WARNING: In production, use Redis or database for persistence
+        # Memory storage will lose state on app restart
         self._oauth_states: Dict[str, OAuthState] = {}
         
         logger.info("Initialized Shopify OAuth handler for app: %s", config.client_id)
