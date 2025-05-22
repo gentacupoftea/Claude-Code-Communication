@@ -71,3 +71,18 @@ mailgun>=1.0.0
 backoff>=2.2.1
 reportlab>=3.6.0
 openpyxl>=3.0.0
+
+# AI/LLM Libraries - Multi-LLM Autonomous System
+anthropic>=0.25.0
+openai>=1.12.0
+google-generativeai>=0.4.0
+
+# GitHub Integration
+PyGithub>=2.2.0
+
+# Enhanced Monitoring
+watchdog>=4.0.0
+
+# Autonomous System Dependencies (additional)
+# Note: Most dependencies already covered above
+# psutil already included in Performance section

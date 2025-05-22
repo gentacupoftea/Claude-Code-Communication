@@ -1,0 +1,11 @@
+# Configuration Manager Dependencies
+# Required packages for the ConfigManager functionality
+
+# Core dependencies
+PyYAML>=6.0.1                    # YAML configuration file support
+cryptography>=41.0.0             # Encryption for sensitive data
+
+# Optional dependencies for enhanced functionality
+python-dotenv>=1.0.0             # Environment variable management
+watchdog>=3.0.0                  # File system monitoring for hot reload
+jsonschema>=4.19.0               # Configuration validation
