@@ -14,6 +14,7 @@ from .auth.routes import router as auth_router
 from .auth.database import init_db
 from .environment.routes import router as environment_router
 from .environment.database import init_db as init_environment_db
+from .shopify.routes import router as shopify_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -54,6 +55,7 @@ setup_middleware(app)
 # Include routers
 app.include_router(auth_router)
 app.include_router(environment_router, prefix="/api/v1")
+app.include_router(shopify_router)
 
 # Health check endpoint
 @app.get("/health")
