@@ -460,8 +460,10 @@ class MockApiService extends ApiService {
   }
 }
 
-// 開発環境ではMockを使用、本番環境では実際のAPIを使用
+// 開発環境設定: REACT_APP_USE_REAL_API=true で実際のAPIを使用
+const useRealAPI = process.env.REACT_APP_USE_REAL_API === 'true';
 const isProduction = process.env.NODE_ENV === 'production';
-export const apiService = isProduction ? new ApiService() : new MockApiService();
+
+export const apiService = (useRealAPI || isProduction) ? new ApiService() : new MockApiService();
 
 export default apiService;

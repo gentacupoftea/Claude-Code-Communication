@@ -21,6 +21,7 @@ import ProtectedRoute from './components/Auth/ProtectedRoute';
 // Pages
 import LoginPage from './pages/Auth/LoginPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
+import AgentMonitoring from './pages/Agents/AgentMonitoring';
 import EditableAPIKeyManager from './pages/APIKeys/EditableAPIKeyManager';
 import MonitoringPage from './pages/Monitoring/MonitoringPage';
 import ProjectBoxes from './pages/Projects/ProjectBoxes';
@@ -111,7 +112,7 @@ const App: React.FC = () => {
                   <Route path="dashboard" element={<DashboardPage />} />
                   
                   {/* AI エージェント管理 */}
-                  <Route path="agents" element={<DashboardPage />} />
+                  <Route path="agents" element={<AgentMonitoring />} />
                   
                   {/* API キー管理 */}
                   <Route path="api-keys" element={<EditableAPIKeyManager />} />
