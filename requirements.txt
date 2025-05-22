@@ -1,88 +1,67 @@
-# Core dependencies
-fastapi==0.104.1
-uvicorn==0.24.0
-pydantic==2.4.2
+# Shopify MCP Server - Complete Requirements
+# Basic dependencies
+flask==3.0.0
+requests==2.31.0
 python-dotenv==1.0.0
+pydantic==2.8.2
 
-# Shopify integration
-shopifyapi==12.3.0
-requests>=2.31.0
+# Async and HTTP
+httpx==0.27.0
 aiohttp==3.9.0
+asyncio-throttle==1.0.2
 
-# Database
-sqlalchemy==2.0.23
-alembic==1.12.1
-psycopg2-binary==2.9.9
+# LLM Integrations
+anthropic==0.37.1
+openai==1.51.2
+google-generativeai==0.8.3
 
-# Redis
-redis==5.0.1
-aioredis==2.0.1
+# Configuration and Security
+cryptography==42.0.8
+pyyaml==6.0.1
+toml==0.10.2
+python-jose==3.3.0
 
-# Security and encryption
-cryptography==41.0.7
+# Monitoring and Logging
+psutil==5.9.8
+watchdog==4.0.0
+prometheus-client==0.20.0
 
-# Caching
-cachetools==5.3.2
+# Development and Testing
+pytest==8.3.3
+pytest-asyncio==0.24.0
+pytest-mock==3.14.0
+pytest-cov==5.0.0
+black==24.10.0
+flake8==7.1.1
+mypy==1.11.2
 
-# Analytics & ML
-pandas==2.1.3
-numpy==1.26.1
-scikit-learn==1.3.2
-statsmodels==0.14.0
-scipy==1.11.4
+# Data and Database
+pandas==2.2.2
+sqlalchemy==2.0.32
 
-# Task scheduling
-celery==5.3.4
-apscheduler==3.10.4
+# Git Integration
+GitPython==3.1.43
 
-# Monitoring & Logging
-prometheus-client==0.18.0
-structlog==23.2.0
+# Web and API
+fastapi==0.115.0
+uvicorn==0.31.0
+gunicorn==23.0.0
 
-# Testing
-pytest==7.4.3
-pytest-asyncio==0.21.1
-pytest-cov==4.1.0
-pytest-mock==3.12.0
+# Utilities
+click==8.1.7
+rich==13.8.1
+typer==0.12.5
+schedule==1.2.2
+
+# Scientific and ML (if needed)
+numpy==1.26.4
+scikit-learn==1.5.1
 
 # Development tools
-black==23.11.0
-flake8==6.1.0
-mypy==1.7.0
-isort==5.12.0
+pre-commit==3.8.0
+bandit==1.7.9
+safety==3.2.7
 
-# API documentation
-pydantic-settings==2.1.0
-
-# Security
-cryptography==41.0.7
-jwt==1.3.1
-
-# Performance
-psutil==5.9.6
-orjson==3.9.10
-
-# Optional integrations
-stripe==7.4.0
-sendgrid==6.11.0
-mailgun>=1.0.0
-
-# Additional dependencies for export functionality
-backoff>=2.2.1
-reportlab>=3.6.0
-openpyxl>=3.0.0
-
-# AI/LLM Libraries - Multi-LLM Autonomous System
-anthropic>=0.25.0
-openai>=1.12.0
-google-generativeai>=0.4.0
-
-# GitHub Integration
-PyGithub>=2.2.0
-
-# Enhanced Monitoring
-watchdog>=4.0.0
-
-# Autonomous System Dependencies (additional)
-# Note: Most dependencies already covered above
-# psutil already included in Performance section
+# Documentation
+sphinx==8.0.2
+sphinx-rtd-theme==2.0.0

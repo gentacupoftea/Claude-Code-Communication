@@ -31,31 +31,64 @@ __version__ = "1.0.0"
 __author__ = "Claude Code Team"
 __description__ = "Autonomous MultiLLM Agent System"
 
-# Core components
-from .orchestrator import (
-    AutonomousOrchestrator,
-    get_orchestrator,
-    AutonomousTask,
-    TaskStatus,
-    TaskPriority
-)
+# Import core components with optional dependency handling
+import warnings
 
-from .multi_llm_client import MultiLLMClient
+# Core components - always available
+try:
+    from .orchestrator import (
+        AutonomousOrchestrator,
+        get_orchestrator,
+        AutonomousTask,
+        TaskStatus,
+        TaskPriority
+    )
+    ORCHESTRATOR_AVAILABLE = True
+except ImportError as e:
+    warnings.warn(f"Orchestrator not available: {e}", UserWarning)
+    ORCHESTRATOR_AVAILABLE = False
 
-# Configuration
-from .config.config_manager import ConfigManager
+try:
+    from .multi_llm_client import MultiLLMClient
+    MULTI_LLM_AVAILABLE = True
+except ImportError as e:
+    warnings.warn(f"MultiLLM client not available: {e}", UserWarning)
+    MULTI_LLM_AVAILABLE = False
 
-# Monitoring
-from .monitoring.system_monitor import SystemMonitor
-from .monitoring.error_detector import ErrorDetector
+# Configuration - always try to load
+try:
+    from .config.config_manager import ConfigManager
+    CONFIG_AVAILABLE = True
+except ImportError as e:
+    warnings.warn(f"Configuration manager not available: {e}", UserWarning)
+    CONFIG_AVAILABLE = False
 
-# Agents
-from .agents.claude_agent import ClaudeAnalysisAgent
-from .agents.openai_agent import OpenAICodeAgent  
-from .agents.gemini_agent import GeminiInfraAgent
+# Monitoring - optional
+try:
+    from .monitoring.system_monitor import SystemMonitor
+    from .monitoring.error_detector import ErrorDetector
+    MONITORING_AVAILABLE = True
+except ImportError as e:
+    warnings.warn(f"Monitoring components not available: {e}", UserWarning)
+    MONITORING_AVAILABLE = False
 
-# Integrations
-from .integrations.github_integration import GitHubIntegration
+# Agents - optional
+try:
+    from .agents.claude_agent import ClaudeAnalysisAgent
+    from .agents.openai_agent import OpenAICodeAgent  
+    from .agents.gemini_agent import GeminiInfraAgent
+    AGENTS_AVAILABLE = True
+except ImportError as e:
+    warnings.warn(f"LLM agents not available: {e}", UserWarning)
+    AGENTS_AVAILABLE = False
+
+# Integrations - optional
+try:
+    from .integrations.github_integration import GitHubIntegration
+    GITHUB_AVAILABLE = True
+except ImportError as e:
+    warnings.warn(f"GitHub integration not available: {e}", UserWarning)
+    GITHUB_AVAILABLE = False
 
 # Main entry point
 from .main import AutonomousSystemMain
@@ -265,16 +298,50 @@ def production_mode():
     setup_package_logging("WARNING")
     logging.getLogger(__name__).info("🏭 Autonomous System: Production mode enabled")
 
-# Import validation
+# Import validation with graceful fallbacks
+import warnings
+
+_IMPORT_SUCCESS = True
+_IMPORT_WARNINGS = []
+
 try:
-    # Verify all components can be imported
-    from . import orchestrator, multi_llm_client, agents, monitoring, config, integrations
-    _IMPORT_SUCCESS = True
+    # Try to import core components
+    from . import orchestrator, multi_llm_client, config
+    logging.getLogger(__name__).info("✅ Core autonomous system components loaded successfully")
 except ImportError as e:
     _IMPORT_SUCCESS = False
-    logging.getLogger(__name__).error(f"❌ Failed to import autonomous system components: {e}")
+    _IMPORT_WARNINGS.append(f"Core components failed: {e}")
+    logging.getLogger(__name__).error(f"❌ Failed to import core autonomous system components: {e}")
 
+# Optional components with graceful degradation
+try:
+    from . import agents
+    logging.getLogger(__name__).info("✅ Agent components loaded successfully")
+except ImportError as e:
+    _IMPORT_WARNINGS.append(f"Agent components not available: {e}")
+    logging.getLogger(__name__).warning(f"⚠️ Agent components not available: {e}")
+
+try:
+    from . import monitoring
+    logging.getLogger(__name__).info("✅ Monitoring components loaded successfully")
+except ImportError as e:
+    _IMPORT_WARNINGS.append(f"Monitoring components not available: {e}")
+    logging.getLogger(__name__).warning(f"⚠️ Monitoring components not available: {e}")
+
+try:
+    from . import integrations
+    logging.getLogger(__name__).info("✅ Integration components loaded successfully")
+except ImportError as e:
+    _IMPORT_WARNINGS.append(f"Integration components not available: {e}")
+    logging.getLogger(__name__).warning(f"⚠️ Integration components not available: {e}")
+
+# Only fail if core components are missing
 if not _IMPORT_SUCCESS:
-    raise ImportError("Failed to initialize autonomous system package - check dependencies")
+    raise ImportError("Failed to initialize autonomous system package - core dependencies missing")
 
-logging.getLogger(__name__).info(f"✅ Autonomous System v{__version__} package loaded successfully")
+# Log warnings for missing optional components
+if _IMPORT_WARNINGS:
+    for warning in _IMPORT_WARNINGS:
+        warnings.warn(warning, UserWarning)
+
+logging.getLogger(__name__).info(f"✅ Autonomous System v{__version__} package loaded (with {len(_IMPORT_WARNINGS)} warnings)")

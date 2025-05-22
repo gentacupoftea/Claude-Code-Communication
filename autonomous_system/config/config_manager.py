@@ -10,7 +10,6 @@ This module provides comprehensive configuration management including:
 """
 
 import json
-import yaml
 import os
 import logging
 import threading
@@ -18,6 +17,14 @@ import hashlib
 import base64
 from typing import Dict, Any, Optional, List, Union
 from pathlib import Path
+
+# Optional imports with fallbacks
+try:
+    import yaml
+    YAML_AVAILABLE = True
+except ImportError:
+    YAML_AVAILABLE = False
+    yaml = None
 from datetime import datetime
 from cryptography.fernet import Fernet
 from dataclasses import dataclass, asdict
