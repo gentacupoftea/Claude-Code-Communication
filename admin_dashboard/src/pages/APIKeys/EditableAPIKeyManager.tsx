@@ -75,7 +75,7 @@ interface APIKeyFormData {
   provider: 'claude' | 'openai' | 'gemini';
   name: string;
   key: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'error';
 }
 
 const EditableAPIKeyManager: React.FC = () => {
@@ -144,14 +144,23 @@ const EditableAPIKeyManager: React.FC = () => {
   // API Key Operations
   const handleCreateKey = async () => {
     try {
-      const newKey = await apiService.createAPIKey(keyFormData);
-      setApiKeys(prev => [...prev, newKey]);
+      if (editingId) {
+        // Update existing key
+        const updatedKey = await apiService.updateAPIKey(editingId, keyFormData);
+        setApiKeys(prev => prev.map(key => key.id === editingId ? updatedKey : key));
+        showSnackbar('API Keyを更新しました', 'success');
+      } else {
+        // Create new key
+        const newKey = await apiService.createAPIKey(keyFormData);
+        setApiKeys(prev => [...prev, newKey]);
+        showSnackbar('API Keyを作成しました', 'success');
+      }
       setCreateDialogOpen(false);
+      setEditingId(null);
       resetKeyForm();
-      showSnackbar('API Keyを作成しました', 'success');
     } catch (error) {
-      console.error('Failed to create API key:', error);
-      showSnackbar('API Keyの作成に失敗しました', 'error');
+      console.error('Failed to save API key:', error);
+      showSnackbar(editingId ? 'API Keyの更新に失敗しました' : 'API Keyの作成に失敗しました', 'error');
     }
   };
 
@@ -254,6 +263,7 @@ const EditableAPIKeyManager: React.FC = () => {
       key: '',
       status: 'active',
     });
+    setEditingId(null);
   };
 
   const resetUserForm = () => {
@@ -355,30 +365,47 @@ const EditableAPIKeyManager: React.FC = () => {
 
         {/* API Keys Tab */}
         <TabPanel value={tabValue} index={0}>
-          <Grid container spacing={3}>
+          <Grid container spacing={2}>
             {apiKeys.map((apiKey) => (
               <Grid item xs={12} md={6} lg={4} key={apiKey.id}>
-                <Card>
-                  <CardContent>
+                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                  <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+                    {/* Header with Status */}
                     <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
                       <Box display="flex" alignItems="center">
                         {getProviderIcon(apiKey.provider)}
                         <Box ml={1}>
-                          <Typography variant="h6">{apiKey.name}</Typography>
+                          <Typography variant="h6" sx={{ fontSize: '1.1rem' }}>{apiKey.name}</Typography>
                           <Typography variant="caption" color="text.secondary">
                             {apiKey.provider.toUpperCase()}
                           </Typography>
                         </Box>
                       </Box>
-                      {getStatusIcon(apiKey.status)}
+                      <Box display="flex" alignItems="center" gap={1}>
+                        {getStatusIcon(apiKey.status)}
+                        <Chip
+                          label={apiKey.status}
+                          color={apiKey.status === 'active' ? 'success' : 'error'}
+                          size="small"
+                        />
+                      </Box>
                     </Box>
 
+                    {/* API Key Display */}
                     <Box mb={2}>
                       <Typography variant="body2" color="text.secondary" gutterBottom>
                         API Key
                       </Typography>
                       <Box display="flex" alignItems="center">
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace', flex: 1 }}>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            fontFamily: 'monospace', 
+                            flex: 1, 
+                            fontSize: '0.75rem',
+                            wordBreak: 'break-all'
+                          }}
+                        >
                           {showKey[apiKey.id] ? apiKey.key : maskKey(apiKey.key)}
                         </Typography>
                         <IconButton
@@ -390,52 +417,72 @@ const EditableAPIKeyManager: React.FC = () => {
                       </Box>
                     </Box>
 
-                    <Box mb={2}>
-                      <Typography variant="body2" color="text.secondary">
-                        Usage: {apiKey.usageCount} requests
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Cost: ${apiKey.monthlyCost.toFixed(2)} this month
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Last used: {apiKey.lastUsed ? formatDate(apiKey.lastUsed) : 'Never'}
-                      </Typography>
+                    {/* Usage Stats - Compact */}
+                    <Box mb={1}>
+                      <Grid container spacing={1}>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary">
+                            Requests: {apiKey.usageCount}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary">
+                            Cost: ${apiKey.monthlyCost.toFixed(2)}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Typography variant="caption" color="text.secondary">
+                            Last used: {apiKey.lastUsed ? formatDate(apiKey.lastUsed) : 'Never'}
+                          </Typography>
+                        </Grid>
+                      </Grid>
                     </Box>
-
-                    <Chip
-                      label={apiKey.status}
-                      color={apiKey.status === 'active' ? 'success' : 'error'}
-                      size="small"
-                    />
                   </CardContent>
                   
-                  <CardActions>
-                    <Button
-                      size="small"
-                      onClick={() => handleTestKey(apiKey.id)}
-                      disabled={testingKeys[apiKey.id]}
-                      startIcon={testingKeys[apiKey.id] ? <CircularProgress size={16} /> : <TestIcon />}
-                    >
-                      Test
-                    </Button>
-                    <Button
-                      size="small"
-                      startIcon={<EditIcon />}
-                      onClick={() => setEditingId(apiKey.id)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
+                  {/* Action Buttons - Fixed at bottom */}
+                  <CardActions sx={{ pt: 0, justifyContent: 'space-between' }}>
+                    <Box display="flex" gap={0.5}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => handleTestKey(apiKey.id)}
+                        disabled={testingKeys[apiKey.id]}
+                        startIcon={testingKeys[apiKey.id] ? <CircularProgress size={14} /> : <TestIcon />}
+                        sx={{ minWidth: 'auto', px: 1 }}
+                      >
+                        Test
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<EditIcon />}
+                        onClick={() => {
+                          // Edit functionality - open dialog with current data
+                          setKeyFormData({
+                            provider: apiKey.provider,
+                            name: apiKey.name,
+                            key: apiKey.key,
+                            status: apiKey.status,
+                          });
+                          setEditingId(apiKey.id);
+                          setCreateDialogOpen(true);
+                        }}
+                        sx={{ minWidth: 'auto', px: 1 }}
+                      >
+                        Edit
+                      </Button>
+                    </Box>
+                    <IconButton
                       size="small"
                       color="error"
-                      startIcon={<DeleteIcon />}
                       onClick={() => {
                         setSelectedKeyId(apiKey.id);
                         setDeleteDialogOpen(true);
                       }}
+                      sx={{ ml: 'auto' }}
                     >
-                      Delete
-                    </Button>
+                      <DeleteIcon />
+                    </IconButton>
                   </CardActions>
                 </Card>
               </Grid>
@@ -555,9 +602,18 @@ const EditableAPIKeyManager: React.FC = () => {
         </TabPanel>
       </Paper>
 
-      {/* Create API Key Dialog */}
-      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Create New API Key</DialogTitle>
+      {/* Create/Edit API Key Dialog */}
+      <Dialog 
+        open={createDialogOpen} 
+        onClose={() => {
+          setCreateDialogOpen(false);
+          setEditingId(null);
+          resetKeyForm();
+        }} 
+        maxWidth="sm" 
+        fullWidth
+      >
+        <DialogTitle>{editingId ? 'Edit API Key' : 'Create New API Key'}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
@@ -595,13 +651,21 @@ const EditableAPIKeyManager: React.FC = () => {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+          <Button 
+            onClick={() => {
+              setCreateDialogOpen(false);
+              setEditingId(null);
+              resetKeyForm();
+            }}
+          >
+            Cancel
+          </Button>
           <Button
             onClick={handleCreateKey}
             variant="contained"
             disabled={!keyFormData.name || !keyFormData.key}
           >
-            Create
+            {editingId ? 'Update' : 'Create'}
           </Button>
         </DialogActions>
       </Dialog>
