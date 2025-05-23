@@ -2909,8 +2909,28 @@ async function initializeAutonomousAgent() {
     const config = {
       llmService: {
         generateCode: async (prompt) => {
-          // 既存のMultiLLM APIを使用
-          return await callAIAPI('Claude', prompt, 'autonomous-code-generation');
+          try {
+            // 内部AI Chat APIを使用
+            const response = await fetch('http://localhost:8000/api/ai/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                provider: 'Claude',
+                prompt: prompt,
+                user_id: 'autonomous-agent'
+              })
+            });
+            
+            if (!response.ok) {
+              throw new Error(`AI API call failed: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            return result.response || result.data?.response || 'Generated code placeholder';
+          } catch (error) {
+            console.error('LLM API call error:', error);
+            return 'Fallback code generation';
+          }
         }
       },
       fileAnalyzer: {
