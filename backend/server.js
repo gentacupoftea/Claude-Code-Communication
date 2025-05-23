@@ -3285,4 +3285,67 @@ app.post('/api/bug-fixing/stop', async (req, res) => {
   }
 });
 
+// 設定保存・取得エンドポイント
+app.post('/api/settings', async (req, res) => {
+  try {
+    const settings = req.body;
+    
+    // 設定をファイルに保存（本番環境ではデータベースを使用）
+    const fs = require('fs').promises;
+    const path = require('path');
+    const settingsPath = path.join(__dirname, 'data', 'settings.json');
+    
+    // dataディレクトリが存在しない場合は作成
+    const dataDir = path.dirname(settingsPath);
+    try {
+      await fs.access(dataDir);
+    } catch {
+      await fs.mkdir(dataDir, { recursive: true });
+    }
+    
+    await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
+    
+    res.json({
+      success: true,
+      message: 'Settings saved successfully'
+    });
+    
+  } catch (error) {
+    console.error('Settings save error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+app.get('/api/settings', async (req, res) => {
+  try {
+    const fs = require('fs').promises;
+    const path = require('path');
+    const settingsPath = path.join(__dirname, 'data', 'settings.json');
+    
+    try {
+      const settingsData = await fs.readFile(settingsPath, 'utf8');
+      const settings = JSON.parse(settingsData);
+      res.json(settings);
+    } catch (error) {
+      // ファイルが存在しない場合はデフォルト設定を返す
+      res.json({
+        autoSave: true,
+        notifications: true,
+        theme: 'dark',
+        language: 'en'
+      });
+    }
+    
+  } catch (error) {
+    console.error('Settings load error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 startServer();
