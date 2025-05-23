@@ -7,6 +7,7 @@
 const express = require('express');
 const router = express.Router();
 const ShopifyClient = require('../services/shopifyClient');
+const { shopifyRateLimitMiddleware } = require('../middleware/rateLimiter');
 
 // 接続テストエンドポイント
 router.get('/test-connection', async (req, res) => {
@@ -53,6 +54,11 @@ router.get('/test-connection', async (req, res) => {
 
 // 環境変数確認エンドポイント（デバッグ用）
 router.get('/debug/config', async (req, res) => {
+  // 本番環境では無効化
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  
   const config = {
     storeDomain: process.env.SHOPIFY_STORE_DOMAIN || process.env.SHOPIFY_SHOP_NAME || 'Not set',
     accessToken: process.env.SHOPIFY_ACCESS_TOKEN ? 'Set (hidden)' : 'Not set',
@@ -76,8 +82,8 @@ router.get('/debug/config', async (req, res) => {
   });
 });
 
-// 商品一覧取得
-router.get('/products', async (req, res) => {
+// 商品一覧取得（レート制限付き）
+router.get('/products', shopifyRateLimitMiddleware, async (req, res) => {
   try {
     const client = new ShopifyClient();
     const products = await client.getProducts(req.query);
@@ -95,8 +101,8 @@ router.get('/products', async (req, res) => {
   }
 });
 
-// 注文一覧取得
-router.get('/orders', async (req, res) => {
+// 注文一覧取得（レート制限付き）
+router.get('/orders', shopifyRateLimitMiddleware, async (req, res) => {
   try {
     const client = new ShopifyClient();
     const orders = await client.getOrders(req.query);
@@ -114,8 +120,8 @@ router.get('/orders', async (req, res) => {
   }
 });
 
-// 顧客一覧取得
-router.get('/customers', async (req, res) => {
+// 顧客一覧取得（レート制限付き）
+router.get('/customers', shopifyRateLimitMiddleware, async (req, res) => {
   try {
     const client = new ShopifyClient();
     const customers = await client.getCustomers(req.query);
