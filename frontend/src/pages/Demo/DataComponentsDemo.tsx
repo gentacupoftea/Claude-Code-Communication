@@ -8,7 +8,8 @@ import {
   Tab,
   Button,
   Snackbar,
-  Alert
+  Alert,
+  Chip
 } from '@mui/material';
 import { 
   DataTable, 
@@ -16,10 +17,10 @@ import {
   FilterBar, 
   DataForm,
   type Column,
-  type DetailViewSection,
+  type DetailSection,
   type FormField,
   type FormSection,
-  type FilterOption
+  type FilterField
 } from '../../components/data';
 import { useFetchData, useModifyData, usePaginatedData } from '../../hooks/data';
 
@@ -69,45 +70,37 @@ const DataComponentsDemo: React.FC = () => {
   // Mock data fetch hook
   const { 
     data: products, 
-    isLoading: isLoadingProducts, 
+    loading: isLoadingProducts, 
     error: productsError, 
     refetch: refetchProducts 
-  } = useFetchData<Product[]>('/api/products', {
+  } = useFetchData<Product[]>({
+    url: '/api/products',
     // In a real application, this would make an actual API call
-    mockData: [
+    initialData: [
       { id: '1', name: 'Laptop', category: 'Electronics', price: 1299, stock: 45, status: 'active', createdAt: '2025-01-15T08:30:00Z' },
       { id: '2', name: 'Smartphone', category: 'Electronics', price: 899, stock: 78, status: 'active', createdAt: '2025-01-20T10:15:00Z' },
       { id: '3', name: 'Headphones', category: 'Accessories', price: 199, stock: 120, status: 'active', createdAt: '2025-01-25T14:00:00Z' },
       { id: '4', name: 'Coffee Maker', category: 'Home', price: 89, stock: 34, status: 'inactive', createdAt: '2025-02-01T09:45:00Z' },
       { id: '5', name: 'Desk Chair', category: 'Furniture', price: 249, stock: 12, status: 'active', createdAt: '2025-02-10T11:30:00Z' },
     ],
-    fetchOnMount: true,
     cacheKey: 'products',
   });
 
   // Mock paginated data hook (for table with pagination)
   const {
     data: paginatedProducts,
-    isLoading: isLoadingPaginated,
+    loading: isLoadingPaginated,
     error: paginatedError,
     pagination,
     sort,
     filters,
-    setFilters
-  } = usePaginatedData<Product>('/api/products', {
-    // In a real application, this would make an actual API call
-    mockData: {
-      data: [
-        { id: '1', name: 'Laptop', category: 'Electronics', price: 1299, stock: 45, status: 'active', createdAt: '2025-01-15T08:30:00Z' },
-        { id: '2', name: 'Smartphone', category: 'Electronics', price: 899, stock: 78, status: 'active', createdAt: '2025-01-20T10:15:00Z' },
-        { id: '3', name: 'Headphones', category: 'Accessories', price: 199, stock: 120, status: 'active', createdAt: '2025-01-25T14:00:00Z' },
-        { id: '4', name: 'Coffee Maker', category: 'Home', price: 89, stock: 34, status: 'inactive', createdAt: '2025-02-01T09:45:00Z' },
-        { id: '5', name: 'Desk Chair', category: 'Furniture', price: 249, stock: 12, status: 'active', createdAt: '2025-02-10T11:30:00Z' },
-      ],
-      total: 5,
-      page: 0,
-      pageSize: 10
-    },
+    setFilters,
+    setPage,
+    setPerPage,
+    setSort
+  } = usePaginatedData<Product>({
+    url: '/api/products',
+    initialPagination: { page: 0, perPage: 10 },
     initialSort: { field: 'createdAt', direction: 'desc' },
     cacheKey: 'paginated-products',
   });
@@ -115,10 +108,11 @@ const DataComponentsDemo: React.FC = () => {
   // Mock modify data hook (for form submission)
   const {
     modify: modifyProduct,
-    isLoading: isModifying,
-    error: modifyError,
-    success
-  } = useModifyData('/api/products');
+    loading: isModifying,
+    error: modifyError
+  } = useModifyData({
+    url: '/api/products'
+  });
 
   // Table columns
   const columns: Column<Product>[] = [
@@ -149,33 +143,27 @@ const DataComponentsDemo: React.FC = () => {
   ];
 
   // Detail view sections
-  const detailSections: DetailViewSection<Product>[] = [
+  const detailSections: DetailSection<Product>[] = [
     {
       title: 'Product Information',
       fields: [
-        { label: 'Product ID', key: 'id' },
-        { label: 'Name', key: 'name' },
-        { label: 'Category', key: 'category' },
+        { label: 'Product ID', value: 'id' },
+        { label: 'Name', value: 'name' },
+        { label: 'Category', value: 'category' },
         { 
           label: 'Price', 
-          key: 'price', 
+          value: 'price', 
           format: (value) => `$${value.toFixed(2)}` 
         },
-        { label: 'Stock', key: 'stock' },
+        { label: 'Stock', value: 'stock' },
         { 
           label: 'Status', 
-          key: 'status',
-          format: (value) => (
-            <Chip 
-              label={value} 
-              color={value === 'active' ? 'success' : 'default'} 
-              size="small" 
-            />
-          )
+          value: 'status',
+          variant: 'chip'
         },
         { 
           label: 'Created At', 
-          key: 'createdAt',
+          value: 'createdAt',
           format: (value) => new Date(value).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
@@ -223,7 +211,7 @@ const DataComponentsDemo: React.FC = () => {
   ];
 
   // Filter options
-  const filterOptions: FilterOption[] = [
+  const filterOptions: FilterField[] = [
     { 
       id: 'category', 
       label: 'Category', 
@@ -246,7 +234,7 @@ const DataComponentsDemo: React.FC = () => {
         { label: 'Inactive', value: 'inactive' },
       ] 
     },
-    { id: 'price', label: 'Price Range', type: 'range' },
+    { id: 'price', label: 'Price Range', type: 'number' },
   ];
 
   // Handle row click
@@ -264,11 +252,7 @@ const DataComponentsDemo: React.FC = () => {
   // Handle form submission
   const handleSubmit = async (values: any) => {
     try {
-      await modifyProduct(
-        selectedProduct?.id ? 'PUT' : 'POST', 
-        selectedProduct?.id ? `/api/products/${selectedProduct.id}` : '/api/products',
-        values
-      );
+      await modifyProduct(values);
       
       setSnackbar({
         open: true,
@@ -303,11 +287,6 @@ const DataComponentsDemo: React.FC = () => {
     });
   };
 
-  useEffect(() => {
-    if (success) {
-      refetchProducts();
-    }
-  }, [success, refetchProducts]);
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -330,32 +309,32 @@ const DataComponentsDemo: React.FC = () => {
         {/* Data Table Tab */}
         <TabPanel value={activeTab} index={0}>
           <FilterBar 
-            filters={filterOptions} 
-            values={filters} 
-            onChange={handleFilterChange} 
+            fields={filterOptions} 
+            onFilterChange={(newFilters) => setFilters(newFilters)} 
+            initialFilters={filters}
           />
           
           <Box mt={2}>
             <DataTable<Product>
               columns={columns}
-              data={paginatedProducts?.data || []}
+              data={paginatedProducts || []}
               keyField="id"
               isLoading={isLoadingPaginated}
               error={paginatedError}
               pagination={{
-                count: paginatedProducts?.total || 0,
+                count: pagination.totalItems || 0,
                 page: pagination.page,
-                rowsPerPage: pagination.pageSize,
-                onPageChange: (_, newPage) => pagination.setPage(newPage),
-                onRowsPerPageChange: (e) => pagination.setPageSize(Number(e.target.value))
+                rowsPerPage: pagination.perPage,
+                onPageChange: (_, newPage) => setPage(newPage),
+                onRowsPerPageChange: (e) => setPerPage(Number(e.target.value))
               }}
               sorting={{
                 sortParams: sort,
-                onSortChange: (field, direction) => sort.setSort({ field, direction })
+                onSortChange: (field, direction) => setSort(field, direction)
               }}
               actions={{
                 onEdit: (id) => {
-                  const product = paginatedProducts?.data.find(p => p.id === id);
+                  const product = paginatedProducts?.find(p => p.id === id);
                   if (product) {
                     setSelectedProduct(product);
                     handleEdit();
@@ -383,8 +362,8 @@ const DataComponentsDemo: React.FC = () => {
                 </Button>
               </Box>
               
-              <DetailView
-                data={selectedProduct}
+              <DetailView<Product>
+                item={selectedProduct}
                 sections={detailSections}
               />
             </>
@@ -399,7 +378,7 @@ const DataComponentsDemo: React.FC = () => {
           
           <DataForm
             sections={formSections}
-            initialValues={isEditMode ? selectedProduct : {}}
+            initialValues={isEditMode && selectedProduct ? selectedProduct : {}}
             onSubmit={handleSubmit}
             onCancel={() => {
               setIsEditMode(false);
@@ -407,7 +386,7 @@ const DataComponentsDemo: React.FC = () => {
               setActiveTab(0);
             }}
             isLoading={isModifying}
-            error={modifyError}
+            error={modifyError?.message}
           />
         </TabPanel>
       </Paper>

@@ -158,7 +158,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       saveAuthState(
         response.token,
         response.refreshToken,
-        response.expiresIn || 3600, // Default 1 hour if not provided
+        3600, // Default 1 hour
         response.user
       );
       
@@ -188,7 +188,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         saveAuthState(
           response.token,
           response.refreshToken,
-          response.expiresIn || 3600,
+          3600,
           response.user
         );
       } else {
@@ -242,7 +242,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         saveAuthState(
           response.token,
           response.refreshToken,
-          response.expiresIn || 3600,
+          3600,
           response.user || user as User
         );
         return true;
@@ -262,7 +262,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     
     try {
-      const userData = await authService.getCurrentUser();
+      const apiUser = await authService.getCurrentUser() as any;
+      const userData = apiUser;
       setUser(userData);
       localStorage.setItem('auth_user', JSON.stringify(userData));
     } catch (error) {

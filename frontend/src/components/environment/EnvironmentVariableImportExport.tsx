@@ -69,7 +69,11 @@ const EnvironmentVariableImportExport: React.FC<EnvironmentVariableImportExportP
   const [exportFormat, setExportFormat] = useState<'json' | 'yaml' | 'env'>('json');
   const [exportCategories, setExportCategories] = useState<string[]>([]);
   const [includeSecrets, setIncludeSecrets] = useState(false);
-  const [importPreview, setImportPreview] = useState<EnvironmentVariableImport | null>(null);
+  const [importPreview, setImportPreview] = useState<{
+    variables: Array<{ key: string; value: any; category: string; selected: boolean }>;
+    conflicts: string[];
+    warnings: string[];
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -107,13 +111,41 @@ const EnvironmentVariableImportExport: React.FC<EnvironmentVariableImportExportP
     setError(null);
 
     try {
-      // Simple preview implementation
-      const preview: EnvironmentVariableImport = {
-        format: importFormat,
-        data: importContent,
-        merge_strategy: 'update',
-        dry_run: true
+      // Simple preview generation - just parse the content
+      let parsedData: any;
+      
+      if (importFormat === 'json') {
+        parsedData = JSON.parse(importContent);
+      } else if (importFormat === 'yaml') {
+        // For now, show raw content as YAML parsing would need additional library
+        setError('YAML preview not implemented yet');
+        return;
+      } else if (importFormat === 'env') {
+        // Parse .env format
+        const variables: any = {};
+        importContent.split('\n').forEach(line => {
+          const [key, ...valueParts] = line.split('=');
+          if (key && valueParts.length > 0) {
+            variables[key.trim()] = valueParts.join('=').trim();
+          }
+        });
+        parsedData = variables;
+      }
+      
+      // Create preview object
+      const preview = {
+        variables: Array.isArray(parsedData) ? 
+          parsedData.map(item => ({ ...item, selected: true })) : 
+          Object.entries(parsedData || {}).map(([key, value]) => ({
+            key,
+            value,
+            category: 'general',
+            selected: true
+          })),
+        conflicts: [],
+        warnings: []
       };
+      
       setImportPreview(preview);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to preview import');
@@ -129,8 +161,13 @@ const EnvironmentVariableImportExport: React.FC<EnvironmentVariableImportExportP
     setError(null);
 
     try {
-      const selectedItems = importPreview.items.filter(item => item.selected);
-      await environmentApi.importVariables(selectedItems);
+      const importConfig: EnvironmentVariableImport = {
+        data: importPreview.variables,
+        format: importFormat,
+        merge_strategy: 'update',
+        dry_run: false
+      };
+      await environmentApi.importVariables(importConfig);
       onImportComplete();
       onClose();
     } catch (err) {
@@ -178,16 +215,16 @@ const EnvironmentVariableImportExport: React.FC<EnvironmentVariableImportExportP
   const toggleImportItemSelection = (index: number) => {
     if (!importPreview) return;
     
-    const updatedItems = [...importPreview.items];
-    updatedItems[index].selected = !updatedItems[index].selected;
-    setImportPreview({ ...importPreview, items: updatedItems });
+    const updatedVariables = [...importPreview.variables];
+    updatedVariables[index].selected = !updatedVariables[index].selected;
+    setImportPreview({ ...importPreview, variables: updatedVariables });
   };
 
   const toggleAllImportItems = (selected: boolean) => {
     if (!importPreview) return;
     
-    const updatedItems = importPreview.items.map(item => ({ ...item, selected }));
-    setImportPreview({ ...importPreview, items: updatedItems });
+    const updatedVariables = importPreview.variables.map(item => ({ ...item, selected }));
+    setImportPreview({ ...importPreview, variables: updatedVariables });
   };
 
   const getStatusIcon = (status: string) => {
@@ -299,13 +336,13 @@ const EnvironmentVariableImportExport: React.FC<EnvironmentVariableImportExportP
 
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="body2" color="text.secondary">
-                      Found {importPreview.items.length} variables. 
-                      {importPreview.items.filter(item => item.selected).length} selected for import.
+                      Found {importPreview.variables.length} variables. 
+                      {importPreview.variables.filter(item => item.selected).length} selected for import.
                     </Typography>
                   </Box>
 
                   <List dense>
-                    {importPreview.items.map((item, index) => (
+                    {importPreview.variables.map((item, index) => (
                       <ListItem key={index} divider>
                         <ListItemIcon>
                           <Checkbox
@@ -325,28 +362,20 @@ const EnvironmentVariableImportExport: React.FC<EnvironmentVariableImportExportP
                                 variant="outlined" 
                               />
                               <Chip 
-                                label={item.value_type} 
+                                label={typeof item.value} 
                                 size="small" 
-                                color={getStatusColor(item.status)}
+                                color="default"
                               />
-                              {getStatusIcon(item.status)}
+                              {/* Status icon not available for preview */}
                             </Box>
                           }
                           secondary={
                             <Box>
                               <Typography variant="caption" color="text.secondary">
-                                Value: {item.value_type === 'secret' ? '***' : String(item.value).substring(0, 50)}
+                                Value: {String(item.value).substring(0, 50)}
                                 {String(item.value).length > 50 ? '...' : ''}
                               </Typography>
-                              {item.validation_errors && item.validation_errors.length > 0 && (
-                                <Box sx={{ mt: 0.5 }}>
-                                  {item.validation_errors.map((error, errorIndex) => (
-                                    <Typography key={errorIndex} variant="caption" color="error">
-                                      • {error}
-                                    </Typography>
-                                  ))}
-                                </Box>
-                              )}
+                              {/* Validation errors not available in preview */}
                             </Box>
                           }
                         />
@@ -388,15 +417,15 @@ const EnvironmentVariableImportExport: React.FC<EnvironmentVariableImportExportP
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 {categories.map((category) => (
                   <Chip
-                    key={category.id}
-                    label={`${category.name} (${category.description})`}
+                    key={category.category}
+                    label={`${category.category} (${category.description || 'No description'})`}
                     clickable
-                    color={exportCategories.includes(category.id) ? 'primary' : 'default'}
+                    color={exportCategories.includes(category.category) ? 'primary' : 'default'}
                     onClick={() => {
                       setExportCategories(prev =>
-                        prev.includes(category.id)
-                          ? prev.filter(id => id !== category.id)
-                          : [...prev, category.id]
+                        prev.includes(category.category)
+                          ? prev.filter(id => id !== category.category)
+                          : [...prev, category.category]
                       );
                     }}
                   />
@@ -437,7 +466,7 @@ const EnvironmentVariableImportExport: React.FC<EnvironmentVariableImportExportP
           <Button
             variant="contained"
             onClick={handleConfirmImport}
-            disabled={isLoading || !importPreview.items.some(item => item.selected)}
+            disabled={isLoading || !importPreview.variables.some(item => item.selected)}
             startIcon={isLoading ? <CircularProgress size={16} /> : <UploadIcon />}
           >
             Import Selected

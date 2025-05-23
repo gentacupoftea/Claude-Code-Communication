@@ -174,7 +174,7 @@ const AppearanceSettings: React.FC = () => {
               <Card sx={{ mb: 3 }}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Brightness4 />
+                    <DarkIcon />
                     カラーモード
                   </Typography>
                   
