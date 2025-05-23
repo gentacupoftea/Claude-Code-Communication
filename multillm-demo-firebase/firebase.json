@@ -1,0 +1,10 @@
+{
+  "hosting": {
+    "public": "MultiLLM Demo 2025",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}

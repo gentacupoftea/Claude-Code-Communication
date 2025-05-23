@@ -23,6 +23,7 @@ from slack_sdk.errors import SlackApiError
 import sys
 sys.path.append('../')
 from autonomous_system import AutonomousOrchestrator, ConfigManager, MultiLLMClient
+from autonomous_debug import AutonomousDebugger, ErrorContext, ErrorType
 
 logger = logging.getLogger(__name__)
 
@@ -65,37 +66,46 @@ class ConeaSlackBot:
         self.orchestrator = None
         self.config_manager = ConfigManager()
         
-        # コマンド定義
-        self.commands = {
-            'conea-dev': {
-                'agent': 'openai',
-                'fallback': 'claude',
-                'capabilities': ['コード生成', 'バグ修正', 'リファクタリング', 'テスト作成'],
-                'examples': [
-                    'バグ修正: ログイン処理のエラーハンドリング強化',
-                    '新機能実装: ユーザー登録フロー最適化',
-                    'コードレビュー: PR #123の品質チェック'
-                ]
+        # タスクカテゴリとキーワード定義
+        self.task_categories = {
+            'development': {
+                'keywords': ['バグ', 'bug', 'エラー', 'error', 'コード', 'code', '実装', 'implement', 
+                           'リファクタ', 'refactor', 'テスト', 'test', 'デバッグ', 'debug', 
+                           'API', 'データベース', 'DB', '関数', 'function', 'クラス', 'class'],
+                'preferred_agent': 'openai',
+                'fallback_agent': 'claude'
             },
-            'conea-design': {
-                'agent': 'claude',
-                'fallback': 'gemini',
-                'capabilities': ['UI設計', 'プロトタイプ', 'アクセシビリティ'],
-                'examples': [
-                    'ダッシュボードのUIプロトタイプ作成',
-                    'モバイル対応のレスポンシブ改善'
-                ]
+            'design': {
+                'keywords': ['UI', 'UX', 'デザイン', 'design', 'レイアウト', 'layout', 'スタイル', 'style',
+                           'プロトタイプ', 'prototype', 'モックアップ', 'mockup', 'ワイヤーフレーム',
+                           'カラー', 'color', 'フォント', 'font', 'アイコン', 'icon', 'レスポンシブ'],
+                'preferred_agent': 'claude',
+                'fallback_agent': 'gemini'
             },
-            'conea-pm': {
-                'agent': 'claude',
-                'fallback': 'openai',
-                'capabilities': ['進捗管理', 'リスク分析', 'レポート生成'],
-                'examples': [
-                    'Phase 3の進捗状況レポート作成',
-                    'リスク分析: 納期遅延要因の特定'
-                ]
+            'management': {
+                'keywords': ['進捗', 'progress', 'スケジュール', 'schedule', 'タスク', 'task',
+                           'プロジェクト', 'project', 'レポート', 'report', 'リスク', 'risk',
+                           '計画', 'plan', '管理', 'manage', 'チーム', 'team', '会議', 'meeting'],
+                'preferred_agent': 'claude',
+                'fallback_agent': 'openai'
+            },
+            'analysis': {
+                'keywords': ['分析', 'analyze', 'analysis', '調査', 'research', '検討', 'consider',
+                           '評価', 'evaluate', '比較', 'compare', 'データ', 'data', '統計', 'statistics'],
+                'preferred_agent': 'claude',
+                'fallback_agent': 'openai'
+            },
+            'documentation': {
+                'keywords': ['ドキュメント', 'document', '説明', 'explain', 'README', 'マニュアル', 'manual',
+                           'ガイド', 'guide', 'チュートリアル', 'tutorial', 'API仕様', 'specification'],
+                'preferred_agent': 'openai',
+                'fallback_agent': 'claude'
             }
         }
+        
+        # 自律デバッグシステム統合
+        self.debug_system = None
+        self._init_debug_system()
         
         # イベントハンドラー登録
         self.setup_event_handlers()
@@ -109,12 +119,36 @@ class ConeaSlackBot:
             'total_tokens': 0
         }
     
+    def _init_debug_system(self):
+        """自律デバッグシステムの初期化"""
+        try:
+            if hasattr(self, 'orchestrator') and self.orchestrator:
+                llm_client = self.orchestrator.llm_client
+            else:
+                llm_client = MultiLLMClient()
+            
+            self.debug_system = AutonomousDebugger(
+                llm_client=llm_client,
+                config={
+                    "auto_fix_enabled": True,
+                    "approval_required_for_risk_level": 3,
+                    "pattern_learning_enabled": True
+                }
+            )
+            logger.info("🔧 自律デバッグシステムを初期化しました")
+        except Exception as e:
+            logger.warning(f"自律デバッグシステムの初期化に失敗: {e}")
+            self.debug_system = None
+    
     async def initialize(self):
         """ボット初期化"""
         try:
             # MultiLLM システム初期化
             self.orchestrator = AutonomousOrchestrator()
             await self.orchestrator.initialize()
+            
+            # デバッグシステムの再初期化（orchestratorが利用可能になったため）
+            self._init_debug_system()
             
             logger.info("🤖 Conea Slack Bot initialized successfully")
             
@@ -177,25 +211,48 @@ class ConeaSlackBot:
             await self.send_error_response(command, str(e), say)
     
     def parse_command(self, text: str) -> SlackCommand:
-        """Slack コマンド解析"""
-        # @conea-xxx パターンを検索
-        mention_pattern = r'@conea-(\w+)'
-        mentions = re.findall(mention_pattern, text)
-        
+        """Slack コマンド解析 - 内容から自動的にタスクタイプを判定"""
         # メンション除去してコンテンツ抽出
         content = re.sub(r'<@U\w+>', '', text)  # ユーザーメンション除去
-        content = re.sub(mention_pattern, '', content).strip()
+        content = content.strip()
         
-        command_type = mentions[0] if mentions else 'dev'  # デフォルトは dev
+        # タスクカテゴリを自動判定
+        command_type = self._detect_task_category(content)
         
         return SlackCommand(
-            type=f'conea-{command_type}',
+            type=command_type,
             content=content,
             original_text=text,
             channel="",  # 後で設定
             user="",     # 後で設定
             timestamp="" # 後で設定
         )
+    
+    def _detect_task_category(self, text: str) -> str:
+        """テキスト内容からタスクカテゴリを自動検出"""
+        text_lower = text.lower()
+        category_scores = {}
+        
+        # 各カテゴリのキーワードマッチングスコアを計算
+        for category, config in self.task_categories.items():
+            score = 0
+            for keyword in config['keywords']:
+                if keyword.lower() in text_lower:
+                    # キーワードの長さに応じてスコアを重み付け
+                    score += len(keyword)
+            category_scores[category] = score
+        
+        # 最もスコアの高いカテゴリを選択
+        if category_scores:
+            best_category = max(category_scores, key=category_scores.get)
+            # スコアが0の場合はデフォルトに
+            if category_scores[best_category] > 0:
+                logger.info(f"📊 タスクカテゴリ自動検出: {best_category} (スコア: {category_scores[best_category]})")
+                return best_category
+        
+        # デフォルトは開発カテゴリ
+        logger.info("📊 タスクカテゴリ: development (デフォルト)")
+        return 'development'
     
     async def get_project_context(self, command: SlackCommand) -> Dict[str, Any]:
         """プロジェクト文脈取得"""
@@ -235,7 +292,8 @@ class ConeaSlackBot:
         start_time = datetime.now()
         
         try:
-            command_config = self.commands.get(command.type, self.commands['conea-dev'])
+            # カテゴリ設定を取得
+            category_config = self.task_categories.get(command.type, self.task_categories['development'])
             
             # タスク作成
             task_request = {
@@ -244,7 +302,9 @@ class ConeaSlackBot:
                 'context': context,
                 'priority': 'medium',
                 'user': command.user,
-                'channel': command.channel
+                'channel': command.channel,
+                'preferred_agent': category_config['preferred_agent'],
+                'fallback_agent': category_config['fallback_agent']
             }
             
             # Orchestrator 経由でタスク実行
@@ -263,12 +323,31 @@ class ConeaSlackBot:
                 thread_ts=command.timestamp,
                 cost=task_result.get('cost', 0.0),
                 tokens=task_result.get('tokens', 0),
-                agent_used=task_result.get('agent', command_config['agent']),
+                agent_used=task_result.get('agent', category_config['preferred_agent']),
                 duration=duration
             )
             
         except Exception as e:
             logger.error(f"LLM task execution failed: {e}")
+            
+            # 自律デバッグシステムによるエラー解析
+            if self.debug_system:
+                error_context = await self.debug_system.analyze_error(e, context)
+                solutions = await self.debug_system.generate_solutions(error_context)
+                
+                # 最も信頼度の高い解決策を試行
+                if solutions and self.config_manager.get('auto_debug_enabled', True):
+                    best_solution = solutions[0]
+                    if best_solution.confidence > 0.8 and not best_solution.requires_approval:
+                        debug_result = await self.debug_system.execute_solution(best_solution)
+                        if debug_result['success']:
+                            return SlackResponse(
+                                text=f"🔧 自動修復完了: {best_solution.description}",
+                                blocks=self.create_debug_blocks(error_context, best_solution, debug_result),
+                                agent_used="debug_system",
+                                duration=(datetime.now() - start_time).total_seconds()
+                            )
+            
             return SlackResponse(
                 text=f"エラーが発生しました: {str(e)}",
                 agent_used="error",
@@ -276,22 +355,77 @@ class ConeaSlackBot:
             )
     
     def map_command_to_task_type(self, command_type: str) -> str:
-        """コマンドタイプをタスクタイプにマッピング"""
+        """カテゴリをタスクタイプにマッピング"""
         mapping = {
-            'conea-dev': 'code_generation',
-            'conea-design': 'strategic_analysis',
-            'conea-pm': 'project_coordination'
+            'development': 'code_generation',
+            'design': 'strategic_analysis',
+            'management': 'project_coordination',
+            'analysis': 'strategic_analysis',
+            'documentation': 'code_generation'
         }
         return mapping.get(command_type, 'code_generation')
     
-    def create_response_blocks(self, task_result: Dict, command: SlackCommand) -> List[Dict]:
-        """Slack Blocks UI作成"""
+    def create_debug_blocks(self, error_context: ErrorContext, solution: Any, debug_result: Dict) -> List[Dict]:
+        """デバッグ結果のSlack Blocks作成"""
         blocks = [
             {
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"*🤖 {command.type} による応答*\n{task_result.get('response', '')}"
+                    "text": f"*🔧 自動デバッグ完了*\n\n*エラー:* {error_context.error_type.value}\n*解決策:* {solution.description}"
+                }
+            },
+            {
+                "type": "divider"
+            },
+            {
+                "type": "section",
+                "fields": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*信頼度:* {solution.confidence:.0%}"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*実行時間:* {(debug_result.get('end_time') - debug_result.get('start_time')).total_seconds():.1f}秒"
+                    }
+                ]
+            }
+        ]
+        
+        # 実行ステップの詳細
+        if debug_result.get('steps_executed'):
+            steps_text = "\n".join([f"• {step['step'].get('description', step['step'].get('action', 'Unknown'))}" 
+                                   for step in debug_result['steps_executed']])
+            blocks.append({
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*実行ステップ:*\n{steps_text}"
+                }
+            })
+        
+        return blocks
+    
+    def create_response_blocks(self, task_result: Dict, command: SlackCommand) -> List[Dict]:
+        """Slack Blocks UI作成"""
+        # カテゴリに応じたアイコンとラベル
+        category_info = {
+            'development': {'icon': '💻', 'label': '開発'},
+            'design': {'icon': '🎨', 'label': 'デザイン'},
+            'management': {'icon': '📊', 'label': '管理'},
+            'analysis': {'icon': '🔍', 'label': '分析'},
+            'documentation': {'icon': '📝', 'label': 'ドキュメント'}
+        }
+        
+        info = category_info.get(command.type, {'icon': '🤖', 'label': command.type})
+        
+        blocks = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*{info['icon']} {info['label']}タスク*\n{task_result.get('response', '')}"
                 }
             }
         ]

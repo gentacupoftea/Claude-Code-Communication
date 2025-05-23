@@ -76,7 +76,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!tokens || isTokenExpired()) return;
     
     try {
-      const userData = await authService.getCurrentUser();
+      const apiUser = await authService.getCurrentUser() as any;
+      const userData: User = {
+        id: apiUser.id,
+        email: apiUser.email,
+        full_name: apiUser.full_name,
+        is_active: apiUser.is_active,
+        is_superuser: apiUser.is_superuser,
+        created_at: apiUser.created_at
+      };
       setUser(userData);
       saveUserToStorage(userData);
     } catch (error) {
@@ -119,8 +127,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await authService.login(credentials.email, credentials.password);
       
-      setTokens(response);
-      saveTokensToStorage(response);
+      const authTokens: AuthTokens = {
+        access_token: response.token,
+        refresh_token: response.refreshToken,
+        token_type: 'Bearer'
+      };
+      setTokens(authTokens);
+      saveTokensToStorage(authTokens);
       
       // ユーザー情報を取得
       await fetchCurrentUser();
@@ -145,8 +158,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         name: data.fullName || '',
       });
       
-      setTokens(response);
-      saveTokensToStorage(response);
+      const authTokens: AuthTokens = {
+        access_token: response.token,
+        refresh_token: response.refreshToken,
+        token_type: 'Bearer'
+      };
+      setTokens(authTokens);
+      saveTokensToStorage(authTokens);
       
       // ユーザー情報を取得
       await fetchCurrentUser();
@@ -178,9 +196,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!tokens?.refresh_token) return;
     
     try {
-      const newTokens = await authService.refreshToken(tokens.refresh_token);
-      setTokens(newTokens);
-      saveTokensToStorage(newTokens);
+      const response = await authService.refreshToken(tokens.refresh_token);
+      const authTokens: AuthTokens = {
+        access_token: response.token,
+        refresh_token: response.refreshToken,
+        token_type: 'Bearer'
+      };
+      setTokens(authTokens);
+      saveTokensToStorage(authTokens);
       
       // リフレッシュ成功後に現在のユーザー情報を取得
       await fetchCurrentUser();

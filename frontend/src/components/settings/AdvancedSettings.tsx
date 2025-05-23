@@ -115,13 +115,16 @@ const AdvancedSettings: React.FC = () => {
         [key]: value
       });
     } else {
-      setLocalAdvancedSettings({
-        ...localAdvancedSettings,
-        [section]: {
-          ...localAdvancedSettings[section],
-          [key]: value
-        }
-      });
+      const sectionSettings = localAdvancedSettings[section];
+      if (typeof sectionSettings === 'object' && sectionSettings !== null) {
+        setLocalAdvancedSettings({
+          ...localAdvancedSettings,
+          [section]: {
+            ...sectionSettings,
+            [key]: value
+          }
+        });
+      }
     }
   };
   

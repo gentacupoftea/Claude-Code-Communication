@@ -81,7 +81,17 @@ const authSlice = createSlice({
       })
       // 現在のユーザー取得
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
-        state.user = action.payload;
+        const apiUser = action.payload as any;
+        state.user = {
+          id: apiUser.id,
+          email: apiUser.email,
+          name: apiUser.full_name || apiUser.name || apiUser.email,
+          role: apiUser.is_superuser ? 'admin' as const : 'user' as const,
+          language: 'ja' as const,
+          theme: 'light' as const,
+          permissions: apiUser.permissions || [],
+          lastLogin: new Date()
+        };
         state.isAuthenticated = true;
       })
       .addCase(fetchCurrentUser.rejected, (state) => {

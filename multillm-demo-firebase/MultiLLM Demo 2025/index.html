@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MultiLLM Demo - Conea</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .demo-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .api-status {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .provider-card {
+            flex: 1;
+            min-width: 250px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-healthy { background: #4caf50; }
+        .status-unhealthy { background: #f44336; }
+        .test-area {
+            margin-top: 20px;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover:not(:disabled) {
+            background: #1565c0;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .response-area {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            min-height: 100px;
+        }
+        .disclaimer {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+        .api-key-section {
+            background: #f0f4f8;
+            border: 1px solid #d0d7de;
+            border-radius: 4px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .api-key-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        .api-key-input label {
+            min-width: 120px;
+            font-weight: 500;
+        }
+        .api-key-input input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .api-key-input button {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        .success-message {
+            color: #4caf50;
+            margin-top: 10px;
+            display: none;
+        }
+        .error-message {
+            color: #f44336;
+            margin-top: 10px;
+            display: none;
+        }
+        .toggle-visibility {
+            background: #e0e0e0;
+            color: #333;
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        .toggle-visibility:hover:not(:disabled) {
+            background: #d0d0d0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 MultiLLM Cloud System Demo</h1>
+            <p>複数のLLMプロバイダーを統合管理するシステムのデモンストレーション</p>
+        </div>
+
+        <div class="disclaimer">
+            <strong>⚠️ 注意事項:</strong> これは公開デモです。本番環境での使用は想定されていません。
+            APIには適切なレート制限が設定されています。
+            <br><br>
+            <strong>📌 現在の状況:</strong> バックエンドAPIがメンテナンス中のため、APIキーの設定機能は準備中です。
+            完全な動作には、Cloud Run環境でのAPIキー設定が必要です。
+        </div>
+
+        <div class="demo-section api-key-section">
+            <h2>🔑 APIキー設定</h2>
+            <p>各プロバイダーのAPIキーを設定してください。キーはブラウザのローカルストレージに保存されます。</p>
+            
+            <div class="api-key-input">
+                <label for="openai-key">OpenAI:</label>
+                <input type="password" id="openai-key" placeholder="sk-...">
+                <button class="toggle-visibility" onclick="toggleVisibility('openai-key')">表示</button>
+            </div>
+            
+            <div class="api-key-input">
+                <label for="anthropic-key">Anthropic:</label>
+                <input type="password" id="anthropic-key" placeholder="sk-ant-...">
+                <button class="toggle-visibility" onclick="toggleVisibility('anthropic-key')">表示</button>
+            </div>
+            
+            <div class="api-key-input">
+                <label for="google-key">Google AI:</label>
+                <input type="password" id="google-key" placeholder="AIza...">
+                <button class="toggle-visibility" onclick="toggleVisibility('google-key')">表示</button>
+            </div>
+            
+            <button onclick="saveApiKeys()">APIキーを保存</button>
+            <button onclick="clearApiKeys()" style="background: #f44336;">APIキーをクリア</button>
+            
+            <div id="success-message" class="success-message">✅ APIキーが保存されました</div>
+            <div id="error-message" class="error-message">❌ エラーが発生しました</div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🔍 システムステータス</h2>
+            <div class="api-status" id="api-status">
+                <div class="provider-card">
+                    <h3>OpenAI</h3>
+                    <p><span class="status-indicator status-unhealthy"></span>未設定</p>
+                    <small>GPT-4, GPT-3.5</small>
+                </div>
+                <div class="provider-card">
+                    <h3>Anthropic</h3>
+                    <p><span class="status-indicator status-unhealthy"></span>未設定</p>
+                    <small>Claude 3 Opus, Sonnet</small>
+                </div>
+                <div class="provider-card">
+                    <h3>Google AI</h3>
+                    <p><span class="status-indicator status-unhealthy"></span>未設定</p>
+                    <small>Gemini 1.5 Flash, Pro</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🧪 テストエリア</h2>
+            <div class="test-area">
+                <h3>プロンプト入力</h3>
+                <textarea id="prompt" rows="4" placeholder="ここにプロンプトを入力してください...">Shopifyの在庫管理システムについて簡潔に説明してください。</textarea>
+                
+                <h3>戦略選択</h3>
+                <select id="strategy" style="padding: 8px; margin: 10px 0;">
+                    <option value="quality">品質優先</option>
+                    <option value="cost">コスト最適化</option>
+                    <option value="speed">速度優先</option>
+                </select>
+                
+                <div style="margin-top: 10px;">
+                    <button id="testButton" onclick="testLLM()">テスト実行</button>
+                    <button id="healthButton" onclick="checkHealth()">ヘルスチェック</button>
+                </div>
+                
+                <div class="response-area" id="response">
+                    レスポンスがここに表示されます...
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>📊 API エンドポイント</h2>
+            <ul>
+                <li><code>GET /api/llm/health</code> - システムヘルスチェック</li>
+                <li><code>POST /api/llm/generate</code> - レスポンス生成</li>
+                <li><code>POST /api/llm/stream</code> - ストリーミングレスポンス</li>
+                <li><code>GET /api/llm/providers</code> - 利用可能なプロバイダー一覧</li>
+                <li><code>GET /api/llm/strategies</code> - 利用可能な戦略一覧</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h2>🔧 使用方法</h2>
+            <ol>
+                <li>上部の「APIキー設定」セクションで各プロバイダーのAPIキーを入力</li>
+                <li>「APIキーを保存」ボタンをクリック</li>
+                <li>「ヘルスチェック」ボタンで接続状態を確認</li>
+                <li>プロンプトを入力して「テスト実行」でMultiLLMシステムをテスト</li>
+            </ol>
+            <p><strong>注意:</strong> APIキーはブラウザのローカルストレージに保存され、サーバーには送信されません。</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://shopify-mcp-server-staging-259335331171.asia-northeast1.run.app';
+        
+        // HTMLエスケープ関数
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+        
+        // APIキーの管理
+        function loadApiKeys() {
+            document.getElementById('openai-key').value = localStorage.getItem('openai_api_key') || '';
+            document.getElementById('anthropic-key').value = localStorage.getItem('anthropic_api_key') || '';
+            document.getElementById('google-key').value = localStorage.getItem('google_api_key') || '';
+        }
+        
+        function saveApiKeys() {
+            const openaiKey = document.getElementById('openai-key').value.trim();
+            const anthropicKey = document.getElementById('anthropic-key').value.trim();
+            const googleKey = document.getElementById('google-key').value.trim();
+            
+            if (openaiKey) localStorage.setItem('openai_api_key', openaiKey);
+            if (anthropicKey) localStorage.setItem('anthropic_api_key', anthropicKey);
+            if (googleKey) localStorage.setItem('google_api_key', googleKey);
+            
+            // サーバーに設定を送信
+            updateServerApiKeys();
+            
+            // 成功メッセージを表示
+            const successMsg = document.getElementById('success-message');
+            const errorMsg = document.getElementById('error-message');
+            successMsg.style.display = 'block';
+            errorMsg.style.display = 'none';
+            
+            setTimeout(() => {
+                successMsg.style.display = 'none';
+            }, 3000);
+            
+            // ヘルスチェックを実行
+            checkHealth();
+        }
+        
+        async function updateServerApiKeys() {
+            const apiKeys = {
+                openai: localStorage.getItem('openai_api_key'),
+                anthropic: localStorage.getItem('anthropic_api_key'),
+                google: localStorage.getItem('google_api_key')
+            };
+            
+            try {
+                await fetch(`${API_BASE}/api/settings/multillm`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ apiKeys })
+                });
+            } catch (error) {
+                console.error('Failed to update server API keys:', error);
+            }
+        }
+        
+        function clearApiKeys() {
+            localStorage.removeItem('openai_api_key');
+            localStorage.removeItem('anthropic_api_key');
+            localStorage.removeItem('google_api_key');
+            
+            document.getElementById('openai-key').value = '';
+            document.getElementById('anthropic-key').value = '';
+            document.getElementById('google-key').value = '';
+            
+            const successMsg = document.getElementById('success-message');
+            const errorMsg = document.getElementById('error-message');
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
+            
+            // サーバーの設定もクリア
+            updateServerApiKeys();
+            
+            // ステータスを更新
+            checkHealth();
+        }
+        
+        function toggleVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            const button = event.target;
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.textContent = '隠す';
+            } else {
+                input.type = 'password';
+                button.textContent = '表示';
+            }
+        }
+        
+        // ボタンの有効/無効を切り替え
+        function setButtonsDisabled(disabled) {
+            document.getElementById('testButton').disabled = disabled;
+            document.getElementById('healthButton').disabled = disabled;
+        }
+        
+        async function checkHealth() {
+            const responseEl = document.getElementById('response');
+            responseEl.textContent = 'ヘルスチェック中...';
+            setButtonsDisabled(true);
+            
+            // APIキーを送信
+            await updateServerApiKeys();
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/llm/health`, {
+                    headers: {
+                        'X-API-Keys': JSON.stringify({
+                            openai: localStorage.getItem('openai_api_key'),
+                            anthropic: localStorage.getItem('anthropic_api_key'),
+                            google: localStorage.getItem('google_api_key')
+                        })
+                    }
+                });
+                const data = await response.json();
+                
+                responseEl.innerHTML = `<pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre>`;
+                
+                // ステータス更新
+                updateStatus(data);
+            } catch (error) {
+                responseEl.textContent = `エラー: 接続に失敗しました`;
+            } finally {
+                setButtonsDisabled(false);
+            }
+        }
+        
+        async function testLLM() {
+            const prompt = document.getElementById('prompt').value;
+            const strategy = document.getElementById('strategy').value;
+            const responseEl = document.getElementById('response');
+            
+            // 入力検証
+            if (!prompt.trim()) {
+                responseEl.textContent = 'プロンプトを入力してください';
+                return;
+            }
+            
+            if (prompt.length > 1000) {
+                responseEl.textContent = 'プロンプトは1000文字以内にしてください';
+                return;
+            }
+            
+            responseEl.textContent = 'リクエスト送信中...';
+            setButtonsDisabled(true);
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/llm/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Keys': JSON.stringify({
+                            openai: localStorage.getItem('openai_api_key'),
+                            anthropic: localStorage.getItem('anthropic_api_key'),
+                            google: localStorage.getItem('google_api_key')
+                        })
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        strategy: strategy
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // HTMLエスケープを適用
+                    const safeProvider = escapeHtml(data.data.provider);
+                    const safeModel = escapeHtml(data.data.model);
+                    const safeStrategy = escapeHtml(data.data.strategy);
+                    const safeResponse = escapeHtml(data.data.response);
+                    
+                    responseEl.innerHTML = `
+                        <strong>プロバイダー:</strong> ${safeProvider}<br>
+                        <strong>モデル:</strong> ${safeModel}<br>
+                        <strong>レイテンシ:</strong> ${data.data.totalLatency}ms<br>
+                        <strong>戦略:</strong> ${safeStrategy}<br>
+                        <hr>
+                        <strong>レスポンス:</strong><br>
+                        <pre style="white-space: pre-wrap;">${safeResponse}</pre>
+                    `;
+                } else {
+                    responseEl.innerHTML = `
+                        <strong style="color: #f44336;">エラー: ${escapeHtml(data.error || 'APIリクエストに失敗しました')}</strong><br><br>
+                        <strong>トラブルシューティング:</strong><br>
+                        1. APIキーが正しく設定されているか確認してください<br>
+                        2. 各プロバイダーのAPIキーが有効であることを確認してください<br>
+                        3. 現在、バックエンドAPIはCloud Run環境変数のAPIキーを使用しています<br>
+                        <br>
+                        <small>エラーコード: ${response.status}</small>
+                    `;
+                }
+            } catch (error) {
+                responseEl.textContent = `エラー: 接続に失敗しました`;
+            } finally {
+                setButtonsDisabled(false);
+            }
+        }
+        
+        function updateStatus(healthData) {
+            const statusEl = document.getElementById('api-status');
+            statusEl.innerHTML = healthData.providers.map(provider => {
+                const safeName = escapeHtml(provider.provider.charAt(0).toUpperCase() + provider.provider.slice(1));
+                const safeStatus = escapeHtml(provider.status);
+                return `
+                    <div class="provider-card">
+                        <h3>${safeName}</h3>
+                        <p>
+                            <span class="status-indicator status-${safeStatus}"></span>
+                            ${safeStatus === 'healthy' ? '正常' : '未設定'}
+                        </p>
+                        <small>リクエスト: ${provider.metrics.totalRequests}</small>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // 初期ロード時にAPIキーをロードしてヘルスチェック
+        window.onload = () => {
+            loadApiKeys();
+            checkHealth();
+        };
+    </script>
+</body>
+</html>

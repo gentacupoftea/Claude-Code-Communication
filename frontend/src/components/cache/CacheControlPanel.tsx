@@ -33,7 +33,7 @@ import {
   Paper,
   Snackbar
 } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
+// import { LoadingButton } from '@mui/lab';
 import {
   ExpandMore as ExpandMoreIcon,
   Refresh as RefreshIcon,
@@ -167,15 +167,15 @@ const ClearCacheDialog: React.FC<ClearCacheDialogProps> = ({
         <Button onClick={handleClose} color="inherit">
           {t('common.cancel')}
         </Button>
-        <LoadingButton
-          loading={loading}
+        <Button
+          disabled={loading}
           onClick={handleClear}
           color="error"
           variant="contained"
-          startIcon={<DeleteIcon />}
+          startIcon={loading ? <CircularProgress size={16} /> : <DeleteIcon />}
         >
-          {t('cache.clearCache')}
-        </LoadingButton>
+          {loading ? t('common.loading') : t('cache.clearCache')}
+        </Button>
       </DialogActions>
     </Dialog>
   );
@@ -700,16 +700,15 @@ const CacheControlPanel: React.FC = () => {
       
       {/* 保存ボタン */}
       <Box display="flex" justifyContent="flex-end" mt={3}>
-        <LoadingButton
+        <Button
           variant="contained"
           color="primary"
-          startIcon={<SaveIcon />}
+          startIcon={loading ? <CircularProgress size={16} /> : <SaveIcon />}
           onClick={handleSaveSettings}
-          loading={loading}
-          disabled={!editableSettings}
+          disabled={loading || !editableSettings}
         >
-          {t('cache.saveSettings')}
-        </LoadingButton>
+          {loading ? t('common.loading') : t('cache.saveSettings')}
+        </Button>
       </Box>
       
       {/* キャッシュクリアダイアログ */}
