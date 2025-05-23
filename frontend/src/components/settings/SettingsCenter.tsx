@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { shopifyService } from '../../services/shopifyService';
 import {
   Box,
   Paper,
@@ -178,6 +179,54 @@ const SettingsCenter: React.FC = () => {
     setTimeout(() => {
       setTestingConnection(false);
     }, 2000);
+  };
+
+  const handleTestShopifyConnection = async () => {
+    setTestingConnection(true);
+    try {
+      const result = await shopifyService.testConnection({
+        store_url: settings.shopifyStoreUrl || '',
+        store_id: settings.shopifyStoreId,
+        api_key: settings.shopifyApiKey || '',
+        api_secret: settings.shopifyApiSecret || '',
+        access_token: settings.shopifyAccessToken || ''
+      });
+      
+      if (result.success) {
+        alert('Shopify接続テスト成功！');
+      } else {
+        alert(`接続テスト失敗: ${result.message}`);
+      }
+    } catch (error) {
+      alert(`接続テストエラー: ${error}`);
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
+  const handleSaveShopifySettings = async () => {
+    setSaveStatus('saving');
+    try {
+      const result = await shopifyService.connectStore({
+        store_url: settings.shopifyStoreUrl || '',
+        store_id: settings.shopifyStoreId,
+        api_key: settings.shopifyApiKey || '',
+        api_secret: settings.shopifyApiSecret || '',
+        access_token: settings.shopifyAccessToken || ''
+      });
+      
+      if (result.success) {
+        setSaveStatus('saved');
+        alert(`Shopify設定保存成功！Store ID: ${result.store_id}`);
+        setTimeout(() => setSaveStatus('idle'), 2000);
+      } else {
+        setSaveStatus('idle');
+        alert(`設定保存失敗: ${result.message}`);
+      }
+    } catch (error) {
+      setSaveStatus('idle');
+      alert(`設定保存エラー: ${error}`);
+    }
   };
 
   const getStatusColor = (status: string): 'success' | 'error' | 'warning' | 'info' => {
@@ -398,8 +447,30 @@ const SettingsCenter: React.FC = () => {
             onChange={(e) => setSettings({...settings, shopifyAccessToken: e.target.value})}
             placeholder="shpat_で始まるトークン"
             helperText="OAuth認証後に取得されるアクセストークン"
-            sx={{ mb: 3 }}
+            sx={{ mb: 2 }}
           />
+        </Grid>
+        
+        {/* Shopify接続ボタン */}
+        <Grid item xs={12}>
+          <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+            <Button
+              variant="outlined"
+              onClick={handleTestShopifyConnection}
+              disabled={testingConnection || !settings.shopifyStoreUrl || !settings.shopifyApiKey || !settings.shopifyAccessToken}
+              startIcon={testingConnection ? <RefreshIcon sx={{ animation: 'spin 1s linear infinite' }} /> : <CheckCircleIcon />}
+            >
+              {testingConnection ? '接続テスト中...' : 'Shopify接続テスト'}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleSaveShopifySettings}
+              disabled={!settings.shopifyStoreUrl || !settings.shopifyApiKey || !settings.shopifyAccessToken}
+              startIcon={<SaveIcon />}
+            >
+              Shopify設定を保存
+            </Button>
+          </Box>
         </Grid>
         
         {/* 他のプラットフォーム設定 */}

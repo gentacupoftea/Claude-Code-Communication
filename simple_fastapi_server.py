@@ -6,10 +6,22 @@ Demo version with basic endpoints
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 import json
 import os
 from datetime import datetime
 from typing import Dict, List, Optional, Any
+
+# In-memory storage for connected stores
+connected_stores: Dict[str, Dict] = {}
+
+# Pydantic models
+class ShopifyStoreConfig(BaseModel):
+    store_url: str
+    store_id: Optional[str] = None
+    api_key: str
+    api_secret: str
+    access_token: str
 
 # Create FastAPI app
 app = FastAPI(
@@ -71,37 +83,83 @@ async def health_check():
 # ================================
 
 @app.post("/api/v1/shopify/stores/connect")
-async def connect_store(request: Request):
-    """Initialize Shopify store connection"""
-    body = await request.json()
-    shop_domain = body.get("shop_domain")
-    
-    if not shop_domain:
-        raise HTTPException(status_code=400, detail="Shop domain is required")
-    
-    # Generate mock OAuth URL
-    oauth_url = f"https://{shop_domain}.myshopify.com/admin/oauth/authorize?client_id=demo&scope=read_products,write_products&redirect_uri=https://staging-conea-ai.web.app/oauth/callback"
-    state = f"state_{datetime.utcnow().timestamp()}"
-    
-    return {
-        "oauth_url": oauth_url,
-        "state": state,
-        "shop": shop_domain.replace(".myshopify.com", "")
-    }
+async def connect_store(config: ShopifyStoreConfig):
+    """Save Shopify store connection configuration"""
+    try:
+        # Extract shop name from store_url
+        shop_name = config.store_url.replace('.myshopify.com', '').replace('https://', '').replace('http://', '')
+        
+        # Generate unique store ID if not provided
+        store_id = config.store_id or f"store_{shop_name}_{int(datetime.utcnow().timestamp())}"
+        
+        # Store configuration
+        store_data = {
+            "store_id": store_id,
+            "shop_domain": shop_name,
+            "store_name": f"{shop_name.title()} Store",
+            "store_url": config.store_url,
+            "api_key": config.api_key,
+            "api_secret": config.api_secret,
+            "access_token": config.access_token,
+            "connected_at": datetime.utcnow().isoformat() + "Z",
+            "last_sync": datetime.utcnow().isoformat() + "Z",
+            "sync_enabled": True,
+            "status": "connected"
+        }
+        
+        connected_stores[store_id] = store_data
+        
+        return {
+            "success": True,
+            "message": "Store connected successfully",
+            "store_id": store_id,
+            "store_data": store_data
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to connect store: {str(e)}")
+
+@app.post("/api/v1/shopify/stores/test-connection")
+async def test_connection(config: ShopifyStoreConfig):
+    """Test Shopify store connection"""
+    try:
+        # Basic validation
+        if not config.store_url or not config.api_key or not config.access_token:
+            return {"success": False, "message": "Missing required configuration"}
+        
+        # Mock connection test (in real implementation, this would call Shopify API)
+        return {
+            "success": True,
+            "message": "Connection test successful",
+            "store_info": {
+                "shop_domain": config.store_url.replace('.myshopify.com', ''),
+                "plan_name": "Basic Shopify",
+                "email": "demo@example.com"
+            }
+        }
+        
+    except Exception as e:
+        return {"success": False, "message": f"Connection test failed: {str(e)}"}
 
 @app.get("/api/v1/shopify/stores")
 async def list_stores():
     """Get list of connected stores"""
-    return [
-        {
-            "store_id": "demo_store_1",
-            "shop_domain": "demo-store",
-            "store_name": "Demo Store",
-            "connected_at": "2025-05-23T10:00:00Z",
-            "last_sync": "2025-05-23T12:00:00Z",
-            "sync_enabled": True
-        }
-    ]
+    if not connected_stores:
+        # Return demo data if no stores connected
+        return [
+            {
+                "store_id": "demo_store_1",
+                "shop_domain": "demo-store",
+                "store_name": "Demo Store (Sample)",
+                "connected_at": "2025-05-23T10:00:00Z",
+                "last_sync": "2025-05-23T12:00:00Z",
+                "sync_enabled": True,
+                "status": "demo"
+            }
+        ]
+    
+    # Return actual connected stores
+    return list(connected_stores.values())
 
 @app.get("/api/v1/shopify/stores/{store_id}/products")
 async def get_products(store_id: str, limit: int = 50):

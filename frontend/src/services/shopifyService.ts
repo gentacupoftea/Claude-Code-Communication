@@ -238,6 +238,34 @@ class ShopifyService {
   // ================================
 
   /**
+   * Test Shopify store connection
+   */
+  async testConnection(config: {
+    store_url: string;
+    store_id?: string;
+    api_key: string;
+    api_secret: string;
+    access_token: string;
+  }): Promise<{ success: boolean; message: string; store_info?: any }> {
+    const response = await apiClient.post(`${this.baseUrl}/stores/test-connection`, config);
+    return response.data;
+  }
+
+  /**
+   * Connect Shopify store with configuration
+   */
+  async connectStore(config: {
+    store_url: string;
+    store_id?: string;
+    api_key: string;
+    api_secret: string;
+    access_token: string;
+  }): Promise<{ success: boolean; message: string; store_id: string; store_data: any }> {
+    const response = await apiClient.post(`${this.baseUrl}/stores/connect`, config);
+    return response.data;
+  }
+
+  /**
    * Get OAuth URL to connect a new Shopify store
    */
   async getConnectUrl(shopDomain: string, redirectUrl?: string): Promise<{
