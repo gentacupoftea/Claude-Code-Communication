@@ -2889,6 +2889,9 @@ async function startServer() {
     // 自律エージェント初期化
     await initializeAutonomousAgent();
     
+    // Phase 2: 自動バグ検知・修正システム初期化
+    await initializeBugFixingSystem();
+    
     // 定期サマリー開始 (1時間毎)
     setInterval(generatePeriodicSummary, 60 * 60 * 1000);
     
@@ -2902,7 +2905,9 @@ async function startServer() {
 
 // Phase 5: 自律エージェントシステム
 const AutonomousController = require('./src/agents/AutonomousController');
+const BugFixingController = require('./src/agents/BugFixingController');
 let autonomousAgent = null;
+let bugFixingSystem = null;
 
 async function initializeAutonomousAgent() {
   try {
@@ -2915,7 +2920,7 @@ async function initializeAutonomousAgent() {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                provider: 'Claude',
+                provider: 'claude',
                 prompt: prompt,
                 user_id: 'autonomous-agent'
               })
@@ -2926,7 +2931,7 @@ async function initializeAutonomousAgent() {
             }
             
             const result = await response.json();
-            return result.response || result.data?.response || 'Generated code placeholder';
+            return result.content || result.response || result.data?.response || 'Generated code placeholder';
           } catch (error) {
             console.error('LLM API call error:', error);
             return 'Fallback code generation';
@@ -3117,5 +3122,167 @@ async function handleAutonomousRequest(channel, user, message) {
     return `❌ 自律実行エラー: ${error.message}`;
   }
 }
+
+// Phase 2: 自動バグ検知・修正システム初期化
+async function initializeBugFixingSystem() {
+  try {
+    const config = {
+      projectPath: path.join(__dirname, '..'), // プロジェクトルート
+      autoFixEnabled: true,
+      maxConcurrentFixes: 3,
+      testAfterFix: true
+    };
+
+    bugFixingSystem = new BugFixingController(config);
+    console.log('🔍 Bug fixing system initialized');
+
+    // 自動バグ修正を開始（オプション）
+    if (process.env.AUTO_BUG_FIX_ENABLED !== 'false') {
+      setTimeout(async () => {
+        try {
+          await bugFixingSystem.startAutonomousBugFixing();
+        } catch (error) {
+          console.error('Failed to start autonomous bug fixing:', error);
+        }
+      }, 5000); // 5秒後に開始
+    }
+
+  } catch (error) {
+    console.error('🚫 Bug fixing system initialization error:', error.message);
+  }
+}
+
+// Phase 2 API エンドポイント
+app.post('/api/bug-fixing/start', async (req, res) => {
+  try {
+    if (!bugFixingSystem) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Bug fixing system not initialized' 
+      });
+    }
+
+    const result = await bugFixingSystem.startAutonomousBugFixing();
+    res.json({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    console.error('Bug fixing start error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+app.post('/api/bug-fixing/scan', async (req, res) => {
+  try {
+    const { filePath } = req.body;
+    
+    if (!bugFixingSystem) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Bug fixing system not initialized' 
+      });
+    }
+
+    const bugs = await bugFixingSystem.bugDetector.scanFile(filePath);
+    
+    res.json({
+      success: true,
+      data: {
+        filePath: filePath,
+        bugs: bugs,
+        bugCount: bugs.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Bug scan error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+app.post('/api/bug-fixing/fix', async (req, res) => {
+  try {
+    const { bugs, filePath } = req.body;
+    
+    if (!bugFixingSystem) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Bug fixing system not initialized' 
+      });
+    }
+
+    const fixResults = await bugFixingSystem.autoFixBugs(bugs, filePath);
+    
+    res.json({
+      success: true,
+      data: fixResults
+    });
+
+  } catch (error) {
+    console.error('Bug fix error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+app.get('/api/bug-fixing/status', async (req, res) => {
+  try {
+    if (!bugFixingSystem) {
+      return res.json({
+        initialized: false,
+        status: null
+      });
+    }
+
+    const status = await bugFixingSystem.getSystemStatus();
+    
+    res.json({
+      initialized: true,
+      status: status
+    });
+
+  } catch (error) {
+    console.error('Bug fixing status error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+app.post('/api/bug-fixing/stop', async (req, res) => {
+  try {
+    if (!bugFixingSystem) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Bug fixing system not initialized' 
+      });
+    }
+
+    await bugFixingSystem.stopMonitoring();
+    
+    res.json({
+      success: true,
+      message: 'Bug fixing monitoring stopped'
+    });
+
+  } catch (error) {
+    console.error('Bug fixing stop error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
 
 startServer();

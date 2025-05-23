@@ -22,7 +22,8 @@
     "compromise": "^14.10.0",
     "diff": "^5.1.0",
     "chokidar": "^3.5.3",
-    "shelljs": "^0.8.5"
+    "shelljs": "^0.8.5",
+    "glob": "^10.3.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
