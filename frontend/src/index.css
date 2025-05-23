@@ -1,3 +1,54 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Global gradient backgrounds */
+.gradient-bg-light {
+  background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+  min-height: 100vh;
+}
+
+.gradient-bg-dark {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  min-height: 100vh;
+}
+
+/* Green gradient for selections */
+.gradient-green {
+  background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+}
+
+.gradient-green-hover {
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+}
+
+/* Card gradient effects */
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass-card {
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Button gradients */
+.btn-gradient-primary {
+  background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-gradient-primary:hover {
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+}
+
+/* Smooth transitions */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}

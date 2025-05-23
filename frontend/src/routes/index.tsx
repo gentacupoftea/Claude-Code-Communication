@@ -12,7 +12,6 @@ import OAuthCallback from '../pages/OAuthCallback';
 // 認証が必要なページ
 import Dashboard from '../pages/Dashboard/Dashboard';
 import OrdersPage from '../pages/OrdersPage';
-import AnalyticsDashboard from '../pages/AnalyticsDashboard';
 import { ApiSettings } from '../pages/ApiSettings/ApiSettings';
 import { ChatAnalysis } from '../pages/ChatAnalysis/ChatAnalysis';
 import { DashboardEditor } from '../pages/DashboardEditor/DashboardEditor';
@@ -88,7 +87,6 @@ const AppRoutes: React.FC = () => {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/customers" element={<Customers />} />
-            <Route path="/analytics" element={<AnalyticsDashboard />} />
             <Route path="/api-settings" element={<ApiSettings />} />
             <Route path="/chat" element={<ChatAnalysis />} />
             <Route path="/dashboard-editor" element={<DashboardEditor />} />

@@ -390,6 +390,9 @@ const DashboardEditorComponent: React.FC = () => {
                 >
                   <type.icon style={{ width: 40, height: 40, marginBottom: 8 }} />
                   <Typography>{type.label}</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    {type.description}
+                  </Typography>
                 </Paper>
               </Grid>
             ))}

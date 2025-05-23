@@ -33,6 +33,7 @@ import {
   ArrowUturnLeftIcon,
   ChartBarIcon,
   DocumentTextIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline';
 import { useTranslation } from 'react-i18next';
 import { mainLayout } from '../../layouts/MainLayout';
@@ -81,9 +82,9 @@ const ChatAnalysisComponent: React.FC = () => {
   const { t } = useTranslation();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
-  const [aiModel, setAiModel] = useState('claude');
   const [isLoading, setIsLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(true);
+  const [conversations, setConversations] = useState<{id: string, title: string, date: Date}[]>([]);
 
   // Initialize with empty data in mock mode
   useEffect(() => {
@@ -194,8 +195,26 @@ const ChatAnalysisComponent: React.FC = () => {
               borderRadius: 2,
             }}
           >
-            <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
-              <Typography variant="h6">{t('chatAnalysis.history.title')}</Typography>
+            <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="h6">Chat History</Typography>
+              <Button
+                startIcon={<PlusIcon style={{ width: 16, height: 16 }} />}
+                size="small"
+                variant="contained"
+                sx={{ 
+                  background: 'linear-gradient(135deg, #10B981 0%, #34D399 100%)',
+                  color: '#FFFFFF',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #059669 0%, #10B981 100%)',
+                  },
+                }}
+                onClick={() => {
+                  setMessages([]);
+                  // Add new conversation to history
+                }}
+              >
+                New Chat
+              </Button>
             </Box>
             <List sx={{ flex: 1, overflow: 'auto', p: 2 }}>
               <ListItem sx={{ cursor: 'pointer', borderRadius: 1, '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1) } }}>
@@ -239,20 +258,8 @@ const ChatAnalysisComponent: React.FC = () => {
               <IconButton onClick={() => setShowHistory(!showHistory)}>
                 <ArrowUturnLeftIcon style={{ width: 20, height: 20 }} />
               </IconButton>
-              <Typography variant="h6">{t('chatAnalysis.title')}</Typography>
+              <Typography variant="h6">AI Chat Space</Typography>
             </Box>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <InputLabel>{t('chatAnalysis.aiModel')}</InputLabel>
-              <Select
-                value={aiModel}
-                label={t('chatAnalysis.aiModel')}
-                onChange={(e) => setAiModel(e.target.value)}
-              >
-                <MenuItem value="claude">Claude</MenuItem>
-                <MenuItem value="openai">OpenAI</MenuItem>
-                <MenuItem value="gemini">Gemini</MenuItem>
-              </Select>
-            </FormControl>
           </Box>
 
           {/* メッセージエリア */}

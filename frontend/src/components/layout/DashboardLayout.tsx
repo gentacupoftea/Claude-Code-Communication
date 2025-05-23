@@ -14,7 +14,13 @@ const DashboardLayout: React.FC = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: theme.palette.background.default }}>
+    <Box sx={{ 
+      display: 'flex', 
+      minHeight: '100vh', 
+      background: theme.palette.mode === 'dark' 
+        ? 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)'
+        : 'linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)',
+    }}>
       <Header onMenuClick={handleDrawerToggle} isMobile={isMobile} />
       {!isMobile && (
         <Box sx={{ width: '200px' }}>
@@ -38,7 +44,7 @@ const DashboardLayout: React.FC = () => {
           flexGrow: 1,
           p: 3,
           mt: '64px',
-          backgroundColor: theme.palette.background.default,
+          background: 'transparent',
         }}
       >
         <Outlet />

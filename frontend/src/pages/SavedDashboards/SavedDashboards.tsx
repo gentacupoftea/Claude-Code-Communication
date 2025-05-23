@@ -186,7 +186,7 @@ const SavedDashboardsComponent: React.FC = () => {
       <Box sx={{ mb: 4 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
           <Typography variant="h4">
-            {t('savedDashboards.title')}
+            My Dashboards
           </Typography>
           <Button
             variant="contained"

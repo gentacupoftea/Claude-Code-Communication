@@ -22,7 +22,7 @@ const lightTheme: ThemeOptions = {
       dark: '#0891B2',
     },
     background: {
-      default: '#F0FDF4',
+      default: '#F3F4F6',
       paper: '#FFFFFF',
     },
     info: {
@@ -88,13 +88,13 @@ const darkTheme: ThemeOptions = {
       dark: '#059669',
     },
     secondary: {
-      main: '#6B7280',
-      light: '#9CA3AF',
-      dark: '#4B5563',
+      main: '#06B6D4',
+      light: '#22D3EE',
+      dark: '#0891B2',
     },
     background: {
-      default: '#000000',
-      paper: '#1a1a1a',
+      default: '#0F172A',
+      paper: '#1E293B',
     },
     text: {
       primary: '#F3F4F6',

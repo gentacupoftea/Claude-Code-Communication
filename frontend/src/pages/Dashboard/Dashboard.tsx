@@ -54,30 +54,76 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   
   // サンプルデータ（実際はAPIから取得）
   const topProducts = [
-    { id: '1', name: '商品A', sales: 100, revenue: 10000 },
-    { id: '2', name: '商品B', sales: 80, revenue: 8000 },
-    { id: '3', name: '商品C', sales: 60, revenue: 6000 },
+    { id: '1', name: 'Premium T-Shirt', sales: 245, revenue: 489000 },
+    { id: '2', name: 'Organic Coffee Beans', sales: 189, revenue: 378000 },
+    { id: '3', name: 'Wireless Headphones', sales: 156, revenue: 468000 },
+    { id: '4', name: 'Eco-Friendly Water Bottle', sales: 134, revenue: 201000 },
+    { id: '5', name: 'Yoga Mat Premium', sales: 98, revenue: 196000 },
   ];
   
   const recentOrders: Order[] = [
     { 
       id: '1', 
-      orderNumber: '1001', 
+      orderNumber: '#10234', 
       platform: 'shopify',
       customer: {
-        name: '田中太郎',
-        email: 'tanaka@example.com',
+        name: 'Sarah Johnson',
+        email: 'sarah.j@example.com',
         address: {
-          line1: '東京都渋谷区',
-          city: '渋谷',
+          line1: '123 Main Street',
+          city: 'New York',
+          state: 'NY',
+          postalCode: '10001',
+          country: 'US',
+        },
+      },
+      createdAt: new Date(Date.now() - 1000 * 60 * 30),
+      status: 'processing',
+      totalAmount: 12900,
+      items: [],
+      currency: 'JPY',
+      updatedAt: new Date(),
+    },
+    { 
+      id: '2', 
+      orderNumber: '#10233', 
+      platform: 'shopify',
+      customer: {
+        name: '山田花子',
+        email: 'yamada@example.com',
+        address: {
+          line1: '東京都渋谷区道玄坂1-2-3',
+          city: '渋谷区',
           state: '東京都',
-          postalCode: '150-0001',
+          postalCode: '150-0043',
           country: 'JP',
         },
       },
-      createdAt: new Date(),
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
       status: 'delivered',
-      totalAmount: 5000,
+      totalAmount: 8500,
+      items: [],
+      currency: 'JPY',
+      updatedAt: new Date(),
+    },
+    { 
+      id: '3', 
+      orderNumber: '#10232', 
+      platform: 'shopify',
+      customer: {
+        name: 'Michael Chen',
+        email: 'mchen@example.com',
+        address: {
+          line1: '456 Oak Avenue',
+          city: 'San Francisco',
+          state: 'CA',
+          postalCode: '94102',
+          country: 'US',
+        },
+      },
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5),
+      status: 'shipped',
+      totalAmount: 23500,
       items: [],
       currency: 'JPY',
       updatedAt: new Date(),
@@ -167,17 +213,6 @@ export const Dashboard: React.FC<DashboardProps> = () => {
         </Box>
       </Box>
 
-      {/* プラットフォーム同期状態 */}
-      <Box sx={{ mb: 3 }}>
-        <PlatformSync 
-          platforms={[
-            { platform: 'shopify', lastSync: new Date(), status: 'synced' },
-            { platform: 'rakuten', lastSync: new Date(), status: 'pending' },
-            { platform: 'amazon', lastSync: new Date(), status: 'error' },
-          ]}
-          onSync={(platform) => console.log('Sync', platform)}
-        />
-      </Box>
 
       {/* メトリクスカード */}
       <Grid container spacing={3} sx={{ mb: 3 }}>

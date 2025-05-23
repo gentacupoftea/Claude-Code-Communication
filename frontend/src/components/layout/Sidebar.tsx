@@ -47,7 +47,6 @@ const navigation: NavItem[] = [
   { name: 'AI Chat Space', path: '/chat', icon: CpuChipIcon },
   { name: 'Orders', path: '/orders', icon: ShoppingBagIcon },
   { name: 'Customers', path: '/customers', icon: UserGroupIcon },
-  { name: 'Analytics', path: '/analytics', icon: ChartBarIcon },
   { name: 'Dashboard Editor', path: '/dashboard-editor', icon: PresentationChartLineIcon },
   { name: 'Saved Dashboards', path: '/saved-dashboards', icon: RectangleStackIcon },
   { name: 'API Settings', path: '/api-settings', icon: LinkIcon },
@@ -55,8 +54,6 @@ const navigation: NavItem[] = [
   { name: 'Profile', path: '/profile', icon: UserIcon },
   { name: 'Notifications', path: '/notifications', icon: BellIcon },
   { name: 'Settings', path: '/settings', icon: CogIcon },
-  { name: 'Demo Components', path: '/demo/data-components', icon: BeakerIcon },
-  { name: 'Debug Demo', path: '/debug', icon: BeakerIcon },
   { name: 'Help System', path: '/help', icon: HelpIcon },
 ];
 
@@ -101,9 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant }) => {
                   sx={{
                     borderRadius: 2,
                     '&.Mui-selected': {
-                      background: theme.palette.mode === 'dark'
-                        ? 'linear-gradient(135deg, #6366F1 0%, #818CF8 100%)'
-                        : 'linear-gradient(135deg, #6366F1 0%, #818CF8 100%)',
+                      background: 'linear-gradient(135deg, #10B981 0%, #34D399 100%)',
                       color: '#FFFFFF',
                       '& .MuiListItemIcon-root': {
                         color: '#FFFFFF',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { formatDate, formatCurrency } from '../utils/date';
@@ -16,25 +16,72 @@ interface Order {
 const OrdersPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   
   // Fetch orders data with mock data
-  const { data, isLoading } = useQuery({
-    queryKey: ['orders', page, search],
+  const { data: rawData, isLoading } = useQuery({
+    queryKey: ['orders'],
     queryFn: async () => {
-      // Return empty data in mock mode
+      // Return mock data
       const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
       if (isMockMode) {
+        const mockOrders = [
+          {
+            id: '1',
+            name: '10234',
+            email: 'sarah.johnson@example.com',
+            totalPrice: 12900,
+            financialStatus: 'Paid',
+            fulfillmentStatus: 'Fulfilled',
+            createdAt: new Date(Date.now() - 1000 * 60 * 30),
+          },
+          {
+            id: '2',
+            name: '10233',
+            email: 'yamada.hanako@example.com',
+            totalPrice: 8500,
+            financialStatus: 'Paid',
+            fulfillmentStatus: 'Unfulfilled',
+            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
+          },
+          {
+            id: '3',
+            name: '10232',
+            email: 'michael.chen@example.com',
+            totalPrice: 23500,
+            financialStatus: 'Pending',
+            fulfillmentStatus: 'Unfulfilled',
+            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5),
+          },
+          {
+            id: '4',
+            name: '10231',
+            email: 'lisa.park@example.com',
+            totalPrice: 45000,
+            financialStatus: 'Paid',
+            fulfillmentStatus: 'Fulfilled',
+            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
+          },
+          {
+            id: '5',
+            name: '10230',
+            email: 'john.smith@example.com',
+            totalPrice: 15600,
+            financialStatus: 'Paid',
+            fulfillmentStatus: 'Fulfilled',
+            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48),
+          },
+        ];
+        
         return {
-          orders: [],
-          total: 0,
-          totalPages: 0,
+          orders: mockOrders,
+          total: mockOrders.length,
+          totalPages: Math.ceil(mockOrders.length / 10),
         };
       }
       
       // API call would go here
-      const response = await api.get('/api/v1/orders', {
-        params: { page, search },
-      });
+      const response = await api.get('/api/v1/orders');
       
       return {
         orders: response.data.orders.map((order: any) => ({
@@ -51,6 +98,71 @@ const OrdersPage: React.FC = () => {
       };
     },
   });
+
+  // Filter data based on search and status
+  const data = useMemo(() => {
+    if (!rawData) return null;
+    
+    let filtered = [...rawData.orders];
+    
+    // Apply search filter
+    if (search) {
+      filtered = filtered.filter(order => 
+        order.name.toLowerCase().includes(search.toLowerCase()) || 
+        order.email.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    
+    // Apply status filter
+    if (statusFilter) {
+      filtered = filtered.filter(order => 
+        order.financialStatus.toLowerCase() === statusFilter.toLowerCase()
+      );
+    }
+    
+    // Paginate
+    const startIndex = (page - 1) * 10;
+    const endIndex = startIndex + 10;
+    
+    return {
+      orders: filtered.slice(startIndex, endIndex),
+      total: filtered.length,
+      totalPages: Math.ceil(filtered.length / 10),
+    };
+  }, [rawData, search, statusFilter, page]);
+
+  // Export to CSV function
+  const exportToCSV = () => {
+    if (!data || !data.orders || data.orders.length === 0) {
+      alert('No orders to export');
+      return;
+    }
+
+    // Create CSV content
+    const headers = ['Order ID', 'Customer Email', 'Date', 'Payment Status', 'Fulfillment Status', 'Total'];
+    const csvContent = [
+      headers.join(','),
+      ...data.orders.map(order => [
+        order.name,
+        order.email,
+        formatDate(order.createdAt, 'yyyy-MM-dd'),
+        order.financialStatus,
+        order.fulfillmentStatus,
+        order.totalPrice
+      ].join(','))
+    ].join('\n');
+
+    // Download CSV
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `orders_${formatDate(new Date(), 'yyyyMMdd')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const getStatusBadge = (status: string) => {
     const statusStyles: { [key: string]: string } = {
@@ -87,11 +199,21 @@ const OrdersPage: React.FC = () => {
             type="text"
             placeholder="Search orders..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1); // Reset to first page when search changes
+            }}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-[#1a1a1a] dark:text-white"
           />
           
-          <select className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-[#1a1a1a] dark:text-white">
+          <select 
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1); // Reset to first page when filter changes
+            }}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-[#1a1a1a] dark:text-white"
+          >
             <option value="">All statuses</option>
             <option value="paid">Paid</option>
             <option value="pending">Pending</option>
@@ -99,8 +221,12 @@ const OrdersPage: React.FC = () => {
           </select>
         </div>
         
-        <button className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700">
-          Export
+        <button 
+          onClick={exportToCSV}
+          className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:bg-gray-400"
+          disabled={!data || data.orders.length === 0}
+        >
+          Export to CSV
         </button>
       </div>
 

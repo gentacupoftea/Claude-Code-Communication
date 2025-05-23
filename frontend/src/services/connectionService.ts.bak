@@ -1,0 +1,131 @@
+/**
+ * Connection service for MCP server communication
+ */
+
+export type ConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'error';
+
+export interface ConnectionDetails {
+  serverUrl: string;
+  port: number;
+  status: ConnectionStatus;
+  lastConnected?: Date;
+  error?: string;
+  serverVersion?: string;
+  serverInfo?: {
+    environment?: string;
+    features?: Record<string, any>;
+  };
+}
+
+export interface ConnectionConfig {
+  serverUrl: string;
+  port: number;
+  timeout?: number;
+  retryAttempts?: number;
+}
+
+class ConnectionService {
+  private connectionDetails: ConnectionDetails | null = null;
+  private isConnecting = false;
+
+  /**
+   * Connect to MCP server
+   */
+  async connect(config: ConnectionConfig): Promise<ConnectionDetails> {
+    if (this.isConnecting) {
+      throw new Error('Connection already in progress');
+    }
+
+    this.isConnecting = true;
+    
+    try {
+      // Simulate connection logic - replace with actual MCP connection
+      const response = await fetch(`${config.serverUrl}:${config.port}/health`, {
+        method: 'GET',
+        timeout: config.timeout || 5000,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Connection failed: ${response.statusText}`);
+      }
+
+      this.connectionDetails = {
+        serverUrl: config.serverUrl,
+        port: config.port,
+        status: 'connected',
+        lastConnected: new Date(),
+      };
+
+      return this.connectionDetails;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown connection error';
+      
+      this.connectionDetails = {
+        serverUrl: config.serverUrl,
+        port: config.port,
+        status: 'error',
+        error: errorMessage,
+      };
+
+      throw new Error(errorMessage);
+    } finally {
+      this.isConnecting = false;
+    }
+  }
+
+  /**
+   * Disconnect from MCP server
+   */
+  async disconnect(): Promise<void> {
+    if (this.connectionDetails) {
+      this.connectionDetails.status = 'disconnected';
+    }
+  }
+
+  /**
+   * Get current connection details
+   */
+  getConnectionDetails(): ConnectionDetails | null {
+    return this.connectionDetails;
+  }
+
+  /**
+   * Check connection status
+   */
+  async checkStatus(): Promise<ConnectionDetails | null> {
+    if (!this.connectionDetails || this.connectionDetails.status !== 'connected') {
+      return this.connectionDetails;
+    }
+
+    try {
+      const response = await fetch(`${this.connectionDetails.serverUrl}:${this.connectionDetails.port}/health`);
+      if (!response.ok) {
+        this.connectionDetails.status = 'error';
+        this.connectionDetails.error = 'Health check failed';
+      }
+    } catch (error) {
+      this.connectionDetails.status = 'error';
+      this.connectionDetails.error = error instanceof Error ? error.message : 'Unknown error';
+    }
+
+    return this.connectionDetails;
+  }
+
+  /**
+   * Test connection without saving details
+   */
+  async testConnection(config: ConnectionConfig): Promise<boolean> {
+    try {
+      const response = await fetch(`${config.serverUrl}:${config.port}/health`, {
+        method: 'GET',
+        timeout: config.timeout || 5000,
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+const connectionService = new ConnectionService();
+export default connectionService;
