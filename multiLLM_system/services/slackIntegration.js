@@ -18,6 +18,11 @@ class SlackThreadManager extends EventEmitter {
     // Conea Bot ID（実際は環境変数から取得）
     this.CONEA_BOT_ID = process.env.SLACK_BOT_ID || 'U123456789';
     
+    // メモリ管理設定
+    this.maxThreads = config.maxThreads || 100; // 最大スレッド数
+    this.threadTTL = config.threadTTL || 24 * 60 * 60 * 1000; // スレッド保持期間（24時間）
+    this.cleanupInterval = config.cleanupInterval || 15 * 60 * 1000; // クリーンアップ間隔（15分）
+    
     // イベントアダプター初期化
     this.events = createEventAdapter(config.signingSecret);
     this.setupEventHandlers();
@@ -96,11 +101,22 @@ class SlackThreadManager extends EventEmitter {
   async startThread(event) {
     const threadTs = event.thread_ts || event.ts;
     
+    // スレッド数制限チェック
+    if (this.activeThreads.size >= this.maxThreads) {
+      // LRU: 最も古いスレッドを削除
+      const oldestThread = this.getOldestThread();
+      if (oldestThread) {
+        this.activeThreads.delete(oldestThread.threadTs);
+        console.log(`Removed oldest thread ${oldestThread.threadTs} due to limit`);
+      }
+    }
+    
     // スレッドコンテキストを作成
     const context = {
       channel: event.channel,
       user: event.user,
       startedAt: new Date(),
+      lastActivity: new Date(),
       messages: [],
       metadata: {}
     };
@@ -118,12 +134,20 @@ class SlackThreadManager extends EventEmitter {
     const context = this.activeThreads.get(event.thread_ts);
     if (!context) return;
     
-    // メッセージ履歴に追加
+    // 最終活動時間を更新
+    context.lastActivity = new Date();
+    
+    // メッセージ履歴に追加（最大100メッセージ）
     context.messages.push({
       user: event.user,
       text: event.text,
       timestamp: event.ts
     });
+    
+    // メッセージ数制限
+    if (context.messages.length > 100) {
+      context.messages = context.messages.slice(-50); // 最新50件を保持
+    }
     
     await this.processMessage(event, context, false);
   }
@@ -351,16 +375,43 @@ class SlackThreadManager extends EventEmitter {
   }
 
   /**
+   * 最も古いスレッドを取得
+   */
+  getOldestThread() {
+    let oldest = null;
+    let oldestTime = Date.now();
+    
+    for (const [threadTs, context] of this.activeThreads) {
+      const lastActivity = context.lastActivity || context.startedAt;
+      if (lastActivity < oldestTime) {
+        oldestTime = lastActivity;
+        oldest = { threadTs, context };
+      }
+    }
+    
+    return oldest;
+  }
+
+  /**
    * スレッドのクリーンアップ（古いスレッドを削除）
    */
   cleanupOldThreads() {
     const now = Date.now();
-    const maxAge = 24 * 60 * 60 * 1000; // 24時間
+    let cleanedCount = 0;
     
     for (const [threadTs, context] of this.activeThreads) {
-      if (now - context.startedAt > maxAge) {
+      const lastActivity = context.lastActivity || context.startedAt;
+      const age = now - lastActivity.getTime();
+      
+      // TTLを超えたスレッドを削除
+      if (age > this.threadTTL) {
         this.activeThreads.delete(threadTs);
+        cleanedCount++;
       }
+    }
+    
+    if (cleanedCount > 0) {
+      console.log(`Cleaned up ${cleanedCount} inactive threads`);
     }
   }
 
@@ -382,10 +433,10 @@ class SlackThreadManager extends EventEmitter {
     // イベントリスナーを開始
     await this.events.start(this.config.port || 3000);
     
-    // 定期的なクリーンアップ
-    setInterval(() => this.cleanupOldThreads(), 60 * 60 * 1000); // 1時間ごと
+    // 定期的なクリーンアップ（設定可能な間隔）
+    setInterval(() => this.cleanupOldThreads(), this.cleanupInterval);
     
-    console.log('✅ Slack integration started');
+    console.log(`✅ Slack integration started with cleanup every ${this.cleanupInterval / 1000 / 60} minutes`);
   }
 }
 

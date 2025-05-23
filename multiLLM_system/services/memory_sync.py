@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 import hashlib
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +122,10 @@ class MemorySyncService:
     async def _fetch_remote_memories(self) -> Dict[str, List[MemoryEntry]]:
         """OpenMemoryから記憶を取得"""
         try:
+            # URLバリデーション
+            if not self._validate_url(self.openmemory_url):
+                raise ValueError(f"Invalid OpenMemory URL: {self.openmemory_url}")
+            
             # 最後の同期時刻以降の更新を取得
             since = datetime.now() - timedelta(seconds=self.sync_interval * 2)
             
@@ -129,7 +134,8 @@ class MemorySyncService:
                 params={
                     'since': since.isoformat(),
                     'client': 'multiLLM'
-                }
+                },
+                timeout=aiohttp.ClientTimeout(total=30)
             ) as response:
                 if response.status == 200:
                     data = await response.json()
@@ -225,6 +231,27 @@ class MemorySyncService:
             merged.append(remote_by_id[entry_id])
         
         return sorted(merged, key=lambda x: x.timestamp, reverse=True)[:100]
+    
+    def _validate_url(self, url: str) -> bool:
+        """URLの妥当性を検証"""
+        try:
+            parsed = urlparse(url)
+            # HTTPまたはHTTPSのみ許可
+            if parsed.scheme not in ['http', 'https']:
+                return False
+            # ホスト名が存在することを確認
+            if not parsed.netloc:
+                return False
+            # ホワイトリスト（必要に応じて追加）
+            allowed_hosts = ['localhost', '127.0.0.1', 'openmemory.internal']
+            if self.config.get('allowedHosts'):
+                allowed_hosts.extend(self.config['allowedHosts'])
+            # ホスト名チェック（プロダクション環境では必須）
+            # if parsed.hostname not in allowed_hosts:
+            #     return False
+            return True
+        except Exception:
+            return False
     
     async def _save_to_openmemory(self, memories: Dict[str, List[MemoryEntry]]):
         """OpenMemoryに保存"""

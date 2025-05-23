@@ -11,6 +11,7 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 import json
 import uuid
+import random
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,11 @@ class MultiLLMOrchestrator:
         self.active_tasks = {}
         self.memory_sync_interval = config.get('memory', {}).get('syncInterval', 300)
         self.llm_client = None  # LLMクライアント（後で注入）
+        
+        # リトライ設定
+        self.max_retries = config.get('maxRetries', 3)
+        self.base_delay = config.get('baseDelay', 1.0)  # 基本遅延時間（秒）
+        self.max_delay = config.get('maxDelay', 60.0)  # 最大遅延時間（秒）
         
         # タスク振り分けルール
         self.task_routing = {
@@ -303,14 +309,52 @@ class MultiLLMOrchestrator:
     
     async def _execute_task_on_worker(self, task: Task, worker: Dict) -> Dict:
         """Workerでタスクを実行（実際の実装はWorkerクラスで）"""
-        # デモ用の簡易実装
-        await asyncio.sleep(1)  # 処理時間のシミュレーション
+        # エクスポネンシャルバックオフでリトライ
+        last_error = None
         
+        for attempt in range(self.max_retries):
+            try:
+                # デモ用の簡易実装（実際はWorkerクラスで実行）
+                await asyncio.sleep(1)  # 処理時間のシミュレーション
+                
+                # ランダムにエラーを発生させる（デモ用）
+                # if random.random() < 0.3:  # 30%の確率でエラー
+                #     raise Exception("Simulated worker error")
+                
+                return {
+                    "task_id": task.id,
+                    "worker": worker['config'].get('model', 'unknown'),
+                    "result": f"{task.type.value}の処理が完了しました",
+                    "timestamp": datetime.now().isoformat(),
+                    "attempts": attempt + 1
+                }
+                
+            except Exception as e:
+                last_error = e
+                
+                if attempt < self.max_retries - 1:
+                    # エクスポネンシャルバックオフ計算
+                    delay = min(
+                        self.base_delay * (2 ** attempt) + random.uniform(0, 1),
+                        self.max_delay
+                    )
+                    
+                    logger.warning(
+                        f"Task {task.id} failed on attempt {attempt + 1}/{self.max_retries}. "
+                        f"Retrying in {delay:.1f}s... Error: {e}"
+                    )
+                    
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(f"Task {task.id} failed after {self.max_retries} attempts: {e}")
+        
+        # すべてのリトライが失敗した場合
         return {
             "task_id": task.id,
             "worker": worker['config'].get('model', 'unknown'),
-            "result": f"{task.type.value}の処理が完了しました",
-            "timestamp": datetime.now().isoformat()
+            "error": str(last_error),
+            "attempts": self.max_retries,
+            "status": "failed"
         }
     
     async def _memory_sync_loop(self):

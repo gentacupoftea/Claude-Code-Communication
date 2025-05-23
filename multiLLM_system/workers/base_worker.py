@@ -42,15 +42,19 @@ class BaseWorker(ABC):
         self.config = config
         self.model = config.get('model', 'gpt-4')
         self.specialization = config.get('specialization', [])
-        self.max_concurrent_tasks = config.get('maxConcurrentTasks', 3)
+        self.max_concurrent_tasks = min(config.get('maxConcurrentTasks', 3), 10)  # 最大10タスクまで
         self.temperature = config.get('temperature', 0.7)
+        
+        # リソース制限
+        self.max_queue_size = config.get('maxQueueSize', 100)  # キューサイズ制限
+        self.max_memory_entries = config.get('maxMemoryEntries', 1000)  # メモリエントリー制限
         
         # LLMクライアント（後で注入）
         self.llm_client = None
         
         # タスク管理
         self.active_tasks = {}
-        self.task_queue = asyncio.Queue()
+        self.task_queue = asyncio.Queue(maxsize=self.max_queue_size)
         self.processing = False
         
         # メトリクス
@@ -99,6 +103,10 @@ class BaseWorker(ABC):
         """タスクを送信"""
         task.id = task.id or str(uuid.uuid4())
         task.created_at = task.created_at or datetime.now()
+        
+        # キューが満杯の場合はエラー
+        if self.task_queue.full():
+            raise RuntimeError(f"Task queue for {self.name} is full (max: {self.max_queue_size})")
         
         await self.task_queue.put(task)
         logger.info(f"📥 Task {task.id} submitted to {self.name} worker")
@@ -235,6 +243,19 @@ class BaseWorker(ABC):
         
         # 重要なタスクは長期記憶に保存
         if task.priority == 'high' or 'important' in task.description.lower():
+            # メモリ制限チェック
+            if len(self.memory['long_term']) >= self.max_memory_entries:
+                # 古いエントリーを削除（タイムスタンプでソート）
+                sorted_entries = sorted(
+                    self.memory['long_term'].items(),
+                    key=lambda x: x[1].get('timestamp', ''),
+                    reverse=True
+                )
+                # 最新の90%を保持
+                keep_count = int(self.max_memory_entries * 0.9)
+                self.memory['long_term'] = dict(sorted_entries[:keep_count])
+                logger.warning(f"Memory limit reached for {self.name}, pruned old entries")
+            
             self.memory['long_term'][task.id] = {
                 'description': task.description,
                 'result': task.result,
