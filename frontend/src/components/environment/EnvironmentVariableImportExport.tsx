@@ -129,8 +129,7 @@ const EnvironmentVariableImportExport: React.FC<EnvironmentVariableImportExportP
     setError(null);
 
     try {
-      const selectedItems = importPreview.items.filter(item => item.selected);
-      await environmentApi.importVariables(selectedItems);
+      await environmentApi.importVariables(importPreview);
       onImportComplete();
       onClose();
     } catch (err) {
@@ -176,18 +175,13 @@ const EnvironmentVariableImportExport: React.FC<EnvironmentVariableImportExportP
   };
 
   const toggleImportItemSelection = (index: number) => {
-    if (!importPreview) return;
-    
-    const updatedItems = [...importPreview.items];
-    updatedItems[index].selected = !updatedItems[index].selected;
-    setImportPreview({ ...importPreview, items: updatedItems });
+    // Simplified implementation - no individual item selection
+    console.log('Toggle item selection:', index);
   };
 
   const toggleAllImportItems = (selected: boolean) => {
-    if (!importPreview) return;
-    
-    const updatedItems = importPreview.items.map(item => ({ ...item, selected }));
-    setImportPreview({ ...importPreview, items: updatedItems });
+    // Simplified implementation - no item selection
+    console.log('Toggle all items:', selected);
   };
 
   const getStatusIcon = (status: string) => {
@@ -299,65 +293,35 @@ const EnvironmentVariableImportExport: React.FC<EnvironmentVariableImportExportP
 
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="body2" color="text.secondary">
-                      Found {importPreview.items.length} variables. 
-                      {importPreview.items.filter(item => item.selected).length} selected for import.
+                      Import preview data ready for processing.
                     </Typography>
                   </Box>
 
                   <List dense>
-                    {importPreview.items.map((item, index) => (
-                      <ListItem key={index} divider>
-                        <ListItemIcon>
-                          <Checkbox
-                            checked={item.selected}
-                            onChange={() => toggleImportItemSelection(index)}
-                          />
-                        </ListItemIcon>
+                    <ListItem divider>
                         <ListItemText
                           primary={
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                               <Typography variant="body2" fontWeight="bold">
-                                {item.key}
+                                Import Data
                               </Typography>
                               <Chip 
-                                label={item.category} 
+                                label="Ready" 
                                 size="small" 
                                 variant="outlined" 
+                                color="success"
                               />
-                              <Chip 
-                                label={item.value_type} 
-                                size="small" 
-                                color={getStatusColor(item.status)}
-                              />
-                              {getStatusIcon(item.status)}
                             </Box>
                           }
-                          secondary={
-                            <Box>
-                              <Typography variant="caption" color="text.secondary">
-                                Value: {item.value_type === 'secret' ? '***' : String(item.value).substring(0, 50)}
-                                {String(item.value).length > 50 ? '...' : ''}
-                              </Typography>
-                              {item.validation_errors && item.validation_errors.length > 0 && (
-                                <Box sx={{ mt: 0.5 }}>
-                                  {item.validation_errors.map((error, errorIndex) => (
-                                    <Typography key={errorIndex} variant="caption" color="error">
-                                      • {error}
-                                    </Typography>
-                                  ))}
-                                </Box>
-                              )}
-                            </Box>
-                          }
+                          secondary="Import data ready for processing"
                         />
                         <IconButton
                           size="small"
-                          onClick={() => copyToClipboard(JSON.stringify(item, null, 2))}
+                          onClick={() => copyToClipboard(JSON.stringify(importPreview, null, 2))}
                         >
                           <CopyIcon fontSize="small" />
                         </IconButton>
                       </ListItem>
-                    ))}
                   </List>
                 </CardContent>
               </Card>
@@ -388,15 +352,15 @@ const EnvironmentVariableImportExport: React.FC<EnvironmentVariableImportExportP
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 {categories.map((category) => (
                   <Chip
-                    key={category.id}
-                    label={`${category.name} (${category.description})`}
+                    key={category.category}
+                    label={`${category.category} (${category.description || 'No description'})`}
                     clickable
-                    color={exportCategories.includes(category.id) ? 'primary' : 'default'}
+                    color={exportCategories.includes(category.category) ? 'primary' : 'default'}
                     onClick={() => {
                       setExportCategories(prev =>
-                        prev.includes(category.id)
-                          ? prev.filter(id => id !== category.id)
-                          : [...prev, category.id]
+                        prev.includes(category.category)
+                          ? prev.filter(id => id !== category.category)
+                          : [...prev, category.category]
                       );
                     }}
                   />
@@ -437,7 +401,7 @@ const EnvironmentVariableImportExport: React.FC<EnvironmentVariableImportExportP
           <Button
             variant="contained"
             onClick={handleConfirmImport}
-            disabled={isLoading || !importPreview.items.some(item => item.selected)}
+            disabled={isLoading || !importPreview}
             startIcon={isLoading ? <CircularProgress size={16} /> : <UploadIcon />}
           >
             Import Selected

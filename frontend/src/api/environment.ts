@@ -28,15 +28,15 @@ const getApiUrl = (): string => {
   
   // Environment-specific defaults
   if (customEnv === 'staging') {
-    return 'https://staging-api.conea.com';
+    return 'https://shopify-mcp-server-259335331171.asia-northeast1.run.app';
   }
   
   switch (env) {
     case 'production':
-      return 'https://api.conea.com';
+      return 'https://shopify-mcp-server-259335331171.asia-northeast1.run.app';
     case 'development':
     default:
-      return 'http://localhost:8000';
+      return 'https://shopify-mcp-server-259335331171.asia-northeast1.run.app';
   }
 };
 

@@ -53,7 +53,7 @@ export const OAuthCallback: React.FC = () => {
           
           await oauthService.authenticate({
             code,
-            state,
+            state: state || '',
             provider: stateData.channelType || 'unknown',
             redirectUri: `${window.location.origin}/oauth/callback`
           });
@@ -72,7 +72,7 @@ export const OAuthCallback: React.FC = () => {
           }
           
           // チャネル接続処理
-          await handleOAuthCallback(code, state);
+          await handleOAuthCallback(code, state || '');
           
           // 接続後のリダイレクト先
           const redirectTo = stateData.returnTo || '/channels';

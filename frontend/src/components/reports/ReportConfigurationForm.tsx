@@ -216,7 +216,7 @@ const ReportConfigurationForm: React.FC<ReportConfigurationFormProps> = ({
       setConfig({
         ...config,
         [parent]: {
-          ...config[parent as keyof ReportConfig],
+          ...(config[parent as keyof ReportConfig] as Record<string, any>),
           [child]: value,
         },
       });

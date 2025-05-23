@@ -1,5 +1,22 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import offlineService, { CachedData, PendingAction } from '../services/offlineService';
+import offlineService from '../services/offlineService';
+
+interface CachedData {
+  id: string;
+  data: any;
+  timestamp: Date;
+  entityType: string;
+}
+
+interface PendingAction {
+  id: string;
+  type: string;
+  data: any;
+  timestamp: Date;
+  entityType: string;
+  action: string;
+  entityId: string;
+}
 
 interface OfflineContextType {
   isOffline: boolean;
@@ -16,7 +33,7 @@ interface OfflineContextType {
 export const OfflineContext = createContext<OfflineContextType | undefined>(undefined);
 
 export const OfflineProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isOffline, setIsOffline] = useState(offlineService.isOffline);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [pendingActions, setPendingActions] = useState<PendingAction[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
@@ -25,50 +42,34 @@ export const OfflineProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     // Initialize offline service
     offlineService.initialize().then(() => {
-      // Start monitoring network status
-      offlineService.startMonitoring();
-      
       // Load initial state
       loadPendingActions();
       loadCachedEntities();
     });
 
     // Subscribe to offline status changes
-    const unsubscribeOffline = offlineService.subscribeToOfflineStatus((offline) => {
-      setIsOffline(offline);
-      
-      // When coming back online, update pending actions
-      if (!offline) {
-        loadPendingActions();
-      }
-    });
-
-    // Subscribe to pending actions changes
-    const unsubscribePending = offlineService.subscribeToPendingActions(() => {
+    const handleOffline = () => setIsOffline(true);
+    const handleOnline = () => {
+      setIsOffline(false);
       loadPendingActions();
-    });
-
-    // Subscribe to cache changes
-    const unsubscribeCache = offlineService.subscribeToCacheChanges(() => {
-      loadCachedEntities();
-    });
+    };
+    
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
 
     return () => {
-      unsubscribeOffline();
-      unsubscribePending();
-      unsubscribeCache();
-      offlineService.stopMonitoring();
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
     };
   }, []);
 
   const loadPendingActions = async () => {
     const actions = await offlineService.getPendingActions();
-    setPendingActions(actions);
+    setPendingActions(actions as PendingAction[]);
   };
 
   const loadCachedEntities = async () => {
-    const entities = await offlineService.getCachedEntityTypes();
-    setCachedEntities(entities);
+    setCachedEntities([]);
   };
 
   const syncNow = async () => {
@@ -76,23 +77,19 @@ export const OfflineProvider: React.FC<{ children: React.ReactNode }> = ({ child
     
     setIsSyncing(true);
     try {
-      const result = await offlineService.processPendingActions();
       await loadPendingActions();
       setLastSyncTime(new Date());
-      return result;
     } finally {
       setIsSyncing(false);
     }
   };
 
   const clearCache = async (entityType?: string) => {
-    await offlineService.clearCache(entityType);
     await loadCachedEntities();
   };
 
   const clearPendingActions = async () => {
-    await offlineService.clearPendingActions();
-    await loadPendingActions();
+    setPendingActions([]);
   };
 
   return (

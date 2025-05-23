@@ -56,7 +56,7 @@ const GeneralSettings: React.FC = () => {
   const { user } = useAuth();
   
   const [profile, setProfile] = useState({
-    displayName: user?.name || '',
+    displayName: user?.full_name || '',
     email: user?.email || '',
     phone: '+81 90-1234-5678',
     bio: 'プロフィール情報がここに表示されます。自己紹介や役割、経験などを入力してください。',

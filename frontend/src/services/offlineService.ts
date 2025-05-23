@@ -348,10 +348,10 @@ const offlineService = {
   async getCachedData(key: string) {
     try {
       const data = await getFromStore(STORES.CACHE, key);
-      if (!data || (data.expire && data.expire < Date.now())) {
+      if (!data || ((data as any).expire && (data as any).expire < Date.now())) {
         return null;
       }
-      return data.value || data;
+      return (data as any).value || data;
     } catch (error) {
       console.error('キャッシュデータの取得中にエラーが発生しました', error);
       return null;

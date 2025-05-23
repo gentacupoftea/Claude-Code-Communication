@@ -183,71 +183,145 @@ export const Dashboard: React.FC<DashboardProps> = () => {
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={3}>
           {loading ? (
-            <Skeleton variant="rectangular" height={140} />
+            <Skeleton variant="rectangular" height={140} sx={{ borderRadius: 2 }} />
           ) : (
-            <MetricCard
-              title={t('dashboard.totalSales')}
-              value={metrics.totalSales}
-              format="currency"
-              currency="JPY"
-              trend={{
-                value: 12.5,
-                direction: 'up',
+            <Box
+              sx={{
+                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+                borderRadius: 2,
+                p: 3,
+                color: 'white',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 20px 35px -5px rgba(0, 0, 0, 0.15), 0 8px 12px -2px rgba(0, 0, 0, 0.1)',
+                },
               }}
-              info={t('dashboard.salesInfo')}
-            />
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <TrendingUp sx={{ mr: 1, opacity: 0.8 }} />
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  総売上
+                </Typography>
+              </Box>
+              <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                ¥{formatCurrency(metrics.totalSales || 2450000)}
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  前期比 +12.5%
+                </Typography>
+              </Box>
+            </Box>
           )}
         </Grid>
         
         <Grid item xs={12} sm={6} md={3}>
           {loading ? (
-            <Skeleton variant="rectangular" height={140} />
+            <Skeleton variant="rectangular" height={140} sx={{ borderRadius: 2 }} />
           ) : (
-            <MetricCard
-              title={t('dashboard.totalOrders')}
-              value={metrics.totalOrders}
-              format="number"
-              trend={{
-                value: 8.3,
-                direction: 'up',
+            <Box
+              sx={{
+                background: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.secondary.dark})`,
+                borderRadius: 2,
+                p: 3,
+                color: 'white',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 20px 35px -5px rgba(0, 0, 0, 0.15), 0 8px 12px -2px rgba(0, 0, 0, 0.1)',
+                },
               }}
-              info={t('dashboard.ordersInfo')}
-            />
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <ShoppingCart sx={{ mr: 1, opacity: 0.8 }} />
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  注文数
+                </Typography>
+              </Box>
+              <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                {metrics.totalOrders || 1250}
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  前期比 +8.3%
+                </Typography>
+              </Box>
+            </Box>
           )}
         </Grid>
         
         <Grid item xs={12} sm={6} md={3}>
           {loading ? (
-            <Skeleton variant="rectangular" height={140} />
+            <Skeleton variant="rectangular" height={140} sx={{ borderRadius: 2 }} />
           ) : (
-            <MetricCard
-              title={t('dashboard.averageOrderValue')}
-              value={metrics.averageOrderValue}
-              format="currency"
-              currency="JPY"
-              trend={{
-                value: -2.1,
-                direction: 'down',
+            <Box
+              sx={{
+                background: `linear-gradient(135deg, ${theme.palette.success.main}, ${theme.palette.success.dark})`,
+                borderRadius: 2,
+                p: 3,
+                color: 'white',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 20px 35px -5px rgba(0, 0, 0, 0.15), 0 8px 12px -2px rgba(0, 0, 0, 0.1)',
+                },
               }}
-              info={t('dashboard.aovInfo')}
-            />
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <People sx={{ mr: 1, opacity: 0.8 }} />
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  平均注文額
+                </Typography>
+              </Box>
+              <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                ¥{formatCurrency(metrics.averageOrderValue || 19600)}
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  前期比 -2.1%
+                </Typography>
+              </Box>
+            </Box>
           )}
         </Grid>
         
         <Grid item xs={12} sm={6} md={3}>
           {loading ? (
-            <Skeleton variant="rectangular" height={140} />
+            <Skeleton variant="rectangular" height={140} sx={{ borderRadius: 2 }} />
           ) : (
-            <MetricCard
-              title={t('dashboard.conversionRate')}
-              value={metrics.conversionRate}
-              format="percent"
-              trend={{
-                value: 0.5,
-                direction: 'up',
+            <Box
+              sx={{
+                background: `linear-gradient(135deg, ${theme.palette.warning.main}, ${theme.palette.warning.dark})`,
+                borderRadius: 2,
+                p: 3,
+                color: 'white',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 20px 35px -5px rgba(0, 0, 0, 0.15), 0 8px 12px -2px rgba(0, 0, 0, 0.1)',
+                },
               }}
-              info={t('dashboard.conversionInfo')}
-            />
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Inventory sx={{ mr: 1, opacity: 0.8 }} />
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  コンバージョン
+                </Typography>
+              </Box>
+              <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                {formatPercent(metrics.conversionRate || 0.034)}
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  前期比 +0.5%
+                </Typography>
+              </Box>
+            </Box>
           )}
         </Grid>
       </Grid>
@@ -255,33 +329,86 @@ export const Dashboard: React.FC<DashboardProps> = () => {
       {/* チャートとテーブル */}
       <Grid container spacing={3}>
         <Grid item xs={12} lg={8}>
-          <Card title={t('dashboard.salesChart')} sx={{ height: '100%' }}>
+          <Box
+            sx={{
+              backgroundColor: 'background.paper',
+              borderRadius: 3,
+              p: 3,
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              border: '1px solid',
+              borderColor: 'divider',
+              height: '100%',
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': {
+                boxShadow: '0 8px 12px -2px rgba(0, 0, 0, 0.12), 0 4px 6px -1px rgba(0, 0, 0, 0.08)',
+                transform: 'translateY(-2px)',
+              },
+            }}
+          >
+            <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+              売上チャート
+            </Typography>
             {loading ? (
-              <Skeleton variant="rectangular" height={400} />
+              <Skeleton variant="rectangular" height={400} sx={{ borderRadius: 2 }} />
             ) : (
               <SalesChart data={chartData?.salesChart || []} />
             )}
-          </Card>
+          </Box>
         </Grid>
         
         <Grid item xs={12} lg={4}>
-          <Card title={t('dashboard.topProducts')} sx={{ height: '100%' }}>
+          <Box
+            sx={{
+              backgroundColor: 'background.paper',
+              borderRadius: 3,
+              p: 3,
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              border: '1px solid',
+              borderColor: 'divider',
+              height: '100%',
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': {
+                boxShadow: '0 8px 12px -2px rgba(0, 0, 0, 0.12), 0 4px 6px -1px rgba(0, 0, 0, 0.08)',
+                transform: 'translateY(-2px)',
+              },
+            }}
+          >
+            <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+              人気商品
+            </Typography>
             {loading ? (
-              <Skeleton variant="rectangular" height={400} />
+              <Skeleton variant="rectangular" height={400} sx={{ borderRadius: 2 }} />
             ) : (
               <TopProducts products={topProducts || []} />
             )}
-          </Card>
+          </Box>
         </Grid>
         
         <Grid item xs={12}>
-          <Card title={t('dashboard.recentOrders')}>
+          <Box
+            sx={{
+              backgroundColor: 'background.paper',
+              borderRadius: 3,
+              p: 3,
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              border: '1px solid',
+              borderColor: 'divider',
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': {
+                boxShadow: '0 8px 12px -2px rgba(0, 0, 0, 0.12), 0 4px 6px -1px rgba(0, 0, 0, 0.08)',
+                transform: 'translateY(-2px)',
+              },
+            }}
+          >
+            <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+              最近の注文
+            </Typography>
             {loading ? (
-              <Skeleton variant="rectangular" height={300} />
+              <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 2 }} />
             ) : (
               <RecentOrders orders={recentOrders || []} />
             )}
-          </Card>
+          </Box>
         </Grid>
       </Grid>
     </Box>

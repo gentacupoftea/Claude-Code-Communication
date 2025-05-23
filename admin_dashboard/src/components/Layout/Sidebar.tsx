@@ -25,6 +25,7 @@ import {
   Settings as SettingsIcon,
   Psychology as AIIcon,
   Chat as SlackIcon,
+  Memory as MemoryIcon,
 } from '@mui/icons-material';
 
 // Hooks
@@ -72,6 +73,34 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
       icon: <SlackIcon />,
       badge: stats.slackConnected ? 'ON' : 'OFF',
       color: stats.slackConnected ? 'primary' : 'warning',
+    },
+    {
+      path: '/memory',
+      label: 'メモリ管理',
+      icon: <MemoryIcon />,
+      badge: 'NEW',
+      color: 'secondary',
+    },
+    {
+      path: '/sync',
+      label: '同期モニター',
+      icon: <MonitoringIcon />,
+      badge: 'Phase2',
+      color: 'primary',
+    },
+    {
+      path: '/terminal',
+      label: 'Terminal',
+      icon: <KeyIcon />,
+      badge: 'Phase3',
+      color: 'warning',
+    },
+    {
+      path: '/github',
+      label: 'GitHub',
+      icon: <SlackIcon />,
+      badge: 'Phase4',
+      color: 'secondary',
     },
     {
       path: '/monitoring',

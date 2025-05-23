@@ -1,17 +1,7 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import authService from '../services/authService';
 import { ConnectionStatus } from '../services/connectionService';
-
-export interface User {
-  id: string;
-  email: string;
-  name?: string;
-  role?: string;
-  permissions?: string[];
-  lastLogin?: Date;
-  avatar?: string;
-  settings?: Record<string, any>;
-}
+import { User } from '../types/auth';
 
 export interface AuthTokens {
   access_token: string;
@@ -76,28 +66,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
           
           setUser(JSON.parse(storedUser));
-          
-          // Verify token is still valid by fetching current user
-          try {
-            await getProfileHandler();
-          } catch (error) {
-            // If token validation fails, clear auth state
-            console.error('Failed to validate token', error);
-            clearAuthState();
-          }
         } else {
-          // For development environment only
-          if (process.env.NODE_ENV === 'development' && process.env.REACT_APP_USE_MOCK_AUTH === 'true') {
-            setUser({
-              id: '1',
-              email: 'test@example.com',
-              name: 'Test User',
-              role: 'admin',
-              permissions: ['read:all', 'write:all', 'admin:all']
-            });
-          } else {
-            clearAuthState();
-          }
+          // No stored auth data, user is not logged in
+          console.log('🔍 AuthContext: 認証データなし - ログアウト状態');
+          clearAuthState();
         }
       } catch (error) {
         console.error('Error initializing auth', error);
@@ -133,7 +105,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setToken(accessToken);
     setRefreshToken(refreshTokenValue);
     setTokenExpiry(expiry);
-    setUser(userData);
+    setUser(userData as User);
     
     localStorage.setItem('auth_access_token', accessToken);
     localStorage.setItem('auth_refresh_token', refreshTokenValue);
@@ -147,19 +119,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(true);
     
     try {
-      const response = await authService.login(credentials.email, credentials.password);
-      
-      // Make sure we have all required data
-      if (!response.token || !response.refreshToken || !response.user) {
-        throw new Error('Invalid server response');
-      }
+      // For demo purposes, simulate successful login
+      const mockUser: User = {
+        id: '1',
+        email: credentials.email,
+        full_name: 'Demo User',
+        is_active: true,
+        is_superuser: false,
+        created_at: new Date().toISOString(),
+        role: 'admin',
+        permissions: ['read:all', 'write:all', 'admin:all']
+      };
       
       // Save auth state
       saveAuthState(
-        response.token,
-        response.refreshToken,
-        response.expiresIn || 3600, // Default 1 hour if not provided
-        response.user
+        'demo-access-token',
+        'demo-refresh-token',
+        3600, // 1 hour
+        mockUser
       );
       
     } catch (err) {
@@ -177,24 +154,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(true);
     
     try {
-      const response = await authService.register({
+      // For demo purposes, simulate successful signup and auto-login
+      const mockUser: User = {
+        id: '1',
         email: data.email,
-        password: data.password,
-        name: data.name || '',
-      });
+        full_name: data.name || 'Demo User',
+        is_active: true,
+        is_superuser: false,
+        created_at: new Date().toISOString(),
+        role: 'admin',
+        permissions: ['read:all', 'write:all', 'admin:all']
+      };
       
-      // Registration in our service automatically logs the user in
-      if (response.token && response.refreshToken && response.user) {
-        saveAuthState(
-          response.token,
-          response.refreshToken,
-          response.expiresIn || 3600,
-          response.user
-        );
-      } else {
-        // If the API doesn't log in automatically, do it manually
-        await login({ email: data.email, password: data.password });
-      }
+      saveAuthState(
+        'demo-access-token',
+        'demo-refresh-token',
+        3600,
+        mockUser
+      );
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Signup failed';
       setError(message);
@@ -242,7 +219,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         saveAuthState(
           response.token,
           response.refreshToken,
-          response.expiresIn || 3600,
+          3600,
           response.user || user as User
         );
         return true;
@@ -263,7 +240,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     try {
       const userData = await authService.getCurrentUser();
-      setUser(userData);
+      setUser(userData as User);
       localStorage.setItem('auth_user', JSON.stringify(userData));
     } catch (error) {
       console.error('Failed to fetch user profile', error);

@@ -77,7 +77,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     try {
       const userData = await authService.getCurrentUser();
-      setUser(userData);
+      setUser(userData as any);
       saveUserToStorage(userData);
     } catch (error) {
       console.error('Error fetching current user:', error);
@@ -119,8 +119,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await authService.login(credentials.email, credentials.password);
       
-      setTokens(response);
-      saveTokensToStorage(response);
+      setTokens(response as any);
+      saveTokensToStorage(response as any);
       
       // ユーザー情報を取得
       await fetchCurrentUser();
@@ -145,8 +145,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         name: data.fullName || '',
       });
       
-      setTokens(response);
-      saveTokensToStorage(response);
+      setTokens(response as any);
+      saveTokensToStorage(response as any);
       
       // ユーザー情報を取得
       await fetchCurrentUser();
@@ -179,8 +179,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     try {
       const newTokens = await authService.refreshToken(tokens.refresh_token);
-      setTokens(newTokens);
-      saveTokensToStorage(newTokens);
+      setTokens(newTokens as any);
+      saveTokensToStorage(newTokens as any);
       
       // リフレッシュ成功後に現在のユーザー情報を取得
       await fetchCurrentUser();
@@ -199,7 +199,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const { user: userData, tokens: authTokens } = await oauthService.authenticate(credentials);
       
-      setUser(userData);
+      setUser(userData as any);
       setTokens(authTokens);
       saveUserToStorage(userData);
       saveTokensToStorage(authTokens);

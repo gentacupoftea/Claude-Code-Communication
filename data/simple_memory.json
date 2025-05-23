@@ -1,0 +1,62 @@
+[
+  {
+    "id": "mem_1747952601250_a7jm3i18o",
+    "user_id": "mourigenta",
+    "content": "Conea進捗状況：Slack Bot統合完了、OpenMemory同期システム稼働、Terminal実行権限システム動作、GitHub統合システム実装済み。admin_dashboard（localhost:4000）とbackend（localhost:8000）が連携動作。LLM間でのメモリ共有により、Claude、OpenAI、Geminiが相互の記憶を参照可能。",
+    "created_at": "2025-05-22T22:23:21.250Z",
+    "metadata": {
+      "client": "project-status",
+      "type": "manual_save"
+    }
+  },
+  {
+    "id": "mem_1747952588975_dp066y6um",
+    "user_id": "mourigenta",
+    "content": "Coneaプロジェクト概要：MultiLLM高度化システムの実装プロジェクト。Phase1-Slack応答高度化、Phase2-OpenMemory常時同期、Phase3-Terminal編集権限、Phase4-GitHub権限付与の4フェーズで構成。現在全フェーズ実装完了し、LLM間メモリ共有機能が稼働中。",
+    "created_at": "2025-05-22T22:23:08.975Z",
+    "metadata": {
+      "client": "project-documentation",
+      "type": "manual_save"
+    }
+  },
+  {
+    "id": "mem_1747952342814_jacx73f55",
+    "user_id": "mourigenta",
+    "content": "Gemini記憶：プロジェクトの進捗レビューと将来の機能拡張について話し合いました。特にAI間協調とワークフロー自動化に焦点を当てました。",
+    "created_at": "2025-05-22T22:19:02.814Z",
+    "metadata": {
+      "client": "gemini-conversation",
+      "type": "manual_save"
+    }
+  },
+  {
+    "id": "mem_1747952329138_siu7pht5t",
+    "user_id": "mourigenta",
+    "content": "OpenAI記憶：ユーザーと技術的なディスカッションを行いました。システムアーキテクチャとパフォーマンス最適化について議論しました。",
+    "created_at": "2025-05-22T22:18:49.138Z",
+    "metadata": {
+      "client": "openai-conversation",
+      "type": "manual_save"
+    }
+  },
+  {
+    "id": "mem_1747952317061_zjnqi9f0c",
+    "user_id": "mourigenta",
+    "content": "Claude記憶：今日はMultiLLMシステムのメモリ共有機能を実装しました。OpenMemoryとSimple Memoryのデュアル保存により、AI間での知識共有が可能になりました。",
+    "created_at": "2025-05-22T22:18:37.061Z",
+    "metadata": {
+      "client": "claude-conversation",
+      "type": "manual_save"
+    }
+  },
+  {
+    "id": "mem_1747952283315_8q53g7rfu",
+    "user_id": "mourigenta",
+    "content": "新デュアル保存テスト：この記憶はOpenMemoryとSimple Memory両方に保存されるはずです",
+    "created_at": "2025-05-22T22:18:03.315Z",
+    "metadata": {
+      "client": "dual-save-test",
+      "type": "manual_save"
+    }
+  }
+]

@@ -1,0 +1,17 @@
+
+> shopify-mcp-ui@1.0.0 build
+> react-scripts build
+
+Creating an optimized production build...
+Failed to compile.
+
+TS2304: Cannot find name 'Brightness4'.
+    175 |                 <CardContent>
+    176 |                   <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+  > 177 |                     <Brightness4 />
+        |                      ^^^^^^^^^^^
+    178 |                     カラーモード
+    179 |                   </Typography>
+    180 |
+
+

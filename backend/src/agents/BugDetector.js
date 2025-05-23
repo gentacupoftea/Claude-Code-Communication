@@ -29,21 +29,62 @@ class BugDetector {
 
     this.bugPatterns.set('sql_injection', {
       patterns: [
-        /\$\{[^}]*\}.*?(SELECT|INSERT|UPDATE|DELETE)/gi,
-        /['"`]\s*\+\s*[^+]*\s*\+\s*['"`].*?(SELECT|INSERT|UPDATE|DELETE)/gi
+        // Enhanced SQL injection detection
+        /(?:SELECT|INSERT|UPDATE|DELETE)[\s\S]*?\$\{[^}]*\}/gi,
+        /(?:SELECT|INSERT|UPDATE|DELETE)[\s\S]*?['"]\s*\+[\s\S]*?\+\s*['"]/gi,
+        /WHERE[\s\S]*?\$\{[^}]*\}/gi,
+        /VALUES[\s\S]*?\$\{[^}]*\}/gi,
+        /(?:query|execute)\s*\(\s*['"`][^'"`]*\$\{[^}]*\}[^'"`]*['"`]/gi,
+        /\.(?:where|select|insert|update|delete)\s*\(\s*['"`][^'"`]*\$\{[^}]*\}/gi
       ],
       severity: 'critical',
-      description: 'SQL injection vulnerability'
+      description: 'SQL injection vulnerability detected'
     });
 
     this.bugPatterns.set('xss_vulnerability', {
       patterns: [
-        /(innerHTML|outerHTML)\s*=\s*[^;]*\$\{/g,
-        /document\.write\s*\([^)]*\$\{/g,
-        /<script[^>]*>[^<]*\$\{[^}]*\}/g
+        // Direct DOM manipulation with user input
+        /(innerHTML|outerHTML)\s*[=+]\s*[^;]*\$\{[^}]*\}/gi,
+        /insertAdjacentHTML\s*\(\s*[^,]*,\s*[^)]*\$\{[^}]*\}/gi,
+        
+        // Document write methods
+        /document\.write(?:ln)?\s*\(\s*[^)]*\$\{[^}]*\}/gi,
+        
+        // jQuery and framework methods
+        /\.html\s*\(\s*[^)]*\$\{[^}]*\}/gi,
+        /\.append\s*\(\s*[^)]*\$\{[^}]*\}/gi,
+        /\.prepend\s*\(\s*[^)]*\$\{[^}]*\}/gi,
+        /\.after\s*\(\s*[^)]*\$\{[^}]*\}/gi,
+        /\.before\s*\(\s*[^)]*\$\{[^}]*\}/gi,
+        
+        // Dynamic script creation
+        /createElement\s*\(\s*['"`]script['"`]\s*\)[\s\S]*?src\s*=\s*[^;]*\$\{[^}]*\}/gi,
+        /createElement\s*\(\s*['"`]script['"`]\s*\)[\s\S]*?innerHTML\s*=\s*[^;]*\$\{[^}]*\}/gi,
+        
+        // Event handler injection
+        /on\w+\s*=\s*[^;]*\$\{[^}]*\}/gi,
+        /addEventListener\s*\(\s*[^,]*,\s*[^)]*\$\{[^}]*\}/gi,
+        
+        // URL and href manipulation
+        /(?:href|src|action)\s*=\s*[^;]*\$\{[^}]*\}/gi,
+        /location\.href\s*=\s*[^;]*\$\{[^}]*\}/gi,
+        /window\.open\s*\(\s*[^)]*\$\{[^}]*\}/gi,
+        
+        // URL parameter injection
+        /[?&]\w+=[^&]*\$\{[^}]*\}/gi,
+        
+        // CSS injection
+        /style\s*=\s*[^;]*\$\{[^}]*\}/gi,
+        /\.css\s*\(\s*[^)]*\$\{[^}]*\}/gi,
+        
+        // Template string in dangerous contexts
+        /`[^`]*<[^>]*\$\{[^}]*\}[^`]*>/gi,
+        
+        // Script tag injection
+        /<script[^>]*>[^<]*\$\{[^}]*\}/gi
       ],
-      severity: 'high',
-      description: 'XSS vulnerability detected'
+      severity: 'critical',
+      description: 'XSS vulnerability detected - unsanitized user input in DOM manipulation'
     });
 
     this.bugPatterns.set('resource_leak', {
@@ -58,12 +99,25 @@ class BugDetector {
 
     this.bugPatterns.set('async_error', {
       patterns: [
-        /await\s+[^;]*(?!.*catch)/g,
-        /Promise\s*\([^)]*\)(?!.*\.catch)/g,
-        /async\s+function[^{]*\{[^}]*\}(?!.*catch)/g
+        // Unhandled await calls
+        /await\s+[^;]*(?!.*catch)(?!.*\.catch)/gi,
+        /Promise\s*\([^)]*\)(?!.*\.catch)(?!.*catch)/gi,
+        
+        // Async functions without error handling
+        /async\s+function[^{]*\{[^}]*\}(?!.*catch)(?!.*\.catch)/gi,
+        /async\s*\([^)]*\)\s*=>[^{]*\{[^}]*\}(?!.*catch)/gi,
+        
+        // Promise chains without catch
+        /\.then\s*\([^)]*\)(?!.*\.catch)/gi,
+        
+        // Callback patterns without error handling
+        /callback\s*\(\s*[^,)]*[^,)]+\s*[,)]/gi,
+        
+        // Event emitter without error handling
+        /\.emit\s*\(\s*['"`]error['"`]/gi
       ],
-      severity: 'medium',
-      description: 'Unhandled async error potential'
+      severity: 'high',
+      description: 'Unhandled async error potential - could cause unhandled promise rejections'
     });
 
     this.bugPatterns.set('type_error', {
@@ -74,6 +128,70 @@ class BugDetector {
       ],
       severity: 'medium',
       description: 'Type error potential'
+    });
+
+    // Cryptographic vulnerabilities
+    this.bugPatterns.set('crypto_vulnerability', {
+      patterns: [
+        // Weak encryption algorithms
+        /createCipher\s*\(\s*['"`](?:des|rc4|md5)['"`]/gi,
+        /createHash\s*\(\s*['"`](?:md5|sha1)['"`]/gi,
+        
+        // Hardcoded secrets
+        /(?:password|secret|key|token)\s*[=:]\s*['"`][^'"`]{8,}['"`]/gi,
+        /(?:api_key|apikey|access_token)\s*[=:]\s*['"`][^'"`]+['"`]/gi,
+        
+        // Weak random generation
+        /Math\.random\s*\(\s*\)/gi,
+        
+        // Insecure crypto parameters
+        /randomBytes\s*\(\s*[1-7]\s*\)/gi,
+        /pbkdf2\s*\([^)]*,\s*[1-9]\d{0,2}\s*[,)]/gi
+      ],
+      severity: 'critical',
+      description: 'Cryptographic vulnerability detected - weak encryption or exposed secrets'
+    });
+
+    // Path traversal vulnerabilities
+    this.bugPatterns.set('path_traversal', {
+      patterns: [
+        // Direct path manipulation
+        /(?:fs\.readFile|fs\.writeFile|fs\.open)\s*\([^)]*\$\{[^}]*\}/gi,
+        /path\.join\s*\([^)]*\$\{[^}]*\}/gi,
+        /require\s*\(\s*[^)]*\$\{[^}]*\}/gi,
+        
+        // Directory traversal patterns
+        /['"]\.\.[/\\]/gi,
+        /['"]\.\.[/\\]\.\.[/\\]/gi,
+        
+        // File access with user input
+        /(?:readFile|writeFile|access|stat)\s*\([^)]*(?:req\.query|req\.params|req\.body)/gi,
+        /(?:__dirname|__filename)\s*\+\s*[^;]*\$\{[^}]*\}/gi,
+        
+        // Express static with user input
+        /express\.static\s*\([^)]*\$\{[^}]*\}/gi
+      ],
+      severity: 'critical',
+      description: 'Path traversal vulnerability detected - unsafe file access with user input'
+    });
+
+    // Command injection vulnerabilities
+    this.bugPatterns.set('command_injection', {
+      patterns: [
+        // Direct command execution with user input
+        /(?:exec|spawn|fork)\s*\([^)]*\$\{[^}]*\}/gi,
+        /child_process\.\w+\s*\([^)]*\$\{[^}]*\}/gi,
+        
+        // Shell command construction
+        /`[^`]*\$\{[^}]*\}[^`]*`/gi,
+        
+        // Eval-like functions with user input
+        /(?:eval|Function)\s*\([^)]*\$\{[^}]*\}/gi,
+        /setTimeout\s*\(\s*['"`][^'"`]*\$\{[^}]*\}/gi,
+        /setInterval\s*\(\s*['"`][^'"`]*\$\{[^}]*\}/gi
+      ],
+      severity: 'critical',
+      description: 'Command injection vulnerability detected - unsafe command execution'
     });
   }
 

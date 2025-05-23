@@ -28,7 +28,7 @@ module.exports = {
   
   // 変換対象の設定
   transformIgnorePatterns: [
-    'node_modules/(?!(axios|@testing-library|@babel|react-router)/)'
+    'node_modules/(?!(axios|@testing-library|@babel|react-router|react-markdown|date-fns)/)'
   ],
   
   // カバレッジ設定

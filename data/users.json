@@ -1,0 +1,15 @@
+[
+  {
+    "id": "1",
+    "name": "Admin User",
+    "email": "admin@conea.dev",
+    "role": "admin",
+    "permissions": {
+      "claude": true,
+      "openai": true,
+      "gemini": true,
+      "billing": true
+    },
+    "createdAt": "2025-05-22T17:06:33.518Z"
+  }
+]

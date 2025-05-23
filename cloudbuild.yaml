@@ -1,0 +1,81 @@
+# Google Cloud Build configuration for Shopify MCP Server
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: 
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/shopify-mcp-server:$BUILD_ID'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/shopify-mcp-server:latest'
+      - '-f'
+      - 'Dockerfile'
+      - '.'
+    dir: '.'
+
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: 
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/shopify-mcp-server:$BUILD_ID'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: 
+      - 'push' 
+      - 'gcr.io/$PROJECT_ID/shopify-mcp-server:latest'
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'shopify-mcp-server'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/shopify-mcp-server:$BUILD_ID'
+      - '--region'
+      - 'asia-northeast1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--memory'
+      - '1Gi'
+      - '--cpu'
+      - '1'
+      - '--max-instances'
+      - '5'
+      - '--min-instances'
+      - '1'
+      - '--port'
+      - '8000'
+      - '--set-env-vars'
+      - 'NODE_ENV=production,API_HOST=0.0.0.0,PORT=8000'
+
+# Options for the build
+options:
+  # Use a machine with more resources for faster builds
+  machineType: 'E2_HIGHCPU_8'
+  # Increase build timeout
+  timeout: '1200s'
+  # Use Cloud Build's disk space efficiently
+  diskSizeGb: 50
+  # Log streaming
+  logging: CLOUD_LOGGING_ONLY
+
+# Store build artifacts
+artifacts:
+  images:
+    - 'gcr.io/$PROJECT_ID/shopify-mcp-server:$BUILD_ID'
+    - 'gcr.io/$PROJECT_ID/shopify-mcp-server:latest'
+
+# Substitutions for template variables
+substitutions:
+  _REGION: 'asia-northeast1'
+  _SERVICE_NAME: 'shopify-mcp-server'
+  _MEMORY: '2Gi'
+  _CPU: '2'
+
+# Build tags
+tags:
+  - 'shopify-mcp-server'
+  - 'conea'
+  - 'production'

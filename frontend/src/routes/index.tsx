@@ -27,7 +27,7 @@ import { Notifications } from '../pages/Notifications/Notifications';
 import DataComponentsDemo from '../pages/Demo/DataComponentsDemo';
 
 // 環境設定
-import { currentEnvironment } from '../../config/environments';
+const currentEnvironment = process.env.NODE_ENV || 'development';
 
 // エラーハンドリングサービス
 import { trackPageView } from '../services/analyticsService';
@@ -41,7 +41,7 @@ import { ErrorBoundary } from '../components/common/ErrorBoundary';
 const AppRoutes: React.FC = () => {
   // ページビューのトラッキング（環境に応じて有効/無効）
   React.useEffect(() => {
-    if (currentEnvironment.features.enableAnalytics) {
+    if (currentEnvironment === 'production') {
       // ページビューのトラッキングを設定（ルート変更時に実行）
       const trackCurrentPage = () => {
         const path = window.location.pathname;
@@ -67,10 +67,8 @@ const AppRoutes: React.FC = () => {
 
   // デバッグモードで追加情報を表示
   React.useEffect(() => {
-    if (currentEnvironment.debug) {
-      console.log(`Running in ${currentEnvironment.env} mode`);
-      console.log(`API URL: ${currentEnvironment.apiUrl}`);
-      console.log(`WebSocket URL: ${currentEnvironment.websocketUrl}`);
+    if (currentEnvironment === 'development') {
+      console.log(`Running in ${currentEnvironment} mode`);
     }
   }, []);
 

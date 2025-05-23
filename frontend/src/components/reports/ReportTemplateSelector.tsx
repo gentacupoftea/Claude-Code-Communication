@@ -296,7 +296,7 @@ const ReportTemplateSelector: React.FC<ReportTemplateSelectorProps> = ({
   ];
   
   // カテゴリーアイコンマップ
-  const categoryIconMap: Record<ReportCategory | 'all', React.ReactNode> = {
+  const categoryIconMap: Record<ReportCategory | 'all', React.ReactElement> = {
     all: <Description />,
     sales: <TrendingUp />,
     inventory: <Inventory />,

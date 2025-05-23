@@ -327,10 +327,10 @@ const EnvironmentSettingsPage: React.FC = () => {
       />
 
       <EnvironmentVariableImportExport
-        mode={importExportMode}
         isOpen={importExportOpen}
         onClose={() => setImportExportOpen(false)}
-        onSuccess={handleImportExportSuccess}
+        categories={categories}
+        onImportComplete={handleImportExportSuccess}
       />
 
       {/* Success Snackbar */}

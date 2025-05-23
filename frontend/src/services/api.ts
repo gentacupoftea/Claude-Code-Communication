@@ -6,7 +6,7 @@ class ApiService {
   private refreshTokenPromise: Promise<AuthTokens> | null = null;
 
   constructor() {
-    const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+    const baseURL = process.env.REACT_APP_API_URL || 'https://shopify-mcp-server-259335331171.asia-northeast1.run.app';
     console.log('API baseURL:', baseURL);
     
     this.instance = axios.create({

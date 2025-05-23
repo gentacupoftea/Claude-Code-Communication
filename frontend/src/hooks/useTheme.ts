@@ -12,17 +12,17 @@ const lightTheme: ThemeOptions = {
   palette: {
     mode: 'light',
     primary: {
-      main: '#10B981',
-      light: '#34D399',
-      dark: '#059669',
+      main: '#34D399', // Emerald-400 (薄い緑)
+      light: '#6EE7B7', // Emerald-300
+      dark: '#10B981',  // Emerald-500
     },
     secondary: {
-      main: '#06B6D4',
-      light: '#22D3EE',
-      dark: '#0891B2',
+      main: '#60A5FA', // Blue-400 (補完色)
+      light: '#93C5FD', // Blue-300
+      dark: '#3B82F6',  // Blue-500
     },
     background: {
-      default: '#F0FDF4',
+      default: '#F8FAFC',
       paper: '#FFFFFF',
     },
     info: {
@@ -47,25 +47,29 @@ const lightTheme: ThemeOptions = {
     },
   },
   shape: {
-    borderRadius: 12,
+    borderRadius: 16,
   },
   typography: {
-    fontFamily: '"Noto Sans JP", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Inter", "Noto Sans JP", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
       fontSize: '2.5rem',
       fontWeight: 700,
+      letterSpacing: '-0.025em',
     },
     h2: {
       fontSize: '2rem',
-      fontWeight: 600,
+      fontWeight: 700,
+      letterSpacing: '-0.025em',
     },
     h3: {
       fontSize: '1.75rem',
       fontWeight: 600,
+      letterSpacing: '-0.025em',
     },
     h4: {
       fontSize: '1.5rem',
       fontWeight: 600,
+      letterSpacing: '-0.025em',
     },
     h5: {
       fontSize: '1.25rem',
@@ -75,6 +79,45 @@ const lightTheme: ThemeOptions = {
       fontSize: '1rem',
       fontWeight: 600,
     },
+    body1: {
+      fontSize: '1rem',
+      lineHeight: 1.7,
+    },
+    body2: {
+      fontSize: '0.875rem',
+      lineHeight: 1.6,
+    },
+  },
+  components: {
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+          border: '1px solid rgba(226, 232, 240, 0.8)',
+          '&:hover': {
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            transform: 'translateY(-1px)',
+            transition: 'all 0.2s ease-in-out',
+          },
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          fontWeight: 600,
+          borderRadius: 12,
+          padding: '8px 16px',
+        },
+        contained: {
+          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+          '&:hover': {
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          },
+        },
+      },
+    },
   },
 };
 
@@ -83,27 +126,28 @@ const darkTheme: ThemeOptions = {
   palette: {
     mode: 'dark',
     primary: {
-      main: '#10B981',
-      light: '#34D399',
-      dark: '#059669',
+      main: '#6EE7B7', // Emerald-300 for dark mode
+      light: '#A7F3D0', // Emerald-200
+      dark: '#34D399',  // Emerald-400
     },
     secondary: {
-      main: '#6B7280',
-      light: '#9CA3AF',
-      dark: '#4B5563',
+      main: '#93C5FD', // Blue-300 for dark mode
+      light: '#BFDBFE', // Blue-200
+      dark: '#60A5FA',  // Blue-400
     },
     background: {
-      default: '#000000',
-      paper: '#1a1a1a',
+      default: '#0F172A', // Slate 900
+      paper: '#1E293B', // Slate 800
     },
     text: {
-      primary: '#F3F4F6',
-      secondary: '#9CA3AF',
+      primary: '#F1F5F9', // Slate 100
+      secondary: '#94A3B8', // Slate 400
     },
+    divider: '#334155', // Slate 700
     info: {
-      main: '#3B82F6',
-      light: '#60A5FA',
-      dark: '#2563EB',
+      main: '#0EA5E9',
+      light: '#38BDF8',
+      dark: '#0284C7',
     },
     success: {
       main: '#10B981',

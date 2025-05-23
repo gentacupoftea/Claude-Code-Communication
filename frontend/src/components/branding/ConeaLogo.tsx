@@ -4,8 +4,11 @@ import { useTheme } from '@mui/material/styles';
 interface ConeaLogoProps {
   variant?: 'horizontal' | 'vertical' | 'icon-only';
   showTagline?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
+  width?: number;
+  height?: number;
+  forceWhiteText?: boolean;  // 強制的に白色テキストにするオプション
 }
 
 export const ConeaLogo: React.FC<ConeaLogoProps> = ({
@@ -13,6 +16,9 @@ export const ConeaLogo: React.FC<ConeaLogoProps> = ({
   showTagline = false,
   size = 'md',
   className = '',
+  width: customWidth,
+  height: customHeight,
+  forceWhiteText = false,
 }) => {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
@@ -22,22 +28,28 @@ export const ConeaLogo: React.FC<ConeaLogoProps> = ({
     sm: { width: 120, height: 40 },
     md: { width: 180, height: 50 },
     lg: { width: 220, height: 60 },
+    xl: { width: 260, height: 70 },
   };
   
-  // カラー設定
+  // カラー設定（ライトモードでは白抜き、ダークモードでは薄い緑）
   const colors = {
-    icon: isDarkMode ? '#10B981' : '#10B981',
-    text: isDarkMode ? '#FFFFFF' : '#1F2937',
-    tagline: isDarkMode ? '#FFFFFF' : '#6B7280',
+    icon: isDarkMode ? '#34D399' : '#FFFFFF',  // ダークモード: 薄い緑、ライトモード: 白
+    text: forceWhiteText ? '#FFFFFF' : (isDarkMode ? '#FFFFFF' : '#1F2937'),
+    tagline: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : '#6B7280',
   };
   
   const { width, height } = sizes[size];
+  const finalWidth = customWidth || width;
+  const finalHeight = customHeight || height;
   
   if (variant === 'icon-only') {
+    const iconWidth = customWidth || 48;
+    const iconHeight = customHeight || 48;
+    
     return (
       <svg 
-        width={48} 
-        height={48} 
+        width={iconWidth} 
+        height={iconHeight} 
         viewBox="0 0 48 48" 
         fill="none" 
         xmlns="http://www.w3.org/2000/svg"
@@ -55,9 +67,9 @@ export const ConeaLogo: React.FC<ConeaLogoProps> = ({
   
   return (
     <svg 
-      width={width} 
-      height={height} 
-      viewBox={`0 0 ${width} ${height}`} 
+      width={finalWidth} 
+      height={finalHeight} 
+      viewBox={`0 0 ${finalWidth} ${finalHeight}`} 
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"
       className={className}
@@ -75,9 +87,9 @@ export const ConeaLogo: React.FC<ConeaLogoProps> = ({
       {/* テキスト部分 */}
       <text 
         x={variant === 'vertical' ? 18 : 46} 
-        y={variant === 'vertical' ? 45 : 23}
+        y={variant === 'vertical' ? finalHeight * 0.75 : finalHeight / 2}
         fontFamily="Inter, -apple-system, sans-serif" 
-        fontSize={size === 'sm' ? 18 : size === 'md' ? 24 : 28}
+        fontSize={size === 'sm' ? 18 : size === 'md' ? 24 : size === 'lg' ? 28 : 32}
         fontWeight="700"
         fill={colors.text}
         alignmentBaseline="middle"
@@ -89,9 +101,9 @@ export const ConeaLogo: React.FC<ConeaLogoProps> = ({
       {showTagline && (
         <text 
           x={variant === 'vertical' ? 18 : 46} 
-          y={variant === 'vertical' ? 55 : 37}
+          y={variant === 'vertical' ? finalHeight * 0.9 : finalHeight * 0.74}
           fontFamily="Inter, -apple-system, sans-serif" 
-          fontSize={size === 'sm' ? 9 : size === 'md' ? 10 : 12}
+          fontSize={size === 'sm' ? 9 : size === 'md' ? 10 : size === 'lg' ? 12 : 14}
           fill={colors.tagline}
           alignmentBaseline="middle"
         >

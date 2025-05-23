@@ -95,6 +95,54 @@ class AutoFixer {
         }
       ]
     });
+
+    // 暗号化脆弱性修正戦略
+    this.fixStrategies.set('crypto_vulnerability', {
+      strategy: 'crypto_security_review',
+      confidence: 0.1,
+      autoApply: false,
+      requiresSecurityReview: true,
+      fixes: [
+        {
+          pattern: /(createHash\s*\(\s*['"`](?:md5|sha1)['"`])/g,
+          replacement: (match) => {
+            return `// SECURITY ALERT: Weak cryptographic algorithm detected\n// TODO: URGENT - Use SHA-256 or stronger: crypto.createHash('sha256')\n${match}`;
+          }
+        }
+      ]
+    });
+
+    // パストラバーサル脆弱性修正戦略
+    this.fixStrategies.set('path_traversal', {
+      strategy: 'path_security_validation',
+      confidence: 0.1,
+      autoApply: false,
+      requiresSecurityReview: true,
+      fixes: [
+        {
+          pattern: /((?:fs\.readFile|fs\.writeFile)\s*\([^)]*\$\{[^}]*\})/g,
+          replacement: (match) => {
+            return `// SECURITY ALERT: Path traversal vulnerability detected\n// TODO: URGENT - Validate and sanitize file paths, use path.resolve() and check bounds\n${match}`;
+          }
+        }
+      ]
+    });
+
+    // コマンドインジェクション修正戦略
+    this.fixStrategies.set('command_injection', {
+      strategy: 'command_security_validation',
+      confidence: 0.1,
+      autoApply: false,
+      requiresSecurityReview: true,
+      fixes: [
+        {
+          pattern: /((?:exec|spawn)\s*\([^)]*\$\{[^}]*\})/g,
+          replacement: (match) => {
+            return `// SECURITY ALERT: Command injection vulnerability detected\n// TODO: URGENT - Use spawn with array arguments, validate all inputs\n${match}`;
+          }
+        }
+      ]
+    });
   }
 
   async autoFixBug(bug, filePath, originalContent) {

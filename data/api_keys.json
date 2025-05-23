@@ -1,0 +1,13 @@
+[
+  {
+    "provider": "claude",
+    "name": "claude-dev",
+    "key": "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",
+    "status": "error",
+    "id": "1747933887572",
+    "createdAt": "2025-05-22T17:11:27.572Z",
+    "usageCount": 0,
+    "monthlyCost": 0,
+    "isEncrypted": true
+  }
+]

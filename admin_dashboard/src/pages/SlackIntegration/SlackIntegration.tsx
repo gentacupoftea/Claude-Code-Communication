@@ -132,16 +132,22 @@ const SlackIntegration: React.FC = () => {
   };
 
   const handleSave = async () => {
+    console.log('🔧 Save button clicked');
+    console.log('🔧 FormData:', formData);
+    
     try {
       setSaving(true);
+      console.log('🔧 Calling apiService.saveSlackConfig...');
       const savedConfig = await apiService.saveSlackConfig(formData);
+      console.log('🔧 Save successful:', savedConfig);
       setConfig(savedConfig);
       showSnackbar('Slack設定を保存しました', 'success');
     } catch (error) {
-      console.error('Failed to save Slack config:', error);
+      console.error('🔧 Failed to save Slack config:', error);
       showSnackbar('設定の保存に失敗しました', 'error');
     } finally {
       setSaving(false);
+      console.log('🔧 Save process completed');
     }
   };
 
@@ -391,11 +397,59 @@ const SlackIntegration: React.FC = () => {
         <TabPanel value={tabValue} index={1}>
           <Grid container spacing={3}>
             <Grid item xs={12}>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <Typography variant="h6" gutterBottom>📱 Slack App設定手順（2024年最新版）</Typography>
+                <Typography variant="body2" paragraph>
+                  <strong>1. Slack Appの作成</strong><br />
+                  • <a href="https://api.slack.com/apps" target="_blank" rel="noopener">api.slack.com/apps</a> にアクセス<br />
+                  • 「Create New App」→「From scratch」<br />
+                  • App名とワークスペースを選択
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  <strong>2. OAuth & Permissions（必須）</strong><br />
+                  • 左メニュー「OAuth & Permissions」<br />
+                  • 「Scopes」→「Bot Token Scopes」で権限を追加<br />
+                  • 「Install to Workspace」でワークスペースにインストール
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  <strong>3. Socket Mode（推奨）</strong><br />
+                  • 左メニュー「Socket Mode」<br />
+                  • 「Enable Socket Mode」をON<br />
+                  • 新しいトークンを生成（connections:writeスコープ）
+                </Typography>
+                <Typography variant="body2">
+                  <strong>4. Event Subscriptions</strong><br />
+                  • 左メニュー「Event Subscriptions」<br />
+                  • 「Enable Events」をON<br />
+                  • 「Subscribe to bot events」で app_mentions を追加
+                </Typography>
+              </Alert>
+            </Grid>
+
+            <Grid item xs={12}>
               <Alert severity="warning" sx={{ mb: 2 }}>
-                Keep your tokens secure. They will be encrypted when saved.
+                トークンは暗号化して保存されます。外部に漏らさないよう注意してください。
               </Alert>
             </Grid>
             
+            <Grid item xs={12}>
+              <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
+                <Typography variant="subtitle2" gutterBottom color="primary">
+                  📍 Bot User OAuth Token の取得方法
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>手順:</strong><br />
+                  1. 左メニュー「OAuth & Permissions」<br />
+                  2. 「Bot Token Scopes」で必要な権限を追加<br />
+                  3. 「Install to Workspace」ボタンをクリック<br />
+                  4. 権限を承認後、「Bot User OAuth Token」が表示される
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  ⚠️ ワークスペースにインストール後に生成されます
+                </Typography>
+              </Paper>
+            </Grid>
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -403,8 +457,8 @@ const SlackIntegration: React.FC = () => {
                 type={showTokens.botToken ? 'text' : 'password'}
                 value={formData.botToken}
                 onChange={(e) => handleInputChange('botToken', e.target.value)}
-                placeholder="xoxb-..."
-                helperText="Your bot's OAuth token (starts with xoxb-)"
+                placeholder="xoxb-1234567890-1234567890123-abcdefghijklmnopqrstuvwx"
+                helperText="OAuth & Permissions → Bot User OAuth Token (xoxb-で始まる)"
                 InputProps={{
                   endAdornment: (
                     <IconButton
@@ -417,6 +471,25 @@ const SlackIntegration: React.FC = () => {
                 }}
               />
             </Grid>
+
+            <Grid item xs={12}>
+              <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
+                <Typography variant="subtitle2" gutterBottom color="primary">
+                  📍 App-Level Token の取得方法
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>手順:</strong><br />
+                  1. 左メニュー「Socket Mode」<br />
+                  2. 「Enable Socket Mode」トグルをON<br />
+                  3. 「Generate an app-level token」をクリック<br />
+                  4. Token名を入力、「connections:write」スコープを選択<br />
+                  5. 「Generate」ボタンでトークン生成
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  💡 Socket Modeでリアルタイム通信が可能になります
+                </Typography>
+              </Paper>
+            </Grid>
             
             <Grid item xs={12}>
               <TextField
@@ -425,8 +498,8 @@ const SlackIntegration: React.FC = () => {
                 type={showTokens.appToken ? 'text' : 'password'}
                 value={formData.appToken}
                 onChange={(e) => handleInputChange('appToken', e.target.value)}
-                placeholder="xapp-..."
-                helperText="Your app-level token for Socket Mode (starts with xapp-)"
+                placeholder="xapp-1-A1234567890-1234567890123-abcdefghijklmnopqrstuvwxyz"
+                helperText="Socket Mode → App-Level Tokens → Generate Token (xapp-で始まる)"
                 InputProps={{
                   endAdornment: (
                     <IconButton
@@ -439,6 +512,24 @@ const SlackIntegration: React.FC = () => {
                 }}
               />
             </Grid>
+
+            <Grid item xs={12}>
+              <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
+                <Typography variant="subtitle2" gutterBottom color="primary">
+                  📍 Signing Secret の取得方法
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>手順:</strong><br />
+                  1. 左メニュー「Basic Information」<br />
+                  2. 「App Credentials」セクションを探す<br />
+                  3. 「Signing Secret」の「Show」ボタンをクリック<br />
+                  4. 表示された32文字のハッシュ値をコピー
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  🔒 リクエスト署名の検証に使用（セキュリティ必須）
+                </Typography>
+              </Paper>
+            </Grid>
             
             <Grid item xs={12}>
               <TextField
@@ -447,8 +538,8 @@ const SlackIntegration: React.FC = () => {
                 type={showTokens.signingSecret ? 'text' : 'password'}
                 value={formData.signingSecret}
                 onChange={(e) => handleInputChange('signingSecret', e.target.value)}
-                placeholder="Your signing secret"
-                helperText="Used to verify requests from Slack"
+                placeholder="abcdef1234567890abcdef1234567890abcdef12"
+                helperText="Basic Information → App Credentials → Signing Secret (32文字のハッシュ値)"
                 InputProps={{
                   endAdornment: (
                     <IconButton
@@ -460,6 +551,53 @@ const SlackIntegration: React.FC = () => {
                   ),
                 }}
               />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Paper sx={{ p: 3, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
+                <Typography variant="h6" gutterBottom>
+                  🔒 必要な Bot Token Scopes
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  「OAuth & Permissions」→「Bot Token Scopes」で以下を追加：
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <strong>• app_mentions:read</strong><br />
+                      → @botのメンション検知
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <strong>• chat:write</strong><br />
+                      → メッセージ送信権限
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <strong>• channels:read</strong><br />
+                      → チャンネル情報取得
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <strong>• users:read</strong><br />
+                      → ユーザー情報取得
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Paper sx={{ p: 3, bgcolor: 'warning.light', color: 'warning.contrastText' }}>
+                <Typography variant="h6" gutterBottom>
+                  ⚡ Event Subscriptions 設定
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>Subscribe to bot events:</strong> app_mentions
+                </Typography>
+                <Typography variant="body2">
+                  Socket Mode使用時はRequest URLの設定は不要です
+                </Typography>
+              </Paper>
             </Grid>
           </Grid>
         </TabPanel>

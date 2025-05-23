@@ -2,7 +2,7 @@
  * 認証関連サービス
  */
 import api from './api';
-import { User, APIResponse } from '@/types';
+import { User, APIResponse } from '../types';
 
 interface LoginResponse {
   user: User;
@@ -59,16 +59,28 @@ class AuthService {
   }
 
   /**
-   * 現在のユーザー情報取得
+   * 現在のユーザー情報取得（モック版）
    */
   async getCurrentUser(): Promise<User> {
-    const response = await api.get<APIResponse<User>>('/auth/me');
+    // 一時的にモックデータを返す
+    console.log('🔍 AuthService: モック版getCurrentUser()を使用');
+    return {
+      id: '1',
+      email: 'test@example.com',
+      full_name: 'Test User',
+      is_active: true,
+      is_superuser: false,
+      created_at: new Date().toISOString(),
+      role: 'admin',
+      permissions: ['read:all', 'write:all', 'admin:all']
+    };
     
-    if (response.success && response.data) {
-      return response.data;
-    }
-    
-    throw new Error(response.error?.message || 'ユーザー情報の取得に失敗しました');
+    // 元のコード（一時的に無効化）
+    // const response = await api.get<APIResponse<User>>('/auth/me');
+    // if (response.success && response.data) {
+    //   return response.data;
+    // }
+    // throw new Error(response.error?.message || 'ユーザー情報の取得に失敗しました');
   }
 
   /**

@@ -79,7 +79,7 @@ class ConnectionService extends EventEmitter {
       await this.validateApiConnection();
       
       // Then connect WebSocket if API is available
-      if (this._connectionDetails.apiStatus === 'connected') {
+      if ((this._connectionDetails.apiStatus as ConnectionStatus) === 'connected') {
         websocketService.connect();
         
         // Start ping interval to keep connection alive
@@ -178,7 +178,7 @@ class ConnectionService extends EventEmitter {
     
     this.pingInterval = window.setInterval(async () => {
       try {
-        if (this._connectionDetails.apiStatus === 'connected') {
+        if ((this._connectionDetails.apiStatus as ConnectionStatus) === 'connected') {
           await apiService.get('/api/v1/ping');
         }
       } catch (error) {

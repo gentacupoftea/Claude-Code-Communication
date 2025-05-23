@@ -5,17 +5,8 @@
 // ECプラットフォーム種別
 export type ECPlatform = 'shopify' | 'rakuten' | 'amazon' | 'yahoo' | 'base' | 'mercari';
 
-// ユーザー認証
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: 'admin' | 'manager' | 'user' | 'viewer';
-  language: 'ja' | 'en';
-  theme: 'light' | 'dark';
-  permissions: string[];
-  lastLogin: Date;
-}
+// ユーザー認証を auth.ts から再エクスポート
+export type { User } from './auth';
 
 // API認証設定
 export interface APIConfig {

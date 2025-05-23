@@ -38,7 +38,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, isMobile = false }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { toggleTheme, theme } = useTheme();
-  const { isConnected, apiStatus, wsStatus } = useConnectionContext();
+  const { isOnline } = useConnectionContext();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -74,11 +74,12 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, isMobile = false }) => {
       sx={{
         zIndex: (theme) => theme.zIndex.drawer + 1,
         background: theme.palette.mode === 'dark' 
-          ? 'linear-gradient(135deg, #1a1a1a 0%, #111111 100%)' 
-          : 'linear-gradient(135deg, #86EFAC 0%, #6EE7B7 100%)',
-        color: theme.palette.primary.contrastText,
+          ? 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)' 
+          : 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
+        color: '#FFFFFF',
         backdropFilter: 'blur(10px)',
         borderBottom: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)'}`,
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
       }}
       elevation={0}
     >

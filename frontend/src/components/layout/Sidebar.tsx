@@ -13,27 +13,28 @@ import {
   Divider,
   useTheme,
 } from '@mui/material';
+import { ConeaLogo } from '../branding/ConeaLogo';
 import {
-  HomeIcon,
-  ShoppingBagIcon,
-  UserGroupIcon,
-  ChartBarIcon,
-  CogIcon,
-  DocumentTextIcon,
-  CpuChipIcon,
-  PresentationChartLineIcon,
-  RectangleStackIcon,
-  LinkIcon,
-  UserIcon,
-  BellIcon,
-  BeakerIcon,
-  QuestionMarkCircleIcon as HelpIcon,
-} from '@heroicons/react/24/outline';
+  Home as HomeIcon,
+  ShoppingBag as ShoppingBagIcon,
+  Group as UserGroupIcon,
+  BarChart as ChartBarIcon,
+  Settings as CogIcon,
+  Description as DocumentTextIcon,
+  Computer as CpuChipIcon,
+  TrendingUp as PresentationChartLineIcon,
+  Dashboard as RectangleStackIcon,
+  Link as LinkIcon,
+  Person as UserIcon,
+  Notifications as BellIcon,
+  Science as BeakerIcon,
+  Help as HelpIcon,
+} from '@mui/icons-material';
 
 interface NavItem {
   name: string;
   path: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType;
 }
 
 interface SidebarProps {
@@ -44,20 +45,15 @@ interface SidebarProps {
 
 const navigation: NavItem[] = [
   { name: 'Dashboard', path: '/dashboard', icon: HomeIcon },
+  { name: 'Analytics', path: '/analytics', icon: ChartBarIcon },
   { name: 'AI Chat Space', path: '/chat', icon: CpuChipIcon },
   { name: 'Orders', path: '/orders', icon: ShoppingBagIcon },
   { name: 'Customers', path: '/customers', icon: UserGroupIcon },
-  { name: 'Analytics', path: '/analytics', icon: ChartBarIcon },
-  { name: 'Dashboard Editor', path: '/dashboard-editor', icon: PresentationChartLineIcon },
-  { name: 'Saved Dashboards', path: '/saved-dashboards', icon: RectangleStackIcon },
-  { name: 'API Settings', path: '/api-settings', icon: LinkIcon },
+  { name: 'Products', path: '/products', icon: ShoppingBagIcon },
   { name: 'Reports', path: '/reports', icon: DocumentTextIcon },
-  { name: 'Profile', path: '/profile', icon: UserIcon },
-  { name: 'Notifications', path: '/notifications', icon: BellIcon },
   { name: 'Settings', path: '/settings', icon: CogIcon },
-  { name: 'Demo Components', path: '/demo/data-components', icon: BeakerIcon },
-  { name: 'Debug Demo', path: '/debug', icon: BeakerIcon },
-  { name: 'Help System', path: '/help', icon: HelpIcon },
+  { name: 'Profile', path: '/profile', icon: UserIcon },
+  { name: 'Help', path: '/help', icon: HelpIcon },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant }) => {
@@ -69,24 +65,42 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant }) => {
       height: '100%', 
       backgroundColor: theme.palette.background.paper,
       position: 'relative',
+      borderRight: `1px solid ${theme.palette.divider}`,
     }}>
       <Toolbar sx={{ 
         backgroundColor: 'transparent',
         borderBottom: `1px solid ${theme.palette.divider}`,
+        px: 2,
       }}>
-        <Typography 
-          variant="h6" 
-          noWrap 
-          component="div" 
-          sx={{
-            background: 'linear-gradient(135deg, #6366F1 0%, #818CF8 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            fontWeight: 700,
-          }}
-        >
-          conea
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box
+            sx={{
+              width: 32,
+              height: 32,
+              borderRadius: 2,
+              background: theme.palette.mode === 'dark' 
+                ? 'rgba(255, 255, 255, 0.15)' 
+                : 'linear-gradient(135deg, #34D399 0%, #60A5FA 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mr: 2,
+              boxShadow: theme.palette.mode === 'dark'
+                ? '0 4px 12px 0 rgba(255, 255, 255, 0.1)'
+                : '0 4px 12px 0 rgba(52, 211, 153, 0.4)',
+              border: theme.palette.mode === 'dark'
+                ? '1px solid rgba(255, 255, 255, 0.2)'
+                : 'none',
+            }}
+          >
+            <ConeaLogo 
+              variant="icon-only" 
+              size="sm"
+              width={20}
+              height={20}
+            />
+          </Box>
+        </Box>
       </Toolbar>
       <List sx={{ p: 2 }}>
         {navigation.map((item) => (
@@ -101,18 +115,18 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant }) => {
                   sx={{
                     borderRadius: 2,
                     '&.Mui-selected': {
-                      background: theme.palette.mode === 'dark'
-                        ? 'linear-gradient(135deg, #6366F1 0%, #818CF8 100%)'
-                        : 'linear-gradient(135deg, #6366F1 0%, #818CF8 100%)',
+                      background: 'linear-gradient(135deg, #34D399 0%, #60A5FA 100%)',
                       color: '#FFFFFF',
+                      boxShadow: '0 4px 12px 0 rgba(52, 211, 153, 0.4)',
                       '& .MuiListItemIcon-root': {
                         color: '#FFFFFF',
                       },
                     },
                     '&:hover': {
                       backgroundColor: theme.palette.mode === 'dark'
-                        ? 'rgba(129, 140, 248, 0.1)'
-                        : 'rgba(99, 102, 241, 0.1)',
+                        ? 'rgba(52, 211, 153, 0.1)'
+                        : 'rgba(52, 211, 153, 0.08)',
+                      transform: 'translateX(4px)',
                     },
                     transition: 'all 0.3s ease',
                   }}
@@ -121,7 +135,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant }) => {
                     color: isActive ? '#FFFFFF' : theme.palette.text.secondary,
                     minWidth: 40,
                   }}>
-                    <item.icon className="h-5 w-5" />
+                    <item.icon />
                   </ListItemIcon>
                   <ListItemText 
                     primary={item.name} 

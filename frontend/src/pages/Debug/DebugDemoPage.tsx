@@ -78,7 +78,7 @@ export const DebugDemoComponent: React.FC = () => {
     logInfo, 
     logWarning, 
     logError,
-    measureOperation,
+    measurePerformance,
     summary
   } = useDiagnostics();
   
@@ -128,7 +128,7 @@ export const DebugDemoComponent: React.FC = () => {
     setIsHeavyOperationRunning(true);
     
     // 処理の開始を計測
-    const endMeasure = measureOperation('heavy-operation');
+    const endMeasure = measureComponentOperation('heavy-operation');
     
     // 非同期で重い処理を実行
     setTimeout(() => {

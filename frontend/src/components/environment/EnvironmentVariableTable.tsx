@@ -202,7 +202,7 @@ const EnvironmentVariableTable: React.FC<EnvironmentVariableTableProps> = ({
         <SearchContainer>
           <Skeleton variant="rectangular" width={300} height={56} />
         </SearchContainer>
-        <StyledTableContainer component={Paper}>
+        <TableContainer component={Paper}>
           <Table>
             <TableHead>
               <TableRow>
@@ -225,7 +225,7 @@ const EnvironmentVariableTable: React.FC<EnvironmentVariableTableProps> = ({
               ))}
             </TableBody>
           </Table>
-        </StyledTableContainer>
+        </TableContainer>
       </Box>
     );
   }
@@ -280,7 +280,7 @@ const EnvironmentVariableTable: React.FC<EnvironmentVariableTableProps> = ({
         </SearchContainer>
       )}
 
-      <StyledTableContainer component={Paper}>
+      <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
@@ -418,7 +418,7 @@ const EnvironmentVariableTable: React.FC<EnvironmentVariableTableProps> = ({
             `${from}-${to} / ${count}`
           }
         />
-      </StyledTableContainer>
+      </TableContainer>
 
       {/* Context Menu */}
       <Menu

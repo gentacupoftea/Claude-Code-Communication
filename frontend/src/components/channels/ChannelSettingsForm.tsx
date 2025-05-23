@@ -66,6 +66,34 @@ const PlatformSpecificFields: React.FC<PlatformSpecificFieldsProps> = ({
             />
             <p className="mt-1 text-xs text-gray-500">変更する場合のみ入力してください</p>
           </div>
+          <div>
+            <label htmlFor="accessToken" className="block text-sm font-medium text-gray-700">
+              アクセストークン
+            </label>
+            <input
+              type="password"
+              id="accessToken"
+              value={credentials.accessToken || ''}
+              onChange={(e) => handleChange('accessToken', e.target.value)}
+              placeholder="shpat_で始まるトークン"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
+            <p className="mt-1 text-xs text-gray-500">OAuth認証後に取得されるアクセストークン</p>
+          </div>
+          <div>
+            <label htmlFor="storeId" className="block text-sm font-medium text-gray-700">
+              ストアID
+            </label>
+            <input
+              type="text"
+              id="storeId"
+              value={credentials.storeId || ''}
+              onChange={(e) => handleChange('storeId', e.target.value)}
+              placeholder="store-123"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
+            <p className="mt-1 text-xs text-gray-500">Shopifyストアの一意識別子</p>
+          </div>
         </>
       );
     case 'rakuten':
