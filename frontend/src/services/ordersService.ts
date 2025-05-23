@@ -4,6 +4,11 @@
 import api from './api';
 import { Order, PaginationParams, FilterParams, APIResponse } from '@/types';
 
+const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
+
+// Mock orders data - empty when in mock mode
+const mockOrders: Order[] = [];
+
 interface OrdersResponse {
   items: Order[];
   pagination: {
@@ -22,6 +27,19 @@ class OrdersService {
     pagination: PaginationParams,
     filters: FilterParams
   ): Promise<OrdersResponse> {
+    if (isMockMode) {
+      // Return empty data in mock mode
+      return Promise.resolve({
+        items: [],
+        pagination: {
+          page: pagination.page,
+          perPage: pagination.perPage,
+          total: 0,
+          totalPages: 0,
+        },
+      });
+    }
+    
     const params = {
       page: pagination.page,
       per_page: pagination.perPage,
@@ -45,6 +63,10 @@ class OrdersService {
    * 注文詳細取得
    */
   async getOrderById(id: string): Promise<Order> {
+    if (isMockMode) {
+      throw new Error('注文が見つかりません');
+    }
+    
     const response = await api.get<APIResponse<Order>>(`/orders/${id}`);
 
     if (response.success && response.data) {
@@ -242,6 +264,11 @@ class OrdersService {
     dateRange: { start: Date; end: Date },
     groupBy: 'day' | 'week' | 'month'
   ): Promise<any> {
+    if (isMockMode) {
+      // Return empty stats in mock mode
+      return Promise.resolve({ stats: [], summary: { totalSales: 0, totalOrders: 0 } });
+    }
+    
     const response = await api.get<APIResponse<any>>('/orders/stats/sales', {
       params: {
         start_date: dateRange.start.toISOString(),

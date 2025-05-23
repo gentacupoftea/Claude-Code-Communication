@@ -21,7 +21,7 @@ class AuthService {
    * ログイン
    */
   async login(email: string, password: string): Promise<LoginResponse> {
-    const response = await api.post<APIResponse<LoginResponse>>('/auth/login', {
+    const response = await api.post<APIResponse<LoginResponse>>('/api/v1/auth/login', {
       email,
       password,
     });
@@ -37,7 +37,7 @@ class AuthService {
    * ユーザー登録
    */
   async register(data: RegisterRequest): Promise<LoginResponse> {
-    const response = await api.post<APIResponse<LoginResponse>>('/auth/register', data);
+    const response = await api.post<APIResponse<LoginResponse>>('/api/v1/auth/register', data);
     
     if (response.success && response.data) {
       return response.data;
@@ -51,7 +51,7 @@ class AuthService {
    */
   async logout(): Promise<void> {
     try {
-      await api.post('/auth/logout');
+      await api.post('/api/v1/auth/logout');
     } catch (error) {
       // ログアウトエラーは無視
       console.error('Logout error:', error);
@@ -62,7 +62,7 @@ class AuthService {
    * 現在のユーザー情報取得
    */
   async getCurrentUser(): Promise<User> {
-    const response = await api.get<APIResponse<User>>('/auth/me');
+    const response = await api.get<APIResponse<User>>('/api/v1/auth/me');
     
     if (response.success && response.data) {
       return response.data;
@@ -75,7 +75,7 @@ class AuthService {
    * パスワードリセット
    */
   async resetPassword(email: string): Promise<void> {
-    const response = await api.post<APIResponse<void>>('/auth/reset-password', {
+    const response = await api.post<APIResponse<void>>('/api/v1/auth/reset-password', {
       email,
     });
     
@@ -91,7 +91,7 @@ class AuthService {
     currentPassword: string,
     newPassword: string
   ): Promise<void> {
-    const response = await api.post<APIResponse<void>>('/auth/change-password', {
+    const response = await api.post<APIResponse<void>>('/api/v1/auth/change-password', {
       currentPassword,
       newPassword,
     });
@@ -105,7 +105,7 @@ class AuthService {
    * トークンリフレッシュ
    */
   async refreshToken(refreshToken: string): Promise<LoginResponse> {
-    const response = await api.post<APIResponse<LoginResponse>>('/auth/refresh', {
+    const response = await api.post<APIResponse<LoginResponse>>('/api/v1/auth/refresh', {
       refreshToken,
     });
     
@@ -120,7 +120,7 @@ class AuthService {
    * メール確認
    */
   async verifyEmail(token: string): Promise<void> {
-    const response = await api.post<APIResponse<void>>('/auth/verify-email', {
+    const response = await api.post<APIResponse<void>>('/api/v1/auth/verify-email', {
       token,
     });
     
@@ -134,7 +134,7 @@ class AuthService {
    */
   async setupTwoFactor(): Promise<{ qrCode: string; secret: string }> {
     const response = await api.post<APIResponse<{ qrCode: string; secret: string }>>(
-      '/auth/2fa/setup'
+      '/api/v1/auth/2fa/setup'
     );
     
     if (response.success && response.data) {
@@ -148,7 +148,7 @@ class AuthService {
    * 2FA確認
    */
   async verifyTwoFactor(code: string): Promise<void> {
-    const response = await api.post<APIResponse<void>>('/auth/2fa/verify', {
+    const response = await api.post<APIResponse<void>>('/api/v1/auth/2fa/verify', {
       code,
     });
     
@@ -161,7 +161,7 @@ class AuthService {
    * 2FA無効化
    */
   async disableTwoFactor(password: string): Promise<void> {
-    const response = await api.post<APIResponse<void>>('/auth/2fa/disable', {
+    const response = await api.post<APIResponse<void>>('/api/v1/auth/2fa/disable', {
       password,
     });
     

@@ -21,35 +21,33 @@ const OrdersPage: React.FC = () => {
   const { data, isLoading } = useQuery({
     queryKey: ['orders', page, search],
     queryFn: async () => {
-      // Use mock data while API is not available
-      const mockData = await import('../utils/mockData');
-      const orders = mockData.mockOrders;
+      // Return empty data in mock mode
+      const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
+      if (isMockMode) {
+        return {
+          orders: [],
+          total: 0,
+          totalPages: 0,
+        };
+      }
       
-      // Filter by search
-      const filteredOrders = search
-        ? orders.filter(order => 
-            order.customer.name.toLowerCase().includes(search.toLowerCase()) ||
-            order.customer.email.toLowerCase().includes(search.toLowerCase()) ||
-            order.orderNumber.toLowerCase().includes(search.toLowerCase())
-          )
-        : orders;
-      
-      // Paginate
-      const startIndex = (page - 1) * 10;
-      const endIndex = startIndex + 10;
-      const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+      // API call would go here
+      const response = await api.get('/api/v1/orders', {
+        params: { page, search },
+      });
       
       return {
-        orders: paginatedOrders.map(order => ({
+        orders: response.data.orders.map((order: any) => ({
           id: order.id,
           name: order.orderNumber,
           email: order.customer.email,
           totalPrice: order.totalAmount,
-          financialStatus: order.status === 'delivered' ? 'paid' : 'pending',
-          fulfillmentStatus: order.status,
-          createdAt: order.createdAt,
+          financialStatus: order.financialStatus,
+          fulfillmentStatus: order.fulfillmentStatus,
+          createdAt: new Date(order.createdAt),
         })),
-        totalPages: Math.ceil(filteredOrders.length / 10),
+        total: response.data.total,
+        totalPages: response.data.totalPages,
       };
     },
   });
@@ -148,7 +146,7 @@ const OrdersPage: React.FC = () => {
                 </td>
               </tr>
             ) : (
-              data?.orders?.map((order) => (
+              data?.orders?.map((order: any) => (
                 <tr key={order.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                     #{order.name}

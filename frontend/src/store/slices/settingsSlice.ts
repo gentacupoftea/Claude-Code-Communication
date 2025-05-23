@@ -60,7 +60,28 @@ const settingsSlice = createSlice({
   reducers: {
     setTheme: (state, action: PayloadAction<'light' | 'dark'>) => {
       state.theme = action.payload;
-      localStorage.setItem('theme', JSON.stringify(action.payload));
+      try {
+        localStorage.setItem('theme', JSON.stringify(action.payload));
+      } catch (e) {
+        console.error('Failed to save theme to localStorage:', e);
+        // LocalStorageが満杯の場合、古いデータをクリア
+        if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+          try {
+            // 不要なデータをクリア
+            const keysToKeep = ['auth_access_token', 'auth_refresh_token', 'auth_user', 'theme', 'language'];
+            const allKeys = Object.keys(localStorage);
+            allKeys.forEach(key => {
+              if (!keysToKeep.includes(key)) {
+                localStorage.removeItem(key);
+              }
+            });
+            // 再度保存を試みる
+            localStorage.setItem('theme', JSON.stringify(action.payload));
+          } catch (retryError) {
+            console.error('Failed to save theme even after cleanup:', retryError);
+          }
+        }
+      }
     },
     setLanguage: (state, action: PayloadAction<'ja' | 'en'>) => {
       state.language = action.payload;

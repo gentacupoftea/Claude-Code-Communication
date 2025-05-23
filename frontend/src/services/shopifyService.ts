@@ -6,6 +6,13 @@
 import axios, { AxiosResponse } from 'axios';
 import apiService from './api';
 
+const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
+
+// Mock data - empty when in mock mode
+const mockStores: ShopifyStore[] = [];
+
+const mockProducts: ShopifyProduct[] = [];
+
 // ================================
 // Type Definitions
 // ================================
@@ -256,6 +263,9 @@ class ShopifyService {
    * Get list of connected Shopify stores
    */
   async getStores(): Promise<ShopifyStore[]> {
+    if (isMockMode) {
+      return Promise.resolve([]);
+    }
     const response = await apiService.get(`${this.baseUrl}/stores`);
     return response.data;
   }
@@ -293,6 +303,18 @@ class ShopifyService {
       product_type?: string;
     } = {}
   ): Promise<PaginatedResponse<ShopifyProduct>> {
+    if (isMockMode) {
+      const limit = options.limit || 10;
+      return Promise.resolve({
+        items: [],
+        total_count: 0,
+        page: 1,
+        per_page: limit,
+        has_next: false,
+        has_previous: false,
+      });
+    }
+    
     const params = new URLSearchParams();
     
     if (options.limit) params.append('limit', options.limit.toString());
@@ -434,6 +456,19 @@ class ShopifyService {
    * Get synchronization status
    */
   async getSyncStatus(storeId: string): Promise<SyncStatus> {
+    if (isMockMode) {
+      return Promise.resolve({
+        store_id: storeId,
+        last_sync: undefined,
+        sync_in_progress: false,
+        next_scheduled_sync: undefined,
+        products_synced: 0,
+        orders_synced: 0,
+        customers_synced: 0,
+        webhook_status: 'inactive',
+        api_health: 'unknown',
+      });
+    }
     const response = await apiService.get(`${this.baseUrl}/stores/${storeId}/sync/status`);
     return response.data;
   }

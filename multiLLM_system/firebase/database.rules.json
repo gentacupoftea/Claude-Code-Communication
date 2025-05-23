@@ -1,0 +1,42 @@
+{
+  "rules": {
+    "chats": {
+      "$roomId": {
+        "messages": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          "$messageId": {
+            ".validate": "newData.hasChildren(['text', 'sender', 'timestamp']) && newData.child('sender').val() == auth.uid",
+            "text": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "sender": {
+              ".validate": "newData.val() == auth.uid"
+            },
+            "timestamp": {
+              ".validate": "newData.isNumber()"
+            },
+            "$other": { ".validate": false }
+          }
+        }
+      }
+    },
+    "thinking": {
+      ".read": "auth != null",
+      "$messageId": {
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['content', 'timestamp', 'userId'])",
+        "content": {
+          ".validate": "newData.isString()"
+        },
+        "timestamp": {
+          ".validate": "newData.isNumber()"
+        },
+        "userId": {
+          ".validate": "newData.val() == auth.uid"
+        },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

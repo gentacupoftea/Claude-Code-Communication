@@ -26,18 +26,33 @@ const DashboardPage: React.FC = () => {
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => {
-      // Temporarily return mock data while API is not available
-      return {
-        totalRevenue: 1234567,
-        totalOrders: 89,
-        newCustomers: 23,
-        conversionRate: 3.4,
-      };
+      // Return empty data in mock mode
+      const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
+      if (isMockMode) {
+        return {
+          totalRevenue: 0,
+          totalOrders: 0,
+          newCustomers: 0,
+          conversionRate: 0,
+        };
+      }
+      // API call would go here
+      const response = await api.get('/api/v1/dashboard/summary');
+      return response.data;
     },
   });
 
-  // Mock data for charts
-  const salesData = [
+  // Chart data - empty in mock mode
+  const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
+  const salesData = isMockMode ? [
+    { date: 'Mon', sales: 0 },
+    { date: 'Tue', sales: 0 },
+    { date: 'Wed', sales: 0 },
+    { date: 'Thu', sales: 0 },
+    { date: 'Fri', sales: 0 },
+    { date: 'Sat', sales: 0 },
+    { date: 'Sun', sales: 0 },
+  ] : [
     { date: 'Mon', sales: 4000 },
     { date: 'Tue', sales: 3000 },
     { date: 'Wed', sales: 2000 },
@@ -47,7 +62,7 @@ const DashboardPage: React.FC = () => {
     { date: 'Sun', sales: 3490 },
   ];
 
-  const productData = [
+  const productData = isMockMode ? [] : [
     { name: 'Product A', sales: 4000 },
     { name: 'Product B', sales: 3000 },
     { name: 'Product C', sales: 2000 },
@@ -173,27 +188,33 @@ const DashboardPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {/* Mock orders data */}
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  #1001
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  John Doe
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  Dec 12, 2023
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                    Completed
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  $1,234.56
-                </td>
-              </tr>
-              {/* Add more rows as needed */}
+              {isMockMode ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                    No orders yet
+                  </td>
+                </tr>
+              ) : (
+                <tr>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    #1001
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    John Doe
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    Dec 12, 2023
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      Completed
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    $1,234.56
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

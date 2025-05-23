@@ -64,6 +64,8 @@ export interface Order {
   totalAmount: number;
   currency: string;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded';
+  fulfillmentStatus?: 'unfulfilled' | 'partial' | 'fulfilled';
   shippingMethod?: string;
   trackingNumber?: string;
   createdAt: Date;
@@ -72,8 +74,11 @@ export interface Order {
 
 // 注文商品
 export interface OrderItem {
+  id?: string;
   productId: string;
-  title: string;
+  name?: string;  // alias for title
+  title?: string;
+  sku?: string;
   quantity: number;
   price: number;
   discount?: number;

@@ -20,6 +20,7 @@ import {
   Settings as SettingsIcon,
   Description as LogsIcon,
   SmartToy as BotIcon,
+  Chat as ChatIcon,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -37,6 +38,13 @@ const menuItems = [
     label: 'ダッシュボード', 
     icon: <DashboardIcon />,
     description: 'システム概要'
+  },
+  { 
+    path: '/chat', 
+    label: 'AIチャット', 
+    icon: <ChatIcon />,
+    description: 'リアルタイム対話',
+    highlight: true
   },
   { 
     path: '/workers', 
@@ -176,6 +184,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open, width }) => {
                     color: 'white',
                   },
                 },
+                ...(item.highlight && !location.pathname.includes(item.path) && {
+                  backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(25, 118, 210, 0.15)',
+                  },
+                }),
               }}
             >
               <ListItemIcon

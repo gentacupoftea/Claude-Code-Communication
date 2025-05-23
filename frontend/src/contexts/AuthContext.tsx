@@ -147,6 +147,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(true);
     
     try {
+      // Mock mode for development/demo
+      if (process.env.REACT_APP_USE_MOCK_AUTH === 'true') {
+        if (credentials.email === 'demo@conea.ai' && credentials.password === 'password') {
+          const mockUser = {
+            id: '1',
+            email: 'demo@conea.ai',
+            name: 'Demo User',
+            role: 'admin',
+            permissions: ['read:all', 'write:all', 'admin:all']
+          };
+          saveAuthState(
+            'mock-access-token',
+            'mock-refresh-token',
+            3600,
+            mockUser
+          );
+          return;
+        } else {
+          throw new Error('Invalid credentials');
+        }
+      }
+      
       const response = await authService.login(credentials.email, credentials.password);
       
       // Make sure we have all required data

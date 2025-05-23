@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Provider } from 'react-redux';
@@ -30,10 +30,7 @@ import ServerConnectionPage from './pages/ServerConnection/ServerConnectionPage'
 import { UserProfilePage } from './pages/User';
 import { DebugDemoPage } from './pages/Debug/DebugDemoPage';
 import { HelpSystemDemo } from './pages/Help/HelpSystemDemo';
-import { ToastNotification } from './components/notifications';
-import { SyncStatusBar } from './components/offline';
-import { ErrorBoundary, DebugToolbar } from './components/debug';
-import diagnosticsService from './services/diagnosticsService';
+import { ErrorBoundary } from './components/debug';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -46,19 +43,6 @@ const queryClient = new QueryClient({
 });
 
 const App: React.FC = () => {
-  // 診断サービスの初期化
-  useEffect(() => {
-    diagnosticsService.initialize({
-      logLevels: ['debug', 'info', 'warn', 'error'],
-      enablePerformanceMonitoring: true,
-      enableNetworkMonitoring: true
-    });
-
-    return () => {
-      diagnosticsService.dispose();
-    };
-  }, []);
-
   return (
     <ErrorBoundary componentName="App">
       <Provider store={store}>
@@ -169,10 +153,7 @@ const App: React.FC = () => {
                         {/* Catch all */}
                         <Route path="*" element={<Navigate to="/" replace />} />
                       </Routes>
-                      <SyncStatusBar />
-                      <DebugToolbar position="bottom" />
                     </Router>
-                    <ToastNotification />
                   </NotificationProvider>
                 </OfflineProvider>
               </ConnectionProvider>

@@ -51,7 +51,7 @@ export const fetchProducts = createAsyncThunk(
 export const fetchProductById = createAsyncThunk(
   'products/fetchProductById',
   async (id: string) => {
-    const response = await productsService.getProductById(id);
+    const response = await productsService.getProduct(id);
     return response;
   }
 );
@@ -103,8 +103,13 @@ const productsSlice = createSlice({
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.items;
-        state.pagination = action.payload.pagination;
+        state.items = action.payload.products;
+        state.pagination = {
+          page: action.payload.meta.page,
+          perPage: action.payload.meta.perPage,
+          total: action.payload.meta.total,
+          totalPages: action.payload.meta.totalPages,
+        };
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.loading = false;
@@ -139,7 +144,8 @@ const productsSlice = createSlice({
       })
       .addCase(syncProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = [...state.items, ...action.payload.items];
+        // Sync products doesn't return items, just sync status
+        // Items should be refreshed separately if needed
       })
       .addCase(syncProducts.rejected, (state, action) => {
         state.loading = false;

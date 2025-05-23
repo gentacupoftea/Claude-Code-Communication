@@ -1,5 +1,25 @@
 import api from '../services/api';
 
+// Empty data for mock mode
+const emptyDashboardData: DashboardSummaryData = {
+  totalSales: 0,
+  totalOrders: 0,
+  averageOrderValue: 0,
+  conversionRate: 0,
+  pendingOrders: 0,
+  newCustomers: 0,
+  topProducts: [],
+  recentActivity: [],
+  salesByPlatform: [],
+  periodComparison: {
+    sales: { current: 0, previous: 0, change: 0 },
+    orders: { current: 0, previous: 0, change: 0 },
+    customers: { current: 0, previous: 0, change: 0 },
+  },
+};
+
+const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
+
 export interface DashboardSummaryData {
   totalSales: number;
   totalOrders: number;
@@ -51,6 +71,9 @@ export const DashboardService = {
    * @param params リクエストパラメータ
    */
   async getSummary(params: DashboardRequestParams = {}): Promise<DashboardSummaryData> {
+    if (isMockMode) {
+      return Promise.resolve(emptyDashboardData);
+    }
     return api.get('/api/v1/dashboard/summary', { params });
   },
 
@@ -63,6 +86,22 @@ export const DashboardService = {
     sales: number[];
     orders: number[];
   }> {
+    if (isMockMode) {
+      // Return empty daily stats for mock mode
+      const dates: string[] = [];
+      const sales: number[] = [];
+      const orders: number[] = [];
+      
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        dates.push(date.toISOString().split('T')[0]);
+        sales.push(0);
+        orders.push(0);
+      }
+      
+      return Promise.resolve({ dates, sales, orders });
+    }
     return api.get('/api/v1/dashboard/daily-stats', { params });
   },
 
@@ -94,6 +133,9 @@ export const DashboardService = {
     quantity: number;
     platform: string;
   }>> {
+    if (isMockMode) {
+      return Promise.resolve([]);
+    }
     return api.get('/api/v1/dashboard/top-products', { 
       params: { ...params, limit } 
     });

@@ -44,7 +44,8 @@ export const NotificationPopup: React.FC = () => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   
-  const [notifications, setNotifications] = useState<Notification[]>([
+  const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
+  const [notifications, setNotifications] = useState<Notification[]>(isMockMode ? [] : [
     {
       id: '1',
       type: 'order',

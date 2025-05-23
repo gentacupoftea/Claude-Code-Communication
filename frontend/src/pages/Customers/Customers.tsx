@@ -78,7 +78,8 @@ const CustomersComponent: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  const customers: Customer[] = [
+  const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
+  const customers: Customer[] = isMockMode ? [] : [
     {
       id: '1',
       name: '田中太郎',
@@ -188,7 +189,7 @@ const CustomersComponent: React.FC = () => {
   const renderCustomerDetails = () => {
     if (!selectedCustomer) return null;
 
-    const customerOrders: Order[] = [
+    const customerOrders: Order[] = isMockMode ? [] : [
       {
         id: '1',
         orderNumber: '#1234',
@@ -386,17 +387,17 @@ const CustomersComponent: React.FC = () => {
         <Grid item xs={12} sm={6} md={3}>
           <MetricCard
             title="平均購入額"
-            value={227333}
+            value={isMockMode ? 0 : 227333}
             format="currency"
-            trend={{ value: 3.8, direction: 'up' }}
+            trend={{ value: isMockMode ? 0 : 3.8, direction: 'up' }}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <MetricCard
             title="リピート率"
-            value={68}
+            value={isMockMode ? 0 : 68}
             format="percent"
-            trend={{ value: 1.2, direction: 'up' }}
+            trend={{ value: isMockMode ? 0 : 1.2, direction: 'up' }}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>

@@ -85,28 +85,25 @@ const ChatAnalysisComponent: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(true);
 
-  // モックデータを初期化
+  // Initialize with empty data in mock mode
   useEffect(() => {
-    const loadMockData = async () => {
+    const loadInitialData = async () => {
+      const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
+      if (isMockMode) {
+        // Start with empty messages in mock mode
+        setMessages([]);
+        return;
+      }
+      
+      // Load messages from API here
       try {
-        const mockData = await import('../../utils/mockData');
-        const mockMessages = mockData.mockChatMessages;
-        
-        const convertedMessages: ChatMessage[] = mockMessages.map(msg => ({
-          id: msg.id,
-          type: msg.type === 'assistant' ? 'ai' : 'user',
-          content: msg.message,
-          timestamp: msg.timestamp,
-          data: msg.attachments?.[0]?.data,
-          visualization: msg.attachments?.[0]?.type as any,
-        }));
-        
-        setMessages(convertedMessages);
+        // API call would go here
+        setMessages([]);
       } catch (error) {
-        console.error('Failed to load mock data:', error);
+        console.error('Failed to load messages:', error);
       }
     };
-    loadMockData();
+    loadInitialData();
   }, []);
 
   const handleSendMessage = async () => {

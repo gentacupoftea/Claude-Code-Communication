@@ -1,6 +1,8 @@
 type MessageHandler = (data: any) => void;
 type ConnectionStatusHandler = (isConnected: boolean) => void;
 
+const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
+
 export interface WebSocketConfig {
   autoReconnect?: boolean;
   reconnectInterval?: number;
@@ -38,6 +40,19 @@ class WebSocketService {
   public connect(): void {
     if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) {
       console.log('WebSocket is already connected or connecting');
+      return;
+    }
+
+    if (isMockMode) {
+      // Simulate successful connection in mock mode
+      console.log('Mock WebSocket connected');
+      this.notifyConnectionStatus(true);
+      
+      // Simulate periodic updates
+      setInterval(() => {
+        this.simulateMockMessage();
+      }, 5000);
+      
       return;
     }
 
@@ -217,6 +232,20 @@ class WebSocketService {
         console.error('Error in connection status handler:', error);
       }
     });
+  }
+
+  /**
+   * Simulate mock messages for development
+   */
+  private simulateMockMessage(): void {
+    const mockMessages = [
+      { type: 'order_update', data: { orderId: '1001', status: 'shipped' } },
+      { type: 'inventory_update', data: { productId: '1', inventory: Math.floor(Math.random() * 100) } },
+      { type: 'system_status', data: { status: 'healthy', timestamp: new Date() } },
+    ];
+    
+    const message = mockMessages[Math.floor(Math.random() * mockMessages.length)];
+    this.handleMessage({ data: JSON.stringify(message) } as MessageEvent);
   }
 }
 

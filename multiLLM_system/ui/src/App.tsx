@@ -17,6 +17,7 @@ import Memory from './pages/Memory';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import Logs from './pages/Logs';
+import Chat from './pages/Chat';
 
 // Theme
 const theme = createTheme({
@@ -107,6 +108,7 @@ function App() {
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/logs" element={<Logs />} />
+                  <Route path="/chat" element={<Chat />} />
                 </Routes>
               </Box>
             </Box>

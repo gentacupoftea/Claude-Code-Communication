@@ -19,8 +19,9 @@ import { websocketService } from './websocketService';
 const NOTIFICATION_STORAGE_KEY = 'conea_notifications';
 const NOTIFICATION_SETTINGS_KEY = 'conea_notification_settings';
 
-// モック通知データ（実際のAPIが実装されるまでの仮データ）
-const mockNotifications: Notification[] = [
+// Empty notifications in mock mode
+const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
+const mockNotifications: Notification[] = isMockMode ? [] : [
   {
     id: '1',
     type: 'order',

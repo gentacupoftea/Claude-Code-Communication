@@ -52,7 +52,8 @@ const NotificationsComponent: React.FC = () => {
   const [filter, setFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
-  const [notifications, setNotifications] = useState<Notification[]>([
+  const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
+  const [notifications, setNotifications] = useState<Notification[]>(isMockMode ? [] : [
     {
       id: '1',
       type: 'order',

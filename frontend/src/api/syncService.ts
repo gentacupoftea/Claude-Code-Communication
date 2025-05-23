@@ -1,5 +1,66 @@
 import { api } from '../services/api';
 
+const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
+
+// Mock sync data
+const mockJobs: SyncJob[] = [
+  {
+    id: 'job-1',
+    type: 'shopify',
+    status: 'completed',
+    progress: 100,
+    startedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    completedAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+    dataProcessed: 342,
+    totalItems: 342,
+    metadata: { store: 'demo-store' },
+  },
+  {
+    id: 'job-2',
+    type: 'rakuten',
+    status: 'running',
+    progress: 65,
+    startedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    dataProcessed: 195,
+    totalItems: 300,
+    metadata: { store: 'rakuten-store' },
+  },
+  {
+    id: 'job-3',
+    type: 'amazon',
+    status: 'failed',
+    progress: 25,
+    startedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    errorMessage: 'API rate limit exceeded',
+    dataProcessed: 50,
+    totalItems: 200,
+    metadata: { store: 'amazon-store' },
+  },
+];
+
+const mockSchedules: SyncSchedule[] = [
+  {
+    id: 'schedule-1',
+    type: 'shopify',
+    frequency: 'daily',
+    nextRunAt: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
+    lastRunAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+    lastJobId: 'job-1',
+    isActive: true,
+    timeZone: 'Asia/Tokyo',
+  },
+  {
+    id: 'schedule-2',
+    type: 'rakuten',
+    frequency: 'hourly',
+    nextRunAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+    lastRunAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    lastJobId: 'job-2',
+    isActive: true,
+    timeZone: 'Asia/Tokyo',
+  },
+];
+
 export interface SyncJob {
   id: string;
   type: 'shopify' | 'rakuten' | 'amazon' | 'custom';
@@ -51,6 +112,24 @@ const syncService = {
    * Get a list of sync jobs with optional filtering
    */
   getJobs: async (filters?: SyncJobFilter): Promise<SyncJob[]> => {
+    if (isMockMode) {
+      let filteredJobs = [...mockJobs];
+      
+      if (filters?.type) {
+        filteredJobs = filteredJobs.filter(job => job.type === filters.type);
+      }
+      
+      if (filters?.status) {
+        filteredJobs = filteredJobs.filter(job => job.status === filters.status);
+      }
+      
+      if (filters?.limit) {
+        filteredJobs = filteredJobs.slice(0, filters.limit);
+      }
+      
+      return Promise.resolve(filteredJobs);
+    }
+    
     const response = await api.get('/api/sync/jobs', { params: filters });
     return response.data;
   },
@@ -99,6 +178,21 @@ const syncService = {
    * Get sync job statistics
    */
   getStats: async (type?: string): Promise<SyncStats> => {
+    if (isMockMode) {
+      const stats = type ? mockJobs.filter(job => job.type === type) : mockJobs;
+      const completed = stats.filter(job => job.status === 'completed').length;
+      const failed = stats.filter(job => job.status === 'failed').length;
+      
+      return Promise.resolve({
+        totalJobs: stats.length,
+        completedJobs: completed,
+        failedJobs: failed,
+        averageJobDuration: 3600, // 1 hour in seconds
+        totalDataProcessed: stats.reduce((sum, job) => sum + (job.dataProcessed || 0), 0),
+        latestJobStatus: stats[0]?.status || 'none',
+      });
+    }
+    
     const response = await api.get('/api/sync/stats', { params: { type } });
     return response.data;
   },
@@ -107,6 +201,10 @@ const syncService = {
    * Get sync schedules
    */
   getSchedules: async (): Promise<SyncSchedule[]> => {
+    if (isMockMode) {
+      return Promise.resolve(mockSchedules);
+    }
+    
     const response = await api.get('/api/sync/schedules');
     return response.data;
   },
