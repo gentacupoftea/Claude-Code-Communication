@@ -1,30 +1,29 @@
-# Phase 2 Autonomous Bug Detection System
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files
+# Install basic dependencies
+RUN apk add --no-cache curl
+
+# Copy package files first
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm install
 
-# Copy source code
+# Copy all source code
 COPY . .
 
-# Create data directory for settings
-RUN mkdir -p data
+# Create necessary directories
+RUN mkdir -p data logs
 
 # Expose port
 EXPOSE 8000
 
-# Set environment variables
+# Set environment
 ENV NODE_ENV=production
 ENV PORT=8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD curl -f http://localhost:8000/health || exit 1
-
-# Start server
+# Simple start command
 CMD ["node", "server.js"]
+EOF < /dev/null
