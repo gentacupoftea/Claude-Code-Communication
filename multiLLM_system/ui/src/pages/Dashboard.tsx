@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Grid,
   Card,
@@ -71,6 +71,11 @@ const Dashboard: React.FC = () => {
   const activeTasks = useSelector((state: RootState) => state.tasks.activeCount);
   const completedTasks = useSelector((state: RootState) => state.tasks.completedCount);
   const systemUptime = useSelector((state: RootState) => state.system.uptime);
+  
+  // Memoized calculations
+  const memoizedPerformanceData = useMemo(() => performanceData, []);
+  const memoizedWorkerUtilization = useMemo(() => workerUtilization, []);
+  const memoizedRecentTasks = useMemo(() => recentTasks, []);
 
   const handleRefresh = () => {
     setRefreshTime(new Date());

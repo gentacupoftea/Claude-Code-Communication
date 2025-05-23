@@ -11,8 +11,40 @@ from typing import Dict, Any, Optional, List, Union
 from dataclasses import dataclass, asdict
 import aiohttp
 from abc import ABC, abstractmethod
+from functools import wraps
+import random
 
 logger = logging.getLogger(__name__)
+
+
+def retry_async(max_attempts=3, base_delay=1.0, max_delay=10.0):
+    """非同期関数用のリトライデコレーター"""
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            last_exception = None
+            
+            for attempt in range(max_attempts):
+                try:
+                    return await func(*args, **kwargs)
+                except Exception as e:
+                    last_exception = e
+                    
+                    if attempt < max_attempts - 1:
+                        # エクスポネンシャルバックオフ
+                        delay = min(base_delay * (2 ** attempt) + random.uniform(0, 1), max_delay)
+                        logger.warning(
+                            f"Attempt {attempt + 1}/{max_attempts} failed: {e}. "
+                            f"Retrying in {delay:.1f}s..."
+                        )
+                        await asyncio.sleep(delay)
+                    else:
+                        logger.error(f"All {max_attempts} attempts failed: {e}")
+            
+            raise last_exception
+        
+        return wrapper
+    return decorator
 
 
 @dataclass
@@ -88,6 +120,7 @@ class ShopifyMCPProvider(MCPProvider):
             'shopify.webhooks.create'
         ]
     
+    @retry_async(max_attempts=3, base_delay=1.0, max_delay=10.0)
     async def execute_request(self, request: MCPRequest) -> MCPResponse:
         """Shopifyリクエスト実行"""
         method = request.method

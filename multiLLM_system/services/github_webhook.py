@@ -57,12 +57,14 @@ class GitHubWebhookHandler:
         """サービス初期化"""
         logger.info("🔗 Initializing GitHub Webhook Handler...")
         
+        timeout = aiohttp.ClientTimeout(total=self.config.get('webhook_timeout', 30))
         self.session = ClientSession(
             headers={
                 'Authorization': f'token {self.github_token}',
                 'Accept': 'application/vnd.github.v3+json',
                 'User-Agent': 'MultiLLM-System/1.0'
-            }
+            },
+            timeout=timeout
         )
         
         logger.info("✅ GitHub Webhook Handler initialized")
