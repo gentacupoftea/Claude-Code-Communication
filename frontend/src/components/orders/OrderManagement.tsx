@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../../services/api';
 import {
   Box,
   Paper,
@@ -30,6 +31,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Alert,
   useTheme,
   alpha,
 } from '@mui/material';
@@ -131,8 +133,8 @@ const mockOrders: Order[] = [
 
 const OrderManagement: React.FC = () => {
   const theme = useTheme();
-  const [orders] = useState<Order[]>(mockOrders);
-  const [filteredOrders, setFilteredOrders] = useState<Order[]>(mockOrders);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
@@ -141,6 +143,37 @@ const OrderManagement: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [apiMessage, setApiMessage] = useState<string>('');
+
+  // 実データ取得関数
+  const fetchRealOrders = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/api/analytics/orders');
+      
+      // APIレスポンスをOrder形式に変換
+      const ordersData = response.orders || [];
+      setOrders(ordersData);
+      setApiMessage(response.message || '');
+      
+      console.log('Orders data loaded:', response);
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+      setOrders([]);
+      setApiMessage('注文データの取得に失敗しました。しばらくしてから再試行してください。');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 初回ロード
+  useEffect(() => {
+    fetchRealOrders();
+    // 1分ごとの自動更新
+    const interval = setInterval(fetchRealOrders, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   // フィルタリング
   React.useEffect(() => {

@@ -296,6 +296,182 @@ async def handle_webhook(topic: str, request: Request):
 # Analytics and Insights
 # ================================
 
+# ================================
+# Real Data Analytics Endpoints
+# ================================
+
+@app.get("/api/analytics/sales")
+async def get_sales_analytics(range: str = "7d"):
+    """Get real sales analytics data from connected Shopify stores"""
+    from datetime import datetime, timedelta
+    
+    # Check if any stores are actually connected with real Shopify data
+    has_real_shopify_data = False
+    for store_id, store_data in connected_stores.items():
+        # Check if store has real Shopify API credentials (not demo)
+        if (store_data.get("api_key") and 
+            store_data.get("access_token") and 
+            not store_data.get("api_key").startswith("demo") and
+            not store_data.get("access_token").startswith("demo")):
+            has_real_shopify_data = True
+            break
+    
+    # Generate date range
+    end_date = datetime.utcnow()
+    
+    if range == "24h":
+        start_date = end_date - timedelta(hours=24)
+        interval_hours = 1
+        date_format = "%H:%M"
+    elif range == "7d":
+        start_date = end_date - timedelta(days=7)
+        interval_hours = 24
+        date_format = "%m/%d"
+    elif range == "30d":
+        start_date = end_date - timedelta(days=30)
+        interval_hours = 24
+        date_format = "%m/%d"
+    elif range == "90d":
+        start_date = end_date - timedelta(days=90)
+        interval_hours = 24 * 7  # Weekly intervals
+        date_format = "%m/%d"
+    else:
+        start_date = end_date - timedelta(days=7)
+        interval_hours = 24
+        date_format = "%m/%d"
+    
+    # Generate date labels
+    dates = []
+    current_date = start_date
+    while current_date <= end_date:
+        dates.append(current_date.strftime(date_format))
+        current_date += timedelta(hours=interval_hours)
+    
+    # If no real Shopify data is connected, return zeros
+    if not has_real_shopify_data:
+        sales = [0] * len(dates)
+        return {
+            "success": True,
+            "dates": dates,
+            "sales": sales,
+            "total": 0,
+            "average": 0,
+            "count": 0,
+            "message": "No real Shopify stores connected. Please connect your Shopify store to see actual sales data."
+        }
+    
+    # TODO: Implement real Shopify API calls here
+    # For now, return zeros since Shopify API integration is not yet implemented
+    sales = [0] * len(dates)
+    
+    return {
+        "success": True,
+        "dates": dates,
+        "sales": sales,
+        "total": 0,
+        "average": 0,
+        "count": 0,
+        "message": "Shopify API integration in progress. Real data will be available soon."
+    }
+
+@app.get("/api/analytics/products")
+async def get_product_analytics():
+    """Get product performance analytics from connected Shopify stores"""
+    
+    # Check if any stores are actually connected with real Shopify data
+    has_real_shopify_data = False
+    for store_id, store_data in connected_stores.items():
+        if (store_data.get("api_key") and 
+            store_data.get("access_token") and 
+            not store_data.get("api_key").startswith("demo") and
+            not store_data.get("access_token").startswith("demo")):
+            has_real_shopify_data = True
+            break
+    
+    # If no real Shopify data is connected, return empty products
+    if not has_real_shopify_data:
+        return {
+            "success": True,
+            "products": [],
+            "message": "No real Shopify stores connected. Please connect your Shopify store to see product data."
+        }
+    
+    # TODO: Implement real Shopify API calls here
+    # For now, return empty since Shopify API integration is not yet implemented
+    return {
+        "success": True,
+        "products": [],
+        "message": "Shopify API integration in progress. Product data will be available soon."
+    }
+
+@app.get("/api/analytics/customers")
+async def get_customer_analytics():
+    """Get customer analytics from connected Shopify stores"""
+    
+    # Check if any stores are actually connected with real Shopify data
+    has_real_shopify_data = False
+    for store_id, store_data in connected_stores.items():
+        if (store_data.get("api_key") and 
+            store_data.get("access_token") and 
+            not store_data.get("api_key").startswith("demo") and
+            not store_data.get("access_token").startswith("demo")):
+            has_real_shopify_data = True
+            break
+    
+    # If no real Shopify data is connected, return zeros
+    if not has_real_shopify_data:
+        return {
+            "success": True,
+            "total": 0,
+            "new": 0,
+            "returning": 0,
+            "topSpenders": [],
+            "message": "No real Shopify stores connected. Please connect your Shopify store to see customer data."
+        }
+    
+    # TODO: Implement real Shopify API calls here
+    # For now, return zeros since Shopify API integration is not yet implemented
+    return {
+        "success": True,
+        "total": 0,
+        "new": 0,
+        "returning": 0,
+        "topSpenders": [],
+        "message": "Shopify API integration in progress. Customer data will be available soon."
+    }
+
+@app.get("/api/analytics/orders")
+async def get_orders_analytics():
+    """Get orders data from connected Shopify stores"""
+    
+    # Check if any stores are actually connected with real Shopify data
+    has_real_shopify_data = False
+    for store_id, store_data in connected_stores.items():
+        if (store_data.get("api_key") and 
+            store_data.get("access_token") and 
+            not store_data.get("api_key").startswith("demo") and
+            not store_data.get("access_token").startswith("demo")):
+            has_real_shopify_data = True
+            break
+    
+    # If no real Shopify data is connected, return empty orders
+    if not has_real_shopify_data:
+        return {
+            "success": True,
+            "orders": [],
+            "total_count": 0,
+            "message": "No real Shopify stores connected. Please connect your Shopify store to see order data."
+        }
+    
+    # TODO: Implement real Shopify API calls here
+    # For now, return empty since Shopify API integration is not yet implemented
+    return {
+        "success": True,
+        "orders": [],
+        "total_count": 0,
+        "message": "Shopify API integration in progress. Order data will be available soon."
+    }
+
 @app.get("/api/v1/shopify/stores/{store_id}/analytics")
 async def get_analytics(store_id: str, period: str = "30d"):
     """Get store analytics"""

@@ -7,7 +7,7 @@ import { ConeaLogo } from '../components/branding/ConeaLogo';
 import Sidebar from '../components/layout/Sidebar';
 
 // Import page components
-import DashboardSummary from '../components/dashboard/DashboardSummary';
+// import DashboardSummary from '../components/dashboard/DashboardSummary'; // Temporarily disabled
 import AnalyticsCenter from '../components/analytics/AnalyticsCenter';
 import AiChatSpace from '../components/chat/AiChatSpace';
 import OrderManagement from '../components/orders/OrderManagement';
@@ -53,8 +53,8 @@ const DashboardPageLayout: React.FC = () => {
     } else if (path.startsWith('/help')) {
       return <HelpSystem />;
     } else {
-      // Default to dashboard
-      return <DashboardSummary />;
+      // Default to analytics dashboard
+      return <AnalyticsCenter />;
     }
   };
 

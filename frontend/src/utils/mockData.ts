@@ -1,7 +1,9 @@
 /**
  * Mock data utility for development
+ * このファイルは無効化されました - 実データはAPIから取得します
  */
 
+// 無効化されたモックデータ
 export const mockDashboardMetrics = {
   totalSales: 12567890,
   totalOrders: 489,
