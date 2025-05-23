@@ -5,7 +5,7 @@
  * 本番環境とステージング環境では、エラーを収集し、開発チームに報告します。
  */
 
-import type { Environment } from '../../config/environments';
+import type { Environment } from '../config/environments';
 
 // 初期化状態を追跡
 let isInitialized = false;

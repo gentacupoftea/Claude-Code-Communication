@@ -145,7 +145,7 @@ class DiagnosticsService {
     const originalFetch = window.fetch;
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const startTime = performance.now();
-      const url = typeof input === 'string' ? input : input.url;
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url;
       
       try {
         const response = await originalFetch(input, init);

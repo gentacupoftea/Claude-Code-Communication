@@ -195,7 +195,7 @@ class HelpService {
   public addCategory(category: Omit<HelpCategory, 'id'>): HelpCategory {
     const newCategory: HelpCategory = {
       ...category,
-      id: category.id as HelpCategoryId || `custom-${uuidv4().substring(0, 8)}` as HelpCategoryId
+      id: `custom-${uuidv4().substring(0, 8)}` as HelpCategoryId
     };
     
     this.categories.push(newCategory);

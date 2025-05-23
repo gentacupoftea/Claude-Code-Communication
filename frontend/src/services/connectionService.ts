@@ -79,7 +79,9 @@ class ConnectionService extends EventEmitter {
       await this.validateApiConnection();
       
       // Then connect WebSocket if API is available
-      if (this._connectionDetails.apiStatus === 'connected') {
+      // Recheck status after validation
+      const currentStatus = this._connectionDetails.apiStatus as ConnectionStatus;
+      if (currentStatus === 'connected') {
         websocketService.connect();
         
         // Start ping interval to keep connection alive

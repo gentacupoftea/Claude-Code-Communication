@@ -347,8 +347,8 @@ const offlineService = {
 
   async getCachedData(key: string) {
     try {
-      const data = await getFromStore(STORES.CACHE, key);
-      if (!data || (data.expire && data.expire < Date.now())) {
+      const data = await getFromStore(STORES.CACHE, key) as any;
+      if (!data || (data?.expire && data.expire < Date.now())) {
         return null;
       }
       return data.value || data;
