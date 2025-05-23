@@ -21,6 +21,15 @@ const HTTPS_PORT = process.env.HTTPS_PORT || 8443;
 app.use(cors());
 app.use(express.json());
 
+// Shopify API Routes
+try {
+  const shopifyRoutes = require('./src/routes/shopify');
+  app.use('/api/shopify', shopifyRoutes);
+  console.log('✅ Shopify routes loaded');
+} catch (error) {
+  console.error('⚠️ Failed to load Shopify routes:', error.message);
+}
+
 // データファイルパス
 const DATA_DIR = path.join(__dirname, 'data');
 const API_KEYS_FILE = path.join(DATA_DIR, 'api_keys.json');

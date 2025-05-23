@@ -1,29 +1,24 @@
+# Node.js LTSイメージを使用
 FROM node:18-alpine
 
+# 作業ディレクトリの設定
 WORKDIR /app
 
-# Install basic dependencies
-RUN apk add --no-cache curl
-
-# Copy package files first
+# パッケージファイルのコピー
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# 依存関係のインストール
+RUN npm ci --only=production
 
-# Copy all source code
+# アプリケーションファイルのコピー
 COPY . .
 
-# Create necessary directories
-RUN mkdir -p data logs
-
-# Expose port
+# ポートの公開
 EXPOSE 8000
 
-# Set environment
-ENV NODE_ENV=production
-ENV PORT=8000
+# ヘルスチェックの追加
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:8000/api/shopify/test-connection', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
-# Simple start command
+# アプリケーションの起動
 CMD ["node", "server.js"]
-EOF < /dev/null
