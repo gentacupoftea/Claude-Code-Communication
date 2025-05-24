@@ -9,12 +9,16 @@ export type ECPlatform = 'shopify' | 'rakuten' | 'amazon' | 'yahoo' | 'base' | '
 export interface User {
   id: string;
   email: string;
-  name: string;
-  role: 'admin' | 'manager' | 'user' | 'viewer';
-  language: 'ja' | 'en';
-  theme: 'light' | 'dark';
-  permissions: string[];
-  lastLogin: Date;
+  full_name?: string;
+  is_active: boolean;
+  is_superuser: boolean;
+  created_at: string;
+  last_login?: string;
+  // Frontend-specific fields (stored separately)
+  role?: 'admin' | 'manager' | 'user' | 'viewer';
+  language?: 'ja' | 'en';
+  theme?: 'light' | 'dark';
+  permissions?: string[];
 }
 
 // API認証設定

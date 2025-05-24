@@ -20,6 +20,13 @@ cryptography==42.0.8
 pyyaml==6.0.1
 toml==0.10.2
 python-jose==3.3.0
+pyotp==2.9.0
+qrcode==7.4.2
+pillow==10.4.0
+python-slugify==8.0.4
+passlib==1.7.4
+argon2-cffi==23.1.0
+bcrypt==4.2.0
 
 # Monitoring and Logging
 psutil==5.9.8
@@ -38,6 +45,9 @@ mypy==1.11.2
 # Data and Database
 pandas==2.2.2
 sqlalchemy==2.0.32
+alembic==1.13.2
+psycopg2-binary==2.9.9
+redis==5.0.8
 
 # Git Integration
 GitPython==3.1.43
@@ -46,6 +56,8 @@ GitPython==3.1.43
 fastapi==0.115.0
 uvicorn==0.31.0
 gunicorn==23.0.0
+slowapi==0.1.9
+python-multipart==0.0.9
 
 # Utilities
 click==8.1.7

@@ -26,14 +26,22 @@ export const login = createAsyncThunk(
   'auth/login',
   async ({ email, password }: { email: string; password: string }) => {
     const response = await authService.login(email, password);
-    localStorage.setItem('token', response.token);
+    // Store tokens in localStorage
+    if (response.access_token) {
+      localStorage.setItem('auth_access_token', response.access_token);
+      localStorage.setItem('auth_refresh_token', response.refresh_token);
+      localStorage.setItem('auth_token_type', response.token_type || 'Bearer');
+    }
     return response;
   }
 );
 
 export const logout = createAsyncThunk('auth/logout', async () => {
   await authService.logout();
-  localStorage.removeItem('token');
+  localStorage.removeItem('auth_access_token');
+  localStorage.removeItem('auth_refresh_token');
+  localStorage.removeItem('auth_token_type');
+  localStorage.removeItem('auth_user');
 });
 
 export const fetchCurrentUser = createAsyncThunk(
@@ -66,8 +74,12 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.token = action.payload.token;
-        state.user = action.payload.user;
+        state.token = action.payload.access_token;
+        // The user data comes from a separate API call after login
+        // For now, we'll set basic user info from the login response if available
+        if (action.payload.user) {
+          state.user = action.payload.user;
+        }
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
@@ -85,12 +97,15 @@ const authSlice = createSlice({
         state.user = {
           id: apiUser.id,
           email: apiUser.email,
-          name: apiUser.full_name || apiUser.name || apiUser.email,
+          full_name: apiUser.full_name || apiUser.name || apiUser.email,
+          is_active: apiUser.is_active !== undefined ? apiUser.is_active : true,
+          is_superuser: apiUser.is_superuser || false,
+          created_at: apiUser.created_at || new Date().toISOString(),
+          last_login: apiUser.last_login,
           role: apiUser.is_superuser ? 'admin' as const : 'user' as const,
           language: 'ja' as const,
           theme: 'light' as const,
-          permissions: apiUser.permissions || [],
-          lastLogin: new Date()
+          permissions: apiUser.permissions || []
         };
         state.isAuthenticated = true;
       })

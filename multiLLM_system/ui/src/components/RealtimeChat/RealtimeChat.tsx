@@ -31,6 +31,8 @@ interface Message {
   timestamp: Date;
   context?: ChatContext;
   interrupted?: boolean;
+  provider?: string;
+  connections?: MCPConnection[];
 }
 
 interface ChatContext {
@@ -47,6 +49,37 @@ interface ThinkingProcess {
   };
   stage: string;
   steps: ThinkingStep[];
+}
+
+interface MCPConnection {
+  id: string;
+  service: string;
+  action: string;
+  duration: number;
+  success: boolean;
+  error?: string;
+}
+
+interface LLMResponse {
+  id: string;
+  provider: string;
+  model: string;
+  tokens: {
+    prompt: number;
+    completion: number;
+    total: number;
+  };
+  duration: number;
+}
+
+interface ConversationLog {
+  conversation_id: string;
+  messages: Message[];
+  llm_responses: LLMResponse[];
+  mcp_connections: MCPConnection[];
+  total_tokens: number;
+  start_time: string;
+  end_time?: string;
 }
 
 interface ThinkingStep {

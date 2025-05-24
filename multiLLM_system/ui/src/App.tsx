@@ -18,6 +18,7 @@ import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import Logs from './pages/Logs';
 import Chat from './pages/Chat';
+import ImprovedChat from './pages/ImprovedChat';
 
 // Theme
 const theme = createTheme({
@@ -109,6 +110,7 @@ function App() {
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/logs" element={<Logs />} />
                   <Route path="/chat" element={<Chat />} />
+                  <Route path="/improved-chat" element={<ImprovedChat />} />
                 </Routes>
               </Box>
             </Box>

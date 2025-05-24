@@ -1,252 +1,198 @@
-# Conea（旧Shopify MCP Server）
+# Shopify MCP Server
 
-Conea（旧Shopify MCP Server）は、複数のECプラットフォーム（Shopify、楽天、Amazon）とClaude Desktopを連携するためのModel Context Protocol（MCP）サーバーで、リアルタイム分析とデータ可視化機能を提供します。
+Enterprise-level authentication system with Shopify integration capabilities.
 
-**Version**: v0.3.1 (Analytics & MCP Edition)  
-**Status**: Production Ready  
-**Documentation**: [Full Documentation](docs/README.md)
+## 🚀 Features
 
-## 🚀 What's New in v0.3.1
-
-- **モダンGUIインターフェース**: 洗練されたReact/Material UIベースのダッシュボード
-- **オフラインモード**: ネットワーク接続なしでも作業可能
-- **包括的ヘルプシステム**: コンテキスト依存ヘルプとインタラクティブガイド
-- **診断と調査ツール**: 高度な問題診断機能
-- **ステージング/本番環境デプロイ**: Docker Composeによるスムーズなデプロイフロー
-
-### Updates in v0.3.0
-- **Native MCP Integration**: Full support for Claude Desktop's Model Context Protocol
-- **Google Analytics Integration**: Comprehensive GA4 API support with real-time data
-- **Advanced Analytics**: Conversion funnels, user segments, and custom metrics
-- **Intelligent Caching**: Redis-based caching for improved performance
-- **Extended API Support**: Both REST and GraphQL endpoints for analytics
-
-### Previous Updates
-- **Adaptive Rate Limiting**: Automatic API request throttling to prevent rate limit errors
-- **Exponential Backoff**: Smart retry mechanism for failed requests
-- **Rate Limit Monitoring**: New tool to track API usage and rate limit status
-- **GraphQL API Support**: Efficient data fetching with up to 70% fewer API calls
-- **Enhanced Testing**: Comprehensive test suite with coverage reporting
-
-## ✨ Features
+### Security & Authentication
+- **Email Verification** - Required email confirmation before account access
+- **Two-Factor Authentication (2FA)** - TOTP-based with QR codes and backup codes
+- **Account Lockout** - Automatic lockout after 5 failed login attempts
+- **Session Management** - Track and manage all active sessions
+- **Password Security** - Strong password policy with history tracking
+- **Audit Logging** - Complete audit trail of all security events
 
 ### Core Capabilities
-- 🛍️ Real-time order data aggregation
-- 📊 Sales analytics and visualization
-- 📈 Interactive analytics dashboard
-- 💰 Currency-aware reporting (Multi-currency support)
-- 🔒 Secure API integration
-- 📈 Product performance tracking
-- 🌐 GraphQL and REST API support
-- 📊 Google Analytics integration
-- 📱 Responsive modern UI for all devices
-- 🔌 Offline mode for uninterrupted work
-- 🛠️ Advanced diagnostic and debugging tools
-- 📚 Contextual help and documentation
+- **Multi-tenant Architecture** - Organization-based access control
+- **Role-Based Access Control** - Owner, Admin, Member, Viewer roles
+- **API Token Management** - Secure API access for integrations
+- **Shopify Store Integration** - Connect multiple Shopify stores per organization
 
-### Technical Features
-- 🤖 Native MCP server implementation
-- 🚄 High-performance caching
-- 🧪 Comprehensive test coverage
-- 🐳 Docker support
-- 📝 Extensive documentation
-- 🔄 Integrated CI/CD with GitHub Actions
-- 🛡️ Network resilient installation
-- 🔐 Redis-based caching for Google Analytics
-- 🧩 TypeScript and Python dual support
-- 🏗️ Modern React/Material UI frontend
-- 🔄 Redux state management
+## 📋 Requirements
 
-## 📚 Quick Start
+- Python 3.9+
+- PostgreSQL or SQLite
+- Redis (optional, for caching)
+- Node.js 16+ (for frontend)
 
-### Prerequisites
-- Python 3.8+
-- Node.js 18+
-- Docker & Docker Compose (optional, for containerized deployment)
-- Shopify store with API access
-- Claude Desktop application
+## 🛠️ Installation
 
-### Installation
+### Backend Setup
 
-#### Standard Installation
-
+1. Clone the repository:
 ```bash
-# 1. Clone the repository
-git clone https://github.com/mourigenta/conea.git
-cd conea
+git clone https://github.com/yourusername/shopify-mcp-server.git
+cd shopify-mcp-server
+```
 
-# 2. Set up environment with network resilience
-./setup_env.sh
-# Or with custom options:
-# INSTALL_TIMEOUT=300 INSTALL_RETRY=5 ./setup_env.sh
+2. Create virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
-# 3. Configure your Shopify credentials
-# Edit .env with your credentials (created by setup_env.sh)
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-# 4. Install frontend dependencies
+4. Set up environment variables:
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+5. Run database migrations:
+```bash
+alembic upgrade head
+```
+
+6. Start the server:
+```bash
+uvicorn src.main:app --reload
+```
+
+### Frontend Setup
+
+1. Navigate to frontend directory:
+```bash
 cd frontend
+```
+
+2. Install dependencies:
+```bash
 npm install
-cd ..
-
-# 5. Build frontend
-cd frontend
-npm run build
-cd ..
 ```
 
-#### Docker Installation
-
+3. Set up environment:
 ```bash
-# Using Docker Compose
-docker-compose up -d
-
-# For production environment
-docker-compose -f docker-compose.prod.yml up -d
+cp .env.example .env.local
+# Edit .env.local with your configuration
 ```
 
-### Running the Server
-
+4. Start development server:
 ```bash
-# Start the MCP server
-./run_server.py
-
-# For legacy FastAPI mode
-USE_FASTAPI=true ./run_server.py
-
-# Show version
-./run_server.py --version
-
-# Start frontend development server
-cd frontend
-npm run dev
+npm start
 ```
 
-### Configuration
+## 🔐 Security Configuration
 
-Configure your Shopify credentials in `.env`:
+### Environment Variables
 
-```bash
-SHOPIFY_SHOP_NAME=your-shop-name
-SHOPIFY_ACCESS_TOKEN=your-access-token
-SHOPIFY_API_VERSION=2025-04
+```env
+# Security Settings
+PASSWORD_MIN_LENGTH=8
+MAX_LOGIN_ATTEMPTS=5
+LOCKOUT_DURATION_MINUTES=30
+SESSION_EXPIRY_HOURS=24
+EMAIL_VERIFICATION_EXPIRY_HOURS=24
+
+# JWT Settings
+SECRET_KEY=your-secret-key-here
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
+
+# Database
+DATABASE_URL=postgresql://user:password@localhost/shopify_mcp
+
+# Email Service
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
 ```
 
-See [Environment Setup Guide](docs/configuration/environment.md) for detailed instructions.
+## 📚 API Documentation
 
-## 🛠️ Available MCP Tools
+Once the server is running, visit:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
 
-### Order Analytics
-- `get_orders_summary`: Order statistics and revenue with visualization
-- `get_sales_analytics`: Sales trends and analytics with charts
-- `get_product_performance`: Top performing products analysis
+### Key Endpoints
 
-### Shop Information
-- `get_shop_info_graphql`: Comprehensive shop information via GraphQL
+#### Authentication
+- `POST /api/v1/auth/register` - User registration
+- `POST /api/v1/auth/login` - User login
+- `POST /api/v1/auth/verify-email` - Email verification
+- `POST /api/v1/auth/2fa/setup` - Setup 2FA
+- `GET /api/v1/auth/sessions` - List active sessions
 
-### Monitoring
-- `get_rate_limit_stats`: Monitor API rate limit usage statistics
+#### Organizations
+- `POST /api/v1/organizations` - Create organization
+- `GET /api/v1/organizations` - List user's organizations
+- `POST /api/v1/organizations/{id}/members` - Add member
+
+#### Shopify Integration
+- `POST /api/v1/shopify/stores` - Connect Shopify store
+- `GET /api/v1/shopify/products` - List products
+- `GET /api/v1/shopify/orders` - List orders
 
 ## 🧪 Testing
 
-### Running Tests
-
+Run all tests:
 ```bash
-# Run all tests (backend)
-python -m pytest tests/
+pytest tests/ -v
+```
 
-# Run with coverage report
-python -m pytest tests/ --cov=shopify_mcp_server
-
-# Run frontend tests
-cd frontend
-npm test
+Run with coverage:
+```bash
+pytest tests/ --cov=src --cov-report=html
 ```
 
 ## 🚀 Deployment
 
-### Staging Environment
+### Using Docker
 
-Deploy to staging using GitHub Actions workflow or manually:
-
+1. Build the image:
 ```bash
-cd deployment/staging
-cp .env.example .env  # Configure environment variables
-chmod +x deploy.sh
-./deploy.sh
+docker build -t shopify-mcp-server .
 ```
 
-See [Staging Deployment Documentation](deployment/staging/README.md) for details.
+2. Run the container:
+```bash
+docker run -p 8000:8000 --env-file .env shopify-mcp-server
+```
 
-### Production Environment
+### Using Docker Compose
 
-Production deployment is automated through GitHub Actions with manual approval:
+```bash
+docker-compose up -d
+```
 
-1. Changes are merged to the `main` branch
-2. CI builds and tests the application
-3. Security scans are performed
-4. Manual approval is required
-5. Blue-Green deployment is executed
+## 📈 Monitoring
 
-See [Production Deployment Documentation](deployment/production/README.md) for details.
-
-## 🔧 Troubleshooting
-
-### Network Issues
-
-If you encounter dependency installation failures:
-
-1. **Check proxy settings**: `export PIP_PROXY=http://proxy:port`
-2. **Increase timeout**: `INSTALL_TIMEOUT=300 ./setup_env.sh`
-3. **Use offline mode**: `OFFLINE_MODE=1 ./setup_env.sh`
-4. **Disable retries**: `INSTALL_RETRY=0 ./setup_env.sh`
-
-### API Rate Limiting
-
-If you experience rate limiting issues with Shopify API:
-
-1. **Adjust rate limit settings**: Modify the following environment variables:
-   ```
-   SHOPIFY_RATE_LIMIT_RPS=2.0    # Requests per second
-   SHOPIFY_RATE_LIMIT_BURST=10   # Maximum burst size
-   SHOPIFY_RATE_LIMIT_LOG=true   # Enable detailed logging
-   ```
-2. **Monitor rate limit usage**: Use the `get_rate_limit_stats` MCP tool
-3. **Check rate limit headers**: Review logs for "Shopify API Rate Limit" warnings
+- Health check: http://localhost:8000/health
+- Metrics: http://localhost:8000/metrics
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](docs/contributing/README.md) for:
-
-- Development workflow
-- Code style guidelines
-- Pull request process
-- Release procedures
-
-## 🔐 Security
-
-- Environment-based configuration
-- Secure token storage
-- Adaptive rate limiting and automatic throttling
-- Rate limit statistics monitoring
-- SSL/TLS support
-- Docker isolation for production deployments
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-Thanks to all contributors who have helped make this project better!
+- FastAPI for the amazing web framework
+- Shopify for their comprehensive API
+- The Python community for excellent libraries
 
 ## 📞 Support
 
-- 📖 [Documentation](docs/README.md)
-- 💬 [Discussions](https://github.com/mourigenta/conea/discussions)
-- 🐛 [Issue Tracker](https://github.com/mourigenta/conea/issues)
-
----
-
-<p align="center">
-  Made with ❤️ by the Conea team
-</p>
+For support, email support@shopify-mcp-server.com or open an issue on GitHub.

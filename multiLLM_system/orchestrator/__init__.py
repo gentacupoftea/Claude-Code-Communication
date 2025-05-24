@@ -7,12 +7,18 @@ from .orchestrator import (
     MultiLLMOrchestrator,
     Task,
     TaskType,
-    TaskPriority
+    TaskPriority,
+    LLMResponse,
+    MCPConnection,
+    ConversationLog
 )
 
 __all__ = [
     'MultiLLMOrchestrator',
     'Task',
     'TaskType',
-    'TaskPriority'
+    'TaskPriority',
+    'LLMResponse',
+    'MCPConnection',
+    'ConversationLog'
 ]

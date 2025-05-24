@@ -172,16 +172,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const response = await authService.login(credentials.email, credentials.password);
       
       // Make sure we have all required data
-      if (!response.token || !response.refreshToken || !response.user) {
+      if (!response.access_token || !response.refresh_token || !response.user) {
         throw new Error('Invalid server response');
       }
       
+      // Map backend User to frontend User format
+      const userData: User = {
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.full_name,
+        role: response.user.role,
+        permissions: response.user.permissions,
+      };
+      
       // Save auth state
       saveAuthState(
-        response.token,
-        response.refreshToken,
+        response.access_token,
+        response.refresh_token,
         3600, // Default 1 hour
-        response.user
+        userData
       );
       
     } catch (err) {
@@ -206,12 +215,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       
       // Registration in our service automatically logs the user in
-      if (response.token && response.refreshToken && response.user) {
+      if (response.access_token && response.refresh_token && response.user) {
+        // Map backend User to frontend User format
+        const userData: User = {
+          id: response.user.id,
+          email: response.user.email,
+          name: response.user.full_name,
+          role: response.user.role,
+          permissions: response.user.permissions,
+        };
+        
         saveAuthState(
-          response.token,
-          response.refreshToken,
+          response.access_token,
+          response.refresh_token,
           3600,
-          response.user
+          userData
         );
       } else {
         // If the API doesn't log in automatically, do it manually
@@ -260,12 +278,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const response = await authService.refreshToken(refreshToken);
       
-      if (response.token && response.refreshToken) {
+      if (response.access_token && response.refresh_token) {
+        // Map backend User to frontend User format if user exists
+        let userData = user as User;
+        if (response.user) {
+          userData = {
+            id: response.user.id,
+            email: response.user.email,
+            name: response.user.full_name,
+            role: response.user.role,
+            permissions: response.user.permissions,
+          };
+        }
+        
         saveAuthState(
-          response.token,
-          response.refreshToken,
+          response.access_token,
+          response.refresh_token,
           3600,
-          response.user || user as User
+          userData
         );
         return true;
       }
@@ -284,8 +314,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     
     try {
-      const apiUser = await authService.getCurrentUser() as any;
-      const userData = apiUser;
+      const apiUser = await authService.getCurrentUser();
+      // Map backend User to frontend User format
+      const userData: User = {
+        id: apiUser.id,
+        email: apiUser.email,
+        name: apiUser.full_name,
+        role: apiUser.role,
+        permissions: apiUser.permissions,
+      };
       setUser(userData);
       localStorage.setItem('auth_user', JSON.stringify(userData));
     } catch (error) {

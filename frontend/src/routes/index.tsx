@@ -6,6 +6,8 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 // 認証が不要なページ
 import LoginPage from '../pages/LoginPage';
 import SignupPage from '../pages/SignupPage';
+import ForgotPasswordPage from '../pages/ForgotPasswordPage';
+import ResetPasswordPage from '../pages/ResetPasswordPage';
 import { LandingPage } from '../pages/LandingPage/LandingPage';
 import OAuthCallback from '../pages/OAuthCallback';
 
@@ -77,6 +79,8 @@ const AppRoutes: React.FC = () => {
         {/* 公開ルート */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
         <Route path="/landing" element={<LandingPage />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
         

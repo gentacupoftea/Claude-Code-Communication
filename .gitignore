@@ -1,31 +1,63 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
+# Virtual Environment
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
-# testing
-/coverage
+# Testing
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
 
-# production
-/build
+# Database
+*.db
+*.sqlite
+*.sqlite3
+test.db
+test_auth.db
 
-# misc
-.DS_Store
+# Logs
+logs/
+*.log
+
+# Environment files
+.env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Firebase
-.firebase/
-firebase-debug.log
-.firebaserc
+.env.*.local
+*.env
 
 # IDE
 .idea/
@@ -33,7 +65,51 @@ firebase-debug.log
 *.swp
 *.swo
 *~
+.project
+.pydevproject
 
 # OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
-EOF < /dev/null
+
+# Frontend
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/.env.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Firebase
+.firebase/
+firebase-debug.log
+.firebaserc
+
+# Documentation
+docs/_build/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Secrets
+*.pem
+*.key
+*.cert
+*.crt
+
+# Alembic
+alembic.ini
+
+# Project specific
+instance/
+.webassets-cache

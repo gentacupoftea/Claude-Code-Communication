@@ -173,3 +173,36 @@ class ShopifyStoreResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+# Password Reset Schemas
+class PasswordResetRequest(BaseModel):
+    """Schema for password reset request"""
+    email: EmailStr
+    
+    
+class PasswordResetConfirm(BaseModel):
+    """Schema for password reset confirmation"""
+    token: str
+    new_password: str = Field(..., min_length=8)
+    
+    @validator('new_password')
+    def validate_password(cls, v):
+        if not any(char.isdigit() for char in v):
+            raise ValueError('Password must contain at least one digit')
+        if not any(char.isupper() for char in v):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not any(char.islower() for char in v):
+            raise ValueError('Password must contain at least one lowercase letter')
+        return v
+
+
+class PasswordResetTokenVerify(BaseModel):
+    """Schema for password reset token verification"""
+    token: str
+
+
+class MessageResponse(BaseModel):
+    """Schema for simple message responses"""
+    message: str
+    success: bool = True

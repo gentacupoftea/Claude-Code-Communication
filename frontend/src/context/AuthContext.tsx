@@ -128,9 +128,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authService.login(credentials.email, credentials.password);
       
       const authTokens: AuthTokens = {
-        access_token: response.token,
-        refresh_token: response.refreshToken,
-        token_type: 'Bearer'
+        access_token: response.access_token,
+        refresh_token: response.refresh_token,
+        token_type: response.token_type || 'Bearer'
       };
       setTokens(authTokens);
       saveTokensToStorage(authTokens);
@@ -159,9 +159,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
       
       const authTokens: AuthTokens = {
-        access_token: response.token,
-        refresh_token: response.refreshToken,
-        token_type: 'Bearer'
+        access_token: response.access_token,
+        refresh_token: response.refresh_token,
+        token_type: response.token_type || 'Bearer'
       };
       setTokens(authTokens);
       saveTokensToStorage(authTokens);
@@ -198,9 +198,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await authService.refreshToken(tokens.refresh_token);
       const authTokens: AuthTokens = {
-        access_token: response.token,
-        refresh_token: response.refreshToken,
-        token_type: 'Bearer'
+        access_token: response.access_token,
+        refresh_token: response.refresh_token,
+        token_type: response.token_type || 'Bearer'
       };
       setTokens(authTokens);
       saveTokensToStorage(authTokens);

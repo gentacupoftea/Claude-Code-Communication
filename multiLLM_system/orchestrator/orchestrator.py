@@ -12,6 +12,9 @@ from enum import Enum
 import json
 import uuid
 import random
+from .llm_client import ClaudeClient, TaskAnalysis, LLMMessage
+from .response_formatter import ResponseFormatter, MessageProcessor
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +28,7 @@ class TaskType(Enum):
     DATA_ANALYSIS = "data_analysis"
     IMAGE_GENERATION = "image_generation"
     GENERAL = "general"
+    MEMORY_OPERATION = "memory_operation"  # OpenMemory操作用
 
 
 class TaskPriority(Enum):
@@ -50,6 +54,46 @@ class Task:
     metadata: Dict = None
 
 
+@dataclass
+class LLMResponse:
+    """LLM応答の記録"""
+    id: str
+    provider: str
+    model: str
+    content: str
+    tokens: Dict[str, int]
+    metadata: Dict
+    timestamp: datetime
+    duration: float
+    error: Optional[str] = None
+
+
+@dataclass
+class MCPConnection:
+    """MCP接続の記録"""
+    id: str
+    service: str
+    action: str
+    request: Dict
+    response: Dict
+    timestamp: datetime
+    duration: float
+    success: bool
+    error: Optional[str] = None
+
+
+@dataclass
+class ConversationLog:
+    """会話ログ"""
+    conversation_id: str
+    messages: List[Dict]
+    llm_responses: List[LLMResponse]
+    mcp_connections: List[MCPConnection]
+    total_tokens: int
+    start_time: datetime
+    end_time: Optional[datetime] = None
+
+
 class MultiLLMOrchestrator:
     """
     MultiLLMシステムの統括者
@@ -62,7 +106,16 @@ class MultiLLMOrchestrator:
         self.task_queue = asyncio.Queue()
         self.active_tasks = {}
         self.memory_sync_interval = config.get('memory', {}).get('syncInterval', 300)
-        self.llm_client = None  # LLMクライアント（後で注入）
+        # Claude APIクライアント（デモモード）
+        self.claude_client = ClaudeClient(None)  # APIキーなしでデモモード
+        
+        # 会話ログの管理
+        self.conversations = {}
+        self.stream_handlers = {}  # ストリーミング用のハンドラー
+        
+        # レスポンスフォーマッター
+        self.formatter = ResponseFormatter()
+        self.message_processor = MessageProcessor()
         
         # リトライ設定
         self.max_retries = config.get('maxRetries', 3)
@@ -76,7 +129,9 @@ class MultiLLMOrchestrator:
             TaskType.DOCUMENTATION: "documentation_worker",
             TaskType.PR_REVIEW: "review_worker",
             TaskType.DATA_ANALYSIS: "analytics_worker",
-            TaskType.IMAGE_GENERATION: "creative_worker"
+            TaskType.IMAGE_GENERATION: "creative_worker",
+            TaskType.GENERAL: "backend_worker",  # GENERALタスクはbackend_workerに割り当て
+            TaskType.MEMORY_OPERATION: "mcp_worker"  # OpenMemory操作はMCP Workerに割り当て
         }
         
         # キーワードベースのタスク分類
@@ -104,12 +159,25 @@ class MultiLLMOrchestrator:
             TaskType.IMAGE_GENERATION: [
                 '画像', 'image', 'イラスト', 'illustration', '図', 'diagram',
                 'デザイン生成', 'generate'
+            ],
+            TaskType.GENERAL: [
+                'こんにちは', 'hello', 'ハロー', 'やあ', 'help', 'ヘルプ',
+                '教えて', 'tell me', '何ができる', 'what can you do'
+            ],
+            TaskType.MEMORY_OPERATION: [
+                '記憶して', '保存して', 'メモリに保存', 'save memory',
+                '思い出して', '検索して', 'search memory', 'recall',
+                'メモリを全部見せて', '記憶を表示', '一覧表示', 'list memory',
+                'メモリをすべて削除', '全削除', 'delete all', '削除して'
             ]
         }
     
     async def initialize(self):
         """Orchestratorの初期化"""
         logger.info("🎯 MultiLLM Orchestrator initializing...")
+        
+        # Claude-4クライアントの初期化
+        await self.claude_client.initialize()
         
         # Worker LLMsの初期化
         await self._initialize_workers()
@@ -121,6 +189,12 @@ class MultiLLMOrchestrator:
         asyncio.create_task(self._task_processing_loop())
         
         logger.info("✅ Orchestrator initialized successfully")
+    
+    async def shutdown(self):
+        """Orchestratorの終了処理"""
+        logger.info("🛑 Shutting down MultiLLM Orchestrator...")
+        await self.claude_client.shutdown()
+        logger.info("✅ Orchestrator shutdown complete")
     
     async def _initialize_workers(self):
         """Worker LLMsの初期化"""
@@ -135,8 +209,16 @@ class MultiLLMOrchestrator:
                 'current_task': None
             }
             logger.info(f"✅ Initialized worker: {worker_name}")
+        
+        # MCPワーカーを追加
+        self.workers['mcp_worker'] = {
+            'config': {'model': 'mcp-integration'},
+            'status': 'active',
+            'current_task': None
+        }
+        logger.info("✅ Initialized worker: mcp_worker")
     
-    async def process_user_request(self, request: str, user_id: str, context: Dict = None) -> Dict:
+    async def process_user_request(self, request: str, user_id: str, context: Dict = None, conversation_id: str = None, stream_handler=None) -> Dict:
         """
         ユーザーリクエストを処理
         1. リクエストを分析
@@ -145,29 +227,116 @@ class MultiLLMOrchestrator:
         4. 結果を統合して返す
         """
         logger.info(f"📥 Processing user request: {request[:100]}...")
+        start_time = time.time()
         
-        # タスクタイプを判定
-        task_type = self._analyze_task_type(request)
+        # 会話IDの生成または取得
+        if not conversation_id:
+            conversation_id = f"conv_{uuid.uuid4()}"
+        
+        # 会話ログの初期化または取得
+        if conversation_id not in self.conversations:
+            self.conversations[conversation_id] = ConversationLog(
+                conversation_id=conversation_id,
+                messages=[],
+                llm_responses=[],
+                mcp_connections=[],
+                total_tokens=0,
+                start_time=datetime.now()
+            )
+        
+        conversation = self.conversations[conversation_id]
+        
+        # ストリームハンドラーの登録
+        if stream_handler:
+            self.stream_handlers[conversation_id] = stream_handler
+        
+        # ユーザーメッセージを記録
+        conversation.messages.append({
+            'role': 'user',
+            'content': request,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+        # Claude-4による知的タスク分析
+        analysis_start = time.time()
+        task_analysis = await self.claude_client.analyze_task(request, context)
+        analysis_duration = time.time() - analysis_start
+        logger.info(f"🧠 Task analysis: {task_analysis.task_type} - {task_analysis.reasoning}")
+        
+        # タスク分析をLLM応答として記録
+        analysis_response = LLMResponse(
+            id=str(uuid.uuid4()),
+            provider='anthropic',
+            model='claude-3.5-sonnet',
+            content=f"Task Type: {task_analysis.task_type}\nReasoning: {task_analysis.reasoning}",
+            tokens={'prompt': 0, 'completion': 0, 'total': 0},  # デモモードでは0
+            metadata={'task': 'analysis'},
+            timestamp=datetime.now(),
+            duration=analysis_duration
+        )
+        conversation.llm_responses.append(analysis_response)
+        
+        # タスクタイプを設定
+        try:
+            task_type = TaskType(task_analysis.task_type.lower())
+        except ValueError:
+            task_type = TaskType.GENERAL
         
         # タスクを作成
         task = Task(
             id=str(uuid.uuid4()),
             type=task_type,
             description=request,
-            priority=self._determine_priority(request),
+            priority=TaskPriority[task_analysis.priority] if task_analysis.priority in TaskPriority.__members__ else TaskPriority.MEDIUM,
             user_id=user_id,
             created_at=datetime.now(),
             metadata=context or {}
         )
         
-        # 複雑なタスクの場合はサブタスクに分解
-        if self._is_complex_task(request):
-            subtasks = await self._decompose_task(task)
-            results = await self._process_parallel_tasks(subtasks)
-            return await self._integrate_results(results)
+        # 複雑度に応じた処理分岐
+        if task_analysis.complexity == "complex":
+            # 複数のサブタスクに分解して並列処理
+            subtasks = []
+            for i, subtask_desc in enumerate(task_analysis.subtasks):
+                subtask = Task(
+                    id=f"{task.id}_sub_{i}",
+                    type=task.type,
+                    description=subtask_desc,
+                    priority=task.priority,
+                    user_id=user_id,
+                    created_at=datetime.now(),
+                    metadata={"parent_task": task.id, "worker": task_analysis.assigned_workers[i] if i < len(task_analysis.assigned_workers) else "backend_worker"}
+                )
+                subtasks.append(subtask)
+            
+            results = await self._process_parallel_tasks(subtasks, conversation)
+            final_result = await self._integrate_results(results)
         else:
             # 単一タスクとして処理
-            return await self._process_single_task(task)
+            preferred_worker = task_analysis.assigned_workers[0] if task_analysis.assigned_workers else None
+            final_result = await self._process_single_task(task, preferred_worker, conversation)
+        
+        # アシスタントメッセージを記録
+        conversation.messages.append({
+            'role': 'assistant',
+            'content': final_result.get('result', final_result.get('summary', 'Task completed')),
+            'timestamp': datetime.now().isoformat(),
+            'provider': 'claude-4.0',
+            'connections': [asdict(conn) for conn in conversation.mcp_connections[-5:]]  # 最新5件のMCP接続を含める
+        })
+        
+        # 会話終了時刻を記録
+        conversation.end_time = datetime.now()
+        
+        # ストリームハンドラーのクリーンアップ
+        if conversation_id in self.stream_handlers:
+            del self.stream_handlers[conversation_id]
+        
+        return {
+            'response': final_result.get('result', final_result.get('summary', 'Task completed')),
+            'conversation_log': asdict(conversation),
+            'task_analysis': asdict(task_analysis)
+        }
     
     def _analyze_task_type(self, request: str) -> TaskType:
         """リクエスト内容からタスクタイプを判定"""
@@ -249,10 +418,10 @@ class MultiLLMOrchestrator:
         
         return subtasks
     
-    async def _process_single_task(self, task: Task) -> Dict:
+    async def _process_single_task(self, task: Task, preferred_worker: str = None, conversation: ConversationLog = None) -> Dict:
         """単一タスクを処理"""
-        # 適切なWorkerを選択
-        worker_name = self.task_routing.get(task.type, "backend_worker")
+        # 適切なWorkerを選択（Claude-4の推奨を優先）
+        worker_name = preferred_worker or self.task_routing.get(task.type, "backend_worker")
         worker = self.workers.get(worker_name)
         
         if not worker:
@@ -264,7 +433,7 @@ class MultiLLMOrchestrator:
         self.active_tasks[task.id] = task
         
         # Workerでタスクを実行（実際の実装では非同期で実行）
-        result = await self._execute_task_on_worker(task, worker)
+        result = await self._execute_task_on_worker(task, worker, conversation)
         
         # 結果を更新
         task.result = result
@@ -273,9 +442,9 @@ class MultiLLMOrchestrator:
         
         return result
     
-    async def _process_parallel_tasks(self, tasks: List[Task]) -> List[Dict]:
+    async def _process_parallel_tasks(self, tasks: List[Task], conversation: ConversationLog = None) -> List[Dict]:
         """複数のタスクを並列処理"""
-        tasks_coroutines = [self._process_single_task(task) for task in tasks]
+        tasks_coroutines = [self._process_single_task(task, conversation=conversation) for task in tasks]
         results = await asyncio.gather(*tasks_coroutines, return_exceptions=True)
         
         # エラーハンドリング
@@ -307,24 +476,85 @@ class MultiLLMOrchestrator:
         
         return integrated
     
-    async def _execute_task_on_worker(self, task: Task, worker: Dict) -> Dict:
+    async def _execute_task_on_worker(self, task: Task, worker: Dict, conversation: ConversationLog = None) -> Dict:
         """Workerでタスクを実行（実際の実装はWorkerクラスで）"""
         # エクスポネンシャルバックオフでリトライ
         last_error = None
         
         for attempt in range(self.max_retries):
             try:
-                # デモ用の簡易実装（実際はWorkerクラスで実行）
-                await asyncio.sleep(1)  # 処理時間のシミュレーション
+                # 処理開始時刻
+                task_start = time.time()
                 
                 # ランダムにエラーを発生させる（デモ用）
                 # if random.random() < 0.3:  # 30%の確率でエラー
                 #     raise Exception("Simulated worker error")
                 
+                # タスクタイプに応じて処理を分岐
+                if task.type == TaskType.MEMORY_OPERATION:
+                    # MCP接続の記録
+                    mcp_start = time.time()
+                    try:
+                        result = await self._generate_memory_response(task.description, conversation)
+                        mcp_duration = time.time() - mcp_start
+                        
+                        if conversation and hasattr(self, 'last_mcp_connection'):
+                            conversation.mcp_connections.append(self.last_mcp_connection)
+                    except Exception as mcp_error:
+                        mcp_duration = time.time() - mcp_start
+                        if conversation:
+                            mcp_connection = MCPConnection(
+                                id=str(uuid.uuid4()),
+                                service='openmemory',
+                                action='operation',
+                                request={'description': task.description},
+                                response={},
+                                timestamp=datetime.now(),
+                                duration=mcp_duration,
+                                success=False,
+                                error=str(mcp_error)
+                            )
+                            conversation.mcp_connections.append(mcp_connection)
+                        raise
+                        
+                elif task.type == TaskType.GENERAL:
+                    # Claude-4による実際の応答生成
+                    llm_start = time.time()
+                    messages = [LLMMessage(role="user", content=task.description)]
+                    
+                    # ストリーミング対応
+                    if conversation and conversation.conversation_id in self.stream_handlers:
+                        stream_handler = self.stream_handlers[conversation.conversation_id]
+                        result = await self.claude_client.generate_response(
+                            messages, 
+                            stream_callback=lambda chunk: asyncio.create_task(stream_handler(chunk))
+                        )
+                    else:
+                        result = await self.claude_client.generate_response(messages)
+                    
+                    llm_duration = time.time() - llm_start
+                    
+                    # LLM応答を記録
+                    if conversation:
+                        llm_response = LLMResponse(
+                            id=str(uuid.uuid4()),
+                            provider='anthropic',
+                            model='claude-3.5-sonnet',
+                            content=result,
+                            tokens={'prompt': 0, 'completion': 0, 'total': 0},  # デモモードでは0
+                            metadata={'task_type': task.type.value},
+                            timestamp=datetime.now(),
+                            duration=llm_duration
+                        )
+                        conversation.llm_responses.append(llm_response)
+                else:
+                    # 他のタスクタイプも将来的にはLLMで処理
+                    result = f"{task.type.value}の処理が完了しました。専用Workerによる詳細な処理は開発中です。"
+                
                 return {
                     "task_id": task.id,
                     "worker": worker['config'].get('model', 'unknown'),
-                    "result": f"{task.type.value}の処理が完了しました",
+                    "result": result,
                     "timestamp": datetime.now().isoformat(),
                     "attempts": attempt + 1
                 }
@@ -435,6 +665,132 @@ class MultiLLMOrchestrator:
         """新しいLLMインスタンスに切り替え"""
         # 実際の実装
         pass
+    
+    async def _generate_memory_response(self, description: str, conversation: ConversationLog = None) -> str:
+        """OpenMemory操作のデモ応答（実際にはMCP Workerが処理）"""
+        # MCPサービスを使用してOpenMemoryと通信
+        try:
+            # MCP統合サービスのインスタンスを取得または作成
+            if not hasattr(self, 'mcp_service'):
+                import sys
+                import os
+                # 親ディレクトリをパスに追加
+                sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                from services.mcp_integration import MCPIntegrationService, MCPWorker
+                mcp_config = {
+                    'providers': {
+                        'openmemory': {
+                            'type': 'openmemory',
+                            'url': 'http://localhost:8765',
+                            'userId': 'mourigenta'
+                        }
+                    }
+                }
+                self.mcp_service = MCPIntegrationService(mcp_config)
+                await self.mcp_service.initialize()
+                self.mcp_worker = MCPWorker(self.mcp_service)
+            
+            # MCPワーカーでタスクを処理
+            mcp_start = time.time()
+            result = await self.mcp_worker.process_mcp_task(description, {})
+            mcp_duration = time.time() - mcp_start
+            
+            # MCP接続を記録
+            if conversation:
+                mcp_connection = MCPConnection(
+                    id=str(uuid.uuid4()),
+                    service='openmemory',
+                    action=self._extract_mcp_action(description),
+                    request={'description': description},
+                    response=result,
+                    timestamp=datetime.now(),
+                    duration=mcp_duration,
+                    success=not result.get('error'),
+                    error=result.get('error')
+                )
+                conversation.mcp_connections.append(mcp_connection)
+                self.last_mcp_connection = mcp_connection
+            
+            if result.get('error'):
+                return f"❌ エラーが発生しました: {result['error']}"
+            
+            # 成功時の応答を整形
+            mcp_result = result.get('result', {})
+            
+            if 'save' in description or '記憶して' in description or '保存して' in description:
+                return f"""✅ メモリに保存しました！
+
+**保存内容**: {mcp_result.get('content', description)}
+**メモリID**: {mcp_result.get('id', 'N/A')}
+**タイムスタンプ**: {mcp_result.get('timestamp', 'N/A')}
+
+メモリに正常に保存されました。後で「思い出して」と言えば検索できます。"""
+            
+            elif 'search' in description or '思い出して' in description or '検索して' in description:
+                memories = mcp_result.get('memories', [])
+                if not memories:
+                    return "🔍 該当するメモリが見つかりませんでした。"
+                
+                response = f"🔍 {len(memories)}件のメモリが見つかりました：\n\n"
+                for i, memory in enumerate(memories[:5], 1):  # 最大5件表示
+                    response += f"**{i}. {memory.get('content', 'N/A')}**\n"
+                    response += f"   - ID: {memory.get('id', 'N/A')}\n"
+                    response += f"   - 保存日時: {memory.get('timestamp', 'N/A')}\n"
+                    response += f"   - 関連度: {memory.get('similarity', 0):.2f}\n\n"
+                
+                return response
+            
+            elif 'list' in description or '一覧' in description or '全部見せて' in description:
+                memories = mcp_result.get('memories', [])
+                if not memories:
+                    return "📝 現在保存されているメモリはありません。"
+                
+                response = f"📝 {len(memories)}件のメモリが保存されています：\n\n"
+                for i, memory in enumerate(memories[:10], 1):  # 最大10件表示
+                    response += f"**{i}. {memory.get('content', 'N/A')[:50]}{'...' if len(memory.get('content', '')) > 50 else ''}**\n"
+                    response += f"   - ID: {memory.get('id', 'N/A')}\n"
+                    response += f"   - 保存日時: {memory.get('timestamp', 'N/A')}\n\n"
+                
+                if len(memories) > 10:
+                    response += f"\n（他 {len(memories) - 10} 件のメモリがあります）"
+                
+                return response
+            
+            elif 'delete' in description or '削除' in description:
+                if 'すべて' in description or '全部' in description:
+                    return f"🗑️ {mcp_result.get('message', 'すべてのメモリを削除しました')}"
+                else:
+                    return f"🗑️ {mcp_result.get('message', 'メモリを削除しました')}"
+            
+            else:
+                return f"✅ メモリ操作が完了しました: {mcp_result.get('message', '処理完了')}"
+                
+        except Exception as e:
+            logger.error(f"Memory operation error: {e}")
+            return f"❌ メモリ操作中にエラーが発生しました: {str(e)}\n\nOpenMemoryサービスが起動していることを確認してください。"
+    
+    def _extract_mcp_action(self, description: str) -> str:
+        """説明文からMCPアクションを抽出"""
+        if any(word in description for word in ['記憶して', '保存して', 'save']):
+            return 'save'
+        elif any(word in description for word in ['思い出して', '検索して', 'search']):
+            return 'search'
+        elif any(word in description for word in ['一覧', '全部見せて', 'list']):
+            return 'list'
+        elif any(word in description for word in ['削除', 'delete']):
+            return 'delete'
+        else:
+            return 'unknown'
+    
+    def get_conversation_log(self, conversation_id: str) -> Optional[Dict]:
+        """会話ログを取得"""
+        if conversation_id in self.conversations:
+            return asdict(self.conversations[conversation_id])
+        return None
+    
+    def get_all_conversations(self) -> List[Dict]:
+        """全会話ログを取得"""
+        return [asdict(conv) for conv in self.conversations.values()]
 
 
 # 使用例

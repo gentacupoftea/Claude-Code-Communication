@@ -17,16 +17,18 @@ from .schemas import (
     OrganizationCreate, OrganizationResponse,
     MembershipCreate, MembershipResponse,
     APITokenCreate, APITokenResponse, APITokenCreateResponse,
-    ShopifyStoreCreate, ShopifyStoreResponse
+    ShopifyStoreCreate, ShopifyStoreResponse,
+    PasswordResetRequest, PasswordResetConfirm, PasswordResetTokenVerify, MessageResponse
 )
-from .models import User, Organization, OrganizationMember
+from .models import User, Organization, OrganizationMember, APIToken
 from .services import AuthService, AuthorizationService, APITokenService
 from .dependencies import (
     get_current_user, get_auth_service, get_authorization_service,
-    get_api_token_service, require_permission
+    get_api_token_service, get_password_reset_service, require_permission
 )
 from .permissions import Permission
 from .database import get_db
+from .email import email_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/auth", tags=["authentication"])
@@ -370,8 +372,8 @@ async def get_user_tokens(
     db: Session = Depends(get_db)
 ):
     """Get user's API tokens"""
-    tokens = db.query(models.APIToken).filter(
-        models.APIToken.user_id == current_user.id
+    tokens = db.query(APIToken).filter(
+        APIToken.user_id == current_user.id
     ).all()
     
     return tokens
@@ -393,3 +395,114 @@ async def revoke_api_token(
         )
     
     return None
+
+
+# Password Reset Endpoints
+@router.post("/forgot-password", response_model=MessageResponse)
+@limiter.limit("3/hour")
+async def forgot_password(
+    request: Request,  # Required for rate limiting
+    password_reset: PasswordResetRequest,
+    password_reset_service = Depends(get_password_reset_service)
+):
+    """Request password reset email"""
+    try:
+        # Create reset token
+        result = await password_reset_service.create_reset_token(password_reset.email)
+        
+        if result:
+            user, reset_token = result
+            # Send reset email
+            await email_service.send_password_reset_email(
+                to_email=user.email,
+                user_name=user.full_name,
+                reset_token=reset_token
+            )
+        
+        # Always return success to prevent email enumeration
+        return MessageResponse(
+            message="If an account exists with this email, you will receive a password reset link.",
+            success=True
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in forgot password: {str(e)}")
+        # Still return success to prevent email enumeration
+        return MessageResponse(
+            message="If an account exists with this email, you will receive a password reset link.",
+            success=True
+        )
+
+
+@router.post("/reset-password", response_model=MessageResponse)
+@limiter.limit("5/hour")
+async def reset_password(
+    request: Request,  # Required for rate limiting
+    password_reset: PasswordResetConfirm,
+    password_reset_service = Depends(get_password_reset_service)
+):
+    """Reset password using token"""
+    try:
+        # Reset the password
+        success = await password_reset_service.reset_password(
+            password_reset.token,
+            password_reset.new_password
+        )
+        
+        if success:
+            # Get user info for email notification
+            user = await password_reset_service.verify_reset_token(password_reset.token)
+            if user:
+                await email_service.send_password_changed_email(
+                    to_email=user.email,
+                    user_name=user.full_name
+                )
+            
+            return MessageResponse(
+                message="Password has been reset successfully.",
+                success=True
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired reset token"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error resetting password: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error resetting password"
+        )
+
+
+@router.get("/verify-reset-token", response_model=MessageResponse)
+async def verify_reset_token(
+    token: str,
+    password_reset_service = Depends(get_password_reset_service)
+):
+    """Verify if a reset token is valid"""
+    try:
+        user = await password_reset_service.verify_reset_token(token)
+        
+        if user:
+            return MessageResponse(
+                message="Token is valid",
+                success=True
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired reset token"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error verifying reset token: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error verifying token"
+        )

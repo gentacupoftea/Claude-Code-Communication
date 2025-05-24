@@ -417,6 +417,177 @@ class GitHubMCPProvider(MCPProvider):
                 raise Exception(f"Pull requests API error: {response.status}")
 
 
+class OpenMemoryMCPProvider(MCPProvider):
+    """OpenMemory MCP プロバイダー"""
+    
+    async def _initialize_provider(self):
+        """OpenMemory API初期化"""
+        self.base_url = self.config.get('url', 'http://localhost:8765')
+        self.user_id = self.config.get('userId', 'mourigenta')
+        logger.info(f"✅ OpenMemory MCP Provider initialized at {self.base_url}")
+    
+    def get_supported_methods(self) -> List[str]:
+        return [
+            'openmemory.save',
+            'openmemory.search',
+            'openmemory.list',
+            'openmemory.delete',
+            'openmemory.deleteAll'
+        ]
+    
+    @retry_async(max_attempts=3, base_delay=1.0, max_delay=10.0)
+    async def execute_request(self, request: MCPRequest) -> MCPResponse:
+        """OpenMemoryリクエスト実行"""
+        method = request.method
+        params = request.params
+        
+        try:
+            if method == 'openmemory.save':
+                result = await self._save_memory(params)
+            elif method == 'openmemory.search':
+                result = await self._search_memory(params)
+            elif method == 'openmemory.list':
+                result = await self._list_memories(params)
+            elif method == 'openmemory.delete':
+                result = await self._delete_memory(params)
+            elif method == 'openmemory.deleteAll':
+                result = await self._delete_all_memories(params)
+            else:
+                raise ValueError(f"Unsupported method: {method}")
+            
+            return MCPResponse(id=request.id, result=result)
+            
+        except Exception as e:
+            logger.error(f"OpenMemory MCP error: {e}")
+            return MCPResponse(
+                id=request.id,
+                error={'code': -1, 'message': str(e)}
+            )
+    
+    async def _save_memory(self, params: Dict) -> Dict:
+        """メモリを保存"""
+        content = params.get('content')
+        if not content:
+            raise ValueError("content parameter is required")
+        
+        url = f"{self.base_url}/api/v1/memories/"
+        data = {
+            'user_id': self.user_id,
+            'memory_content': content,
+            'metadata': params.get('metadata', {})
+        }
+        
+        async with self.session.post(url, json=data) as response:
+            if response.status in [200, 201]:
+                result = await response.json()
+                return {
+                    'id': result.get('memory_id'),
+                    'content': result.get('memory_content'),
+                    'timestamp': result.get('created_at'),
+                    'message': 'メモリを保存しました'
+                }
+            else:
+                raise Exception(f"Failed to save memory: {response.status}")
+    
+    async def _search_memory(self, params: Dict) -> Dict:
+        """メモリを検索"""
+        query = params.get('query')
+        if not query:
+            raise ValueError("query parameter is required")
+        
+        url = f"{self.base_url}/api/v1/memories/filter"
+        data = {
+            'user_id': self.user_id,
+            'search_query': query
+        }
+        
+        async with self.session.post(url, json=data) as response:
+            if response.status == 200:
+                result = await response.json()
+                memories = result.get('data', [])
+                return {
+                    'memories': [{
+                        'id': m.get('memory_id'),
+                        'content': m.get('memory_content'),
+                        'timestamp': m.get('created_at'),
+                        'similarity': m.get('score', 0)
+                    } for m in memories],
+                    'count': len(memories),
+                    'query': query,
+                    'message': f'{len(memories)}件のメモリが見つかりました'
+                }
+            else:
+                raise Exception(f"Failed to search memory: {response.status}")
+    
+    async def _list_memories(self, params: Dict) -> Dict:
+        """メモリ一覧を取得"""
+        url = f"{self.base_url}/api/v1/memories/?user_id={self.user_id}&limit=100"
+        
+        async with self.session.get(url) as response:
+            if response.status == 200:
+                result = await response.json()
+                memories = result.get('data', [])
+                return {
+                    'memories': [{
+                        'id': m.get('memory_id'),
+                        'content': m.get('memory_content'),
+                        'timestamp': m.get('created_at')
+                    } for m in memories],
+                    'count': len(memories),
+                    'message': f'{len(memories)}件のメモリがあります'
+                }
+            else:
+                raise Exception(f"Failed to list memories: {response.status}")
+    
+    async def _delete_memory(self, params: Dict) -> Dict:
+        """特定のメモリを削除"""
+        memory_id = params.get('id')
+        if not memory_id:
+            raise ValueError("id parameter is required")
+        
+        url = f"{self.base_url}/api/v1/memories/{memory_id}"
+        
+        async with self.session.delete(url) as response:
+            if response.status == 200:
+                return {
+                    'id': memory_id,
+                    'message': f'ID {memory_id} のメモリを削除しました'
+                }
+            else:
+                raise Exception(f"Failed to delete memory: {response.status}")
+    
+    async def _delete_all_memories(self, params: Dict) -> Dict:
+        """すべてのメモリを削除"""
+        # まず全メモリのIDを取得
+        list_url = f"{self.base_url}/api/v1/memories/?user_id={self.user_id}&limit=1000"
+        
+        async with self.session.get(list_url) as response:
+            if response.status == 200:
+                result = await response.json()
+                memories = result.get('data', [])
+                memory_ids = [m.get('memory_id') for m in memories]
+                
+                if not memory_ids:
+                    return {'message': '削除するメモリがありません'}
+                
+                # バッチ削除
+                delete_url = f"{self.base_url}/api/v1/memories/batch-delete"
+                delete_data = {
+                    'memory_ids': memory_ids,
+                    'user_id': self.user_id
+                }
+                
+                async with self.session.post(delete_url, json=delete_data) as del_response:
+                    if del_response.status == 200:
+                        return {
+                            'message': f'{len(memory_ids)}件のメモリを削除しました'
+                        }
+                    else:
+                        raise Exception(f"Failed to delete memories: {del_response.status}")
+            else:
+                raise Exception(f"Failed to list memories: {response.status}")
+
+
 class DatabaseMCPProvider(MCPProvider):
     """データベース MCP プロバイダー"""
     
@@ -531,6 +702,8 @@ class MCPIntegrationService:
                 provider = GitHubMCPProvider(provider_name, provider_config)
             elif provider_type == 'database':
                 provider = DatabaseMCPProvider(provider_name, provider_config)
+            elif provider_type == 'openmemory':
+                provider = OpenMemoryMCPProvider(provider_name, provider_config)
             else:
                 logger.warning(f"Unknown provider type: {provider_type}")
                 continue
@@ -649,9 +822,60 @@ class MCPWorker:
     
     def _parse_task_description(self, description: str, context: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """タスク説明からMCPリクエストを解析"""
-        # 簡略化した実装：キーワードベースの解析
+        # OpenMemory関連のキーワードを最初にチェック
+        if '記憶して' in description or '保存して' in description or 'save' in description.lower():
+            # 保存するコンテンツを抽出
+            content = description.replace('記憶して', '').replace('保存して', '').strip()
+            if not content:
+                content = description
+            return {
+                'method': 'openmemory.save',
+                'params': {
+                    'content': content,
+                    'metadata': {
+                        'source': 'chat',
+                        'context': context
+                    }
+                }
+            }
         
-        if 'shopify' in description.lower():
+        elif '思い出して' in description or '検索して' in description or 'search' in description.lower():
+            # 検索クエリを抽出
+            query = description.replace('思い出して', '').replace('検索して', '').replace('について', '').strip()
+            if not query:
+                query = description
+            return {
+                'method': 'openmemory.search',
+                'params': {
+                    'query': query,
+                    'limit': 5
+                }
+            }
+        
+        elif 'メモリを全部見せて' in description or '記憶を表示' in description or '一覧' in description:
+            return {
+                'method': 'openmemory.list',
+                'params': {}
+            }
+        
+        elif 'メモリをすべて削除' in description or '全削除' in description:
+            return {
+                'method': 'openmemory.deleteAll',
+                'params': {}
+            }
+        
+        elif 'ID' in description and '削除' in description:
+            # ID抽出のシンプルな実装
+            import re
+            match = re.search(r'ID\s*(\w+)', description)
+            if match:
+                return {
+                    'method': 'openmemory.delete',
+                    'params': {'id': match.group(1)}
+                }
+        
+        # 既存の解析ロジック
+        elif 'shopify' in description.lower():
             if 'products' in description.lower():
                 return {
                     'method': 'shopify.products.list',

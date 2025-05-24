@@ -2,14 +2,15 @@
 Authentication and authorization services
 """
 import logging
+import secrets
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Tuple
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from .models import User, Organization, OrganizationMember, APIToken
+from .models import User, Organization, OrganizationMember, APIToken, PasswordResetToken
 from .security import PasswordManager, JWTManager, APITokenManager, InvalidTokenError
 from .permissions import RolePermissionManager
 
@@ -297,3 +298,137 @@ class APITokenService:
             logger.error(f"Error revoking API token: {str(e)}")
             self.db.rollback()
             return False
+
+
+class PasswordResetService:
+    """Service for managing password reset functionality"""
+    
+    def __init__(self, db: Session, password_manager: PasswordManager):
+        self.db = db
+        self.password_manager = password_manager
+        self.token_expiry_hours = 1  # Tokens expire in 1 hour
+    
+    async def create_reset_token(self, email: str) -> Optional[Tuple[User, str]]:
+        """Create a password reset token for a user"""
+        try:
+            # Find user by email
+            user = self.db.query(User).filter(User.email == email).first()
+            if not user:
+                # Don't reveal if email exists or not for security
+                logger.warning(f"Password reset requested for non-existent email: {email}")
+                return None
+            
+            # Generate secure token
+            token_value = secrets.token_urlsafe(32)
+            
+            # Hash the token for storage
+            token_hash = self.password_manager.get_password_hash(token_value)
+            
+            # Set expiration time
+            expires_at = datetime.utcnow() + timedelta(hours=self.token_expiry_hours)
+            
+            # Invalidate any existing tokens for this user
+            self.db.query(PasswordResetToken).filter(
+                PasswordResetToken.user_id == user.id,
+                PasswordResetToken.used == False
+            ).update({"used": True})
+            
+            # Create new token
+            reset_token = PasswordResetToken(
+                user_id=user.id,
+                token=token_hash,
+                expires_at=expires_at
+            )
+            
+            self.db.add(reset_token)
+            self.db.commit()
+            
+            logger.info(f"Created password reset token for user: {user.id}")
+            return user, token_value
+            
+        except Exception as e:
+            logger.error(f"Error creating password reset token: {str(e)}")
+            self.db.rollback()
+            return None
+    
+    async def verify_reset_token(self, token_value: str) -> Optional[User]:
+        """Verify a password reset token and return the associated user"""
+        try:
+            # Find all non-used tokens (we'll check hash match manually)
+            reset_tokens = self.db.query(PasswordResetToken).filter(
+                PasswordResetToken.used == False
+            ).all()
+            
+            # Check each token for a match
+            for reset_token in reset_tokens:
+                if self.password_manager.verify_password(token_value, reset_token.token):
+                    # Check if token is still valid
+                    if not reset_token.is_valid():
+                        logger.warning(f"Expired or used password reset token: {reset_token.id}")
+                        return None
+                    
+                    # Get the associated user
+                    user = self.db.query(User).filter(User.id == reset_token.user_id).first()
+                    if not user or not user.is_active:
+                        logger.warning(f"Invalid user for password reset token: {reset_token.user_id}")
+                        return None
+                    
+                    return user
+            
+            logger.warning("Invalid password reset token provided")
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error verifying password reset token: {str(e)}")
+            return None
+    
+    async def reset_password(self, token_value: str, new_password: str) -> bool:
+        """Reset a user's password using a valid reset token"""
+        try:
+            # Verify the token and get the user
+            user = await self.verify_reset_token(token_value)
+            if not user:
+                return False
+            
+            # Hash the new password
+            hashed_password = self.password_manager.get_password_hash(new_password)
+            
+            # Update user's password
+            user.hashed_password = hashed_password
+            
+            # Mark the token as used
+            reset_tokens = self.db.query(PasswordResetToken).filter(
+                PasswordResetToken.user_id == user.id,
+                PasswordResetToken.used == False
+            ).all()
+            
+            for reset_token in reset_tokens:
+                if self.password_manager.verify_password(token_value, reset_token.token):
+                    reset_token.used = True
+                    break
+            
+            self.db.commit()
+            
+            logger.info(f"Password reset successful for user: {user.id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error resetting password: {str(e)}")
+            self.db.rollback()
+            return False
+    
+    async def cleanup_expired_tokens(self):
+        """Clean up expired password reset tokens"""
+        try:
+            expired_count = self.db.query(PasswordResetToken).filter(
+                PasswordResetToken.expires_at < datetime.utcnow()
+            ).delete()
+            
+            self.db.commit()
+            
+            if expired_count > 0:
+                logger.info(f"Cleaned up {expired_count} expired password reset tokens")
+                
+        except Exception as e:
+            logger.error(f"Error cleaning up expired tokens: {str(e)}")
+            self.db.rollback()

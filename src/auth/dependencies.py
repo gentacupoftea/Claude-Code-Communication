@@ -11,7 +11,7 @@ from fastapi.security import OAuth2PasswordBearer, APIKeyHeader
 from sqlalchemy.orm import Session
 
 from .models import User
-from .services import AuthService, AuthorizationService, APITokenService
+from .services import AuthService, AuthorizationService, APITokenService, PasswordResetService
 from .security import PasswordManager, JWTManager, InvalidTokenError
 from .permissions import RolePermissionManager
 from .config import get_auth_settings
@@ -69,6 +69,14 @@ def get_api_token_service(
 ) -> APITokenService:
     """Get API token service instance"""
     return APITokenService(db)
+
+
+def get_password_reset_service(
+    db: Session = Depends(get_db),
+    password_manager: PasswordManager = Depends(get_password_manager)
+) -> PasswordResetService:
+    """Get password reset service instance"""
+    return PasswordResetService(db, password_manager)
 
 
 async def get_current_user_from_token(

@@ -712,7 +712,7 @@ const ApiSettingsComponent: React.FC = () => {
                 />
                 {platform.lastSync && (
                   <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                    最終同期: {platform.lastSync.toLocaleDateString()}
+                    最終同期: {new Date(platform.lastSync).toLocaleDateString()}
                   </Typography>
                 )}
               </CardContent>
