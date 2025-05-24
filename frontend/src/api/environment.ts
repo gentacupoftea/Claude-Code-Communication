@@ -40,7 +40,7 @@ const getApiUrl = (): string => {
   }
 };
 
-const API_BASE_URL = getApiUrl();
+export const API_BASE_URL = getApiUrl();
 const API_ENDPOINT = `${API_BASE_URL}/api/v1/environment`;
 
 // Helper function to make authenticated API requests

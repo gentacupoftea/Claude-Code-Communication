@@ -26,19 +26,8 @@ const DashboardPage: React.FC = () => {
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => {
-      // Return empty data in mock mode
-      const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
-      if (isMockMode) {
-        return {
-          totalRevenue: 0,
-          totalOrders: 0,
-          newCustomers: 0,
-          conversionRate: 0,
-        };
-      }
-      // API call would go here
-      const response = await api.get('/api/v1/dashboard/summary');
-      return response.data;
+      // The api service handles mock mode automatically
+      return await api.get('/api/v1/dashboard/summary');
     },
   });
 

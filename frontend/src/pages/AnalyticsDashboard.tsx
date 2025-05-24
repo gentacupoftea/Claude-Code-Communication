@@ -8,8 +8,7 @@ const AnalyticsDashboard: React.FC = () => {
   const { data } = useQuery({
     queryKey: ['order-summary'],
     queryFn: async () => {
-      const response = await api.get('/analytics/orders/summary');
-      return response.data;
+      return await api.get('/analytics/orders/summary');
     },
   });
 

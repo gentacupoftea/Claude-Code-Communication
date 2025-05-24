@@ -77,10 +77,10 @@ interface Dashboard {
 }
 
 const widgetTypes = [
-  { id: 'chart', label: '売上チャート', icon: ChartBarIcon },
-  { id: 'table', label: 'データテーブル', icon: TableCellsIcon },
-  { id: 'metric', label: 'KPIメトリクス', icon: CurrencyDollarIcon },
-  { id: 'text', label: 'テキスト', icon: DocumentTextIcon },
+  { id: 'chart', label: '売上チャート', icon: ChartBarIcon, description: '売上データをグラフで表示' },
+  { id: 'table', label: 'データテーブル', icon: TableCellsIcon, description: 'データを表形式で表示' },
+  { id: 'metric', label: 'KPIメトリクス', icon: CurrencyDollarIcon, description: '重要指標を数値で表示' },
+  { id: 'text', label: 'テキスト', icon: DocumentTextIcon, description: 'カスタムテキストを表示' },
 ];
 
 const DashboardEditorComponent: React.FC = () => {
