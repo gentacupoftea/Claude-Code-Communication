@@ -174,6 +174,7 @@ async def chat_stream(request: ChatRequest):
                 await process_callback(formatter.create_thinking_message("リクエストを分析中..."))
             
             # Orchestratorでリクエスト処理（非同期）
+            logger.info(f"Starting orchestrator processing for conversation {conversation_id}")
             process_task = asyncio.create_task(
                 orchestrator.process_user_request(
                     request=request.message,
@@ -207,7 +208,9 @@ async def chat_stream(request: ChatRequest):
                     continue
             
             # 最終結果を取得
+            logger.info(f"Waiting for orchestrator result for conversation {conversation_id}")
             result = await process_task
+            logger.info(f"Orchestrator result received: {list(result.keys()) if result else 'None'}")
             
             # 最終応答を整形して送信
             if result:
@@ -215,6 +218,7 @@ async def chat_stream(request: ChatRequest):
                 content = result.get('response') or result.get('result') or result.get('summary', '')
                 
                 if content:
+                    logger.info(f"Sending final response: {content[:100]}...")
                     final_message = formatter.create_response_message(
                         content,
                         intermediate=False

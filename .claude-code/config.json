@@ -1,0 +1,35 @@
+{
+  "automation": {
+    "enabled": true,
+    "defaultBranch": "develop",
+    "autoCommit": true,
+    "autoPR": true,
+    "prReviewers": ["team-lead", "senior-dev"],
+    "deployOnMerge": true
+  },
+  "ci": {
+    "provider": "github-actions",
+    "testCommand": "npm test",
+    "buildCommand": "npm run build",
+    "deployCommand": "npm run deploy"
+  },
+  "notifications": {
+    "slack": {
+      "enabled": true,
+      "channel": "#claude-code-notifications"
+    }
+  },
+  "parallel": {
+    "enabled": true,
+    "maxWorkers": 4,
+    "taskTimeout": 300000
+  },
+  "shopify": {
+    "enabled": true,
+    "autoSync": true,
+    "webhooks": {
+      "productUpdate": true,
+      "orderCreate": true
+    }
+  }
+}

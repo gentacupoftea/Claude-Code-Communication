@@ -296,8 +296,7 @@ export const ImprovedChatInterface: React.FC = () => {
     
     try {
       // SSE接続
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:9001';
-      const response = await fetch(`${apiUrl}/chat/stream`, {
+      const response = await fetch('/chat/stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -363,10 +362,11 @@ export const ImprovedChatInterface: React.FC = () => {
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setMessages(prev => [...prev, {
         id: Date.now(),
         role: 'system',
-        content: 'エラーが発生しました。もう一度お試しください。',
+        content: `エラーが発生しました: ${errorMessage}`,
         timestamp: new Date().toISOString(),
         isError: true
       }]);

@@ -1,0 +1,40 @@
+{
+  "name": "shopify-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for Shopify integration with authentication",
+  "author": "Shopify MCP Team",
+  "license": "MIT",
+  "capabilities": {
+    "shopify": {
+      "products": {
+        "list": "List all products",
+        "get": "Get product details",
+        "create": "Create new product",
+        "update": "Update product",
+        "delete": "Delete product"
+      },
+      "orders": {
+        "list": "List all orders",
+        "get": "Get order details",
+        "update": "Update order status"
+      },
+      "customers": {
+        "list": "List all customers",
+        "get": "Get customer details"
+      }
+    },
+    "auth": {
+      "login": "Authenticate user",
+      "logout": "Logout user",
+      "verify": "Verify authentication token"
+    }
+  },
+  "server": {
+    "command": "python3",
+    "args": ["simple_mcp_server.py"],
+    "cwd": "/Users/mourigenta/shopify-mcp-server",
+    "env": {
+      "PYTHONPATH": "/Users/mourigenta/shopify-mcp-server"
+    }
+  }
+}
