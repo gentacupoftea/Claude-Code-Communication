@@ -294,7 +294,7 @@ export const ImprovedChatInterface: React.FC = () => {
     
     try {
       // SSE接続
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:9000';
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:9001';
       const response = await fetch(`${apiUrl}/chat/stream`, {
         method: 'POST',
         headers: {
