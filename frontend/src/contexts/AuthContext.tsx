@@ -337,7 +337,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(true);
     
     try {
-      await authService.resetPassword(email);
+      await authService.forgotPassword(email);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Password reset failed';
       setError(message);

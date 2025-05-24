@@ -141,7 +141,15 @@ class ClaudeClient:
    - documentation_worker: ドキュメント
    - project_manager: プロジェクト管理
 
-JSONフォーマットで回答してください。"""
+必ず以下のJSON形式のみで回答してください。説明文などは含めないでください：
+{
+  "task_type": "タスクタイプ",
+  "priority": "優先度",
+  "complexity": "複雑度",
+  "subtasks": ["サブタスク1", "サブタスク2"],
+  "assigned_workers": ["ワーカー名"],
+  "reasoning": "理由"
+}"""
         
         user_message = f"""
 ユーザーリクエスト: {user_request}
@@ -197,7 +205,20 @@ JSONフォーマットで回答してください。"""
             async with self.session.post(self.base_url, headers=headers, json=payload) as response:
                 if response.status == 200:
                     data = await response.json()
-                    return data['choices'][0]['message']['content']
+                    content = data['choices'][0]['message']['content']
+                    # JSONを含む応答から純粋なJSONを抽出
+                    try:
+                        # コードブロック内のJSONを抽出
+                        import re
+                        json_match = re.search(r'```json\s*(.*?)\s*```', content, re.DOTALL)
+                        if json_match:
+                            return json_match.group(1)
+                        # 直接JSONの場合
+                        json.loads(content)
+                        return content
+                    except:
+                        # JSON形式でない場合はそのまま返す
+                        return content
                 else:
                     error_text = await response.text()
                     logger.error(f"API error {response.status}: {error_text}")

@@ -259,6 +259,8 @@ export const ImprovedChatInterface: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId] = useState(`conv_${Date.now()}`);
   const [currentProcesses, setCurrentProcesses] = useState<Process[]>([]);
+  const [isComposing, setIsComposing] = useState(false);
+  const [lastEnterTime, setLastEnterTime] = useState(0);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -436,7 +438,21 @@ export const ImprovedChatInterface: React.FC = () => {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      
+      const currentTime = Date.now();
+      
+      // 日本語入力中の場合は必ず2回エンターが必要
+      if (isComposing) {
+        if (currentTime - lastEnterTime < 500) { // 500ms以内の2回目のエンター
+          sendMessage();
+          setLastEnterTime(0);
+        } else {
+          setLastEnterTime(currentTime);
+        }
+      } else {
+        // 英語入力時は1回で送信
+        sendMessage();
+      }
     }
   };
 
@@ -567,7 +583,9 @@ export const ImprovedChatInterface: React.FC = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyPress}
-            placeholder="メッセージを入力..."
+            onCompositionStart={() => setIsComposing(true)}
+            onCompositionEnd={() => setIsComposing(false)}
+            placeholder="メッセージを入力... (日本語入力時は2回Enter)"
             disabled={isLoading}
             rows={1}
           />
