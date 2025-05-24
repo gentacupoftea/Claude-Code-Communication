@@ -336,11 +336,24 @@ export const ImprovedChatInterface: React.FC = () => {
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6));
+              
+              // chunkタイプの最初のメッセージでIDを設定
+              if (data.type === 'chunk' && !currentMessageId) {
+                currentMessageId = `msg_${Date.now()}`;
+                // 空のメッセージを作成
+                setMessages(prev => [...prev, {
+                  id: currentMessageId!,
+                  role: 'assistant',
+                  content: '',
+                  timestamp: new Date().toISOString()
+                }]);
+              }
+              
               handleSSEEvent(data, currentMessageId);
               
-              // メッセージIDを追跡
-              if (data.type === 'response' && !data.intermediate) {
-                currentMessageId = `msg_${Date.now()}`;
+              // エラーまたは終了時にリセット
+              if (data.type === 'error' || data.type === 'end') {
+                currentMessageId = null;
               }
             } catch (e) {
               console.error('Failed to parse SSE data:', e);
@@ -414,7 +427,11 @@ export const ImprovedChatInterface: React.FC = () => {
             const msgs = [...prev];
             const lastMsg = msgs[msgs.length - 1];
             if (lastMsg && lastMsg.id === currentMessageId) {
-              lastMsg.content += data.content;
+              return msgs.map(msg => 
+                msg.id === currentMessageId 
+                  ? { ...msg, content: msg.content + data.content }
+                  : msg
+              );
             }
             return msgs;
           });
@@ -429,6 +446,12 @@ export const ImprovedChatInterface: React.FC = () => {
           timestamp: data.timestamp,
           isError: true
         }]);
+        setCurrentProcesses([]);
+        setIsLoading(false);
+        break;
+        
+      case 'end':
+        // ストリーミング終了
         setCurrentProcesses([]);
         setIsLoading(false);
         break;

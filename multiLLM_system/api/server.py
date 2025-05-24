@@ -210,17 +210,25 @@ async def chat_stream(request: ChatRequest):
             result = await process_task
             
             # 最終応答を整形して送信
-            if result and 'response' in result:
-                final_message = formatter.create_response_message(
-                    result['response'],
-                    intermediate=False
-                )
-                yield f"data: {json.dumps(final_message)}\n\n"
+            if result:
+                # resultまたはresponseキーから内容を取得
+                content = result.get('response') or result.get('result') or result.get('summary', '')
+                
+                if content:
+                    final_message = formatter.create_response_message(
+                        content,
+                        intermediate=False
+                    )
+                    yield f"data: {json.dumps(final_message)}\n\n"
+                else:
+                    # コンテンツが見つからない場合のエラーハンドリング
+                    logger.warning(f"No content found in result: {result.keys()}")
+                    error_msg = formatter.create_error_message(
+                        "応答の生成に失敗しました。もう一度お試しください。"
+                    )
+                    yield f"data: {json.dumps(error_msg)}\n\n"
             
-            # 完了イベント送信（デバッグ情報は含めない）
-            yield f"data: {json.dumps({'type': 'complete'})}\n\n"
-            
-            # 終了イベント
+            # 終了イベントのみ送信（completeは不要）
             yield f"data: {json.dumps({'type': 'end'})}\n\n"
             
         except Exception as e:
