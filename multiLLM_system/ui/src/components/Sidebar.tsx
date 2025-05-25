@@ -21,6 +21,7 @@ import {
   Description as LogsIcon,
   SmartToy as BotIcon,
   Chat as ChatIcon,
+  AutoMode as AutoModeIcon,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -69,6 +70,12 @@ const menuItems = [
     label: '分析・レポート', 
     icon: <AnalyticsIcon />,
     description: 'パフォーマンス分析'
+  },
+  { 
+    path: '/automation', 
+    label: '自動化管理', 
+    icon: <AutoModeIcon />,
+    description: 'タスク自動化'
   },
   { 
     path: '/logs', 

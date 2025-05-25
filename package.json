@@ -1,7 +1,7 @@
 {
-  "name": "shopify-mcp-server",
+  "name": "conea",
   "version": "0.3.0",
-  "description": "Shopify MCP Server with TypeScript support",
+  "description": "Conea - MCP Server with TypeScript support",
   "scripts": {
     "build": "tsc",
     "dev": "ts-node-dev --respawn ./src/cloud/gcp/index.ts",

@@ -259,9 +259,32 @@ class MultiLLMOrchestrator:
         
         # Claude-4による知的タスク分析
         analysis_start = time.time()
+        
+        # ストリーミングイベント: 分析開始
+        if stream_handler:
+            await stream_handler(json.dumps({
+                'type': 'analysis',
+                'content': 'タスクを分析中...',
+                'timestamp': datetime.now().isoformat()
+            }) + '\n')
+        
         task_analysis = await self.claude_client.analyze_task(request, context)
         analysis_duration = time.time() - analysis_start
         logger.info(f"🧠 Task analysis: {task_analysis.task_type} - {task_analysis.reasoning}")
+        
+        # ストリーミングイベント: 分析完了
+        if stream_handler:
+            await stream_handler(json.dumps({
+                'type': 'analysis',
+                'content': f'タスクタイプ: {task_analysis.task_type}',
+                'details': {
+                    'task_type': task_analysis.task_type,
+                    'priority': task_analysis.priority,
+                    'complexity': task_analysis.complexity,
+                    'reasoning': task_analysis.reasoning
+                },
+                'timestamp': datetime.now().isoformat()
+            }) + '\n')
         
         # タスク分析をLLM応答として記録
         analysis_response = LLMResponse(
@@ -281,6 +304,30 @@ class MultiLLMOrchestrator:
             task_type = TaskType(task_analysis.task_type.lower())
         except ValueError:
             task_type = TaskType.GENERAL
+        
+        # 「思い出して」キーワードがある場合は、直接レスポンスを生成
+        if '思い出して' in request:
+            # LLMクライアントで直接処理
+            messages = [LLMMessage(role='user', content=request)]
+            response = await self.claude_client.generate_response(
+                messages=messages,
+                context=context,
+                stream_callback=stream_handler
+            )
+            
+            # 会話ログに記録
+            conversation.messages.append({
+                'role': 'assistant',
+                'content': response,
+                'timestamp': datetime.now().isoformat(),
+                'provider': 'claude-4.0'
+            })
+            
+            return {
+                'response': response,
+                'conversation_log': asdict(conversation),
+                'task_analysis': asdict(task_analysis)
+            }
         
         # タスクを作成
         task = Task(
@@ -427,6 +474,16 @@ class MultiLLMOrchestrator:
         if not worker:
             logger.error(f"Worker not found: {worker_name}")
             return {"error": "適切なWorkerが見つかりません"}
+        
+        # ストリーミングイベント: ワーカー割り当て
+        if conversation and conversation.conversation_id in self.stream_handlers:
+            stream_handler = self.stream_handlers[conversation.conversation_id]
+            await stream_handler(json.dumps({
+                'type': 'worker',
+                'worker': worker_name,
+                'content': f'{worker_name}にタスクを割り当て中...',
+                'timestamp': datetime.now().isoformat()
+            }) + '\n')
         
         # タスクをキューに追加
         await self.task_queue.put(task)

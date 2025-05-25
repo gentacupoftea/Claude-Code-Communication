@@ -7,7 +7,7 @@ import json
 import logging
 import uuid
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -20,6 +20,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from orchestrator.orchestrator import MultiLLMOrchestrator
 from orchestrator.response_formatter import ResponseFormatter, MessageProcessor
+from orchestrator.analyzers.data_analyzer import DataAnalyzer
+from orchestrator.automation.task_automator import TaskAutomator
 
 # ログ設定
 logging.basicConfig(
@@ -54,14 +56,33 @@ class ConversationDebugRequest(BaseModel):
     conversation_id: str
 
 
-# グローバルオーケストレーター
+class AnalysisRequest(BaseModel):
+    """分析リクエスト"""
+    analysis_type: str  # conversation_patterns, task_performance, resource_prediction
+    data: Optional[Dict] = None
+    time_range: Optional[Dict] = None  # {"start": "2024-01-01", "end": "2024-01-31"}
+
+
+class AutomationRuleRequest(BaseModel):
+    """自動化ルールリクエスト"""
+    name: str
+    description: str
+    trigger_type: str  # time_based, event_based, condition_based, pattern_based
+    trigger_config: Dict
+    actions: List[Dict]
+    active: bool = True
+
+
+# グローバルインスタンス
 orchestrator = None
+data_analyzer = None
+task_automator = None
 
 
 @app.on_event("startup")
 async def startup_event():
     """サーバー起動時の初期化"""
-    global orchestrator
+    global orchestrator, data_analyzer, task_automator
     
     config = {
         "workers": {
@@ -69,7 +90,8 @@ async def startup_event():
             "frontend_worker": {"model": "claude-3.5-sonnet"},
             "review_worker": {"model": "claude-3.5-sonnet"},
             "analytics_worker": {"model": "claude-3.5-sonnet"},
-            "documentation_worker": {"model": "claude-3.5-sonnet"}
+            "documentation_worker": {"model": "claude-3.5-sonnet"},
+            "mcp_worker": {"model": "claude-3.5-sonnet"}
         },
         "memory": {
             "syncInterval": 300
@@ -78,7 +100,12 @@ async def startup_event():
     
     orchestrator = MultiLLMOrchestrator(config)
     await orchestrator.initialize()
-    logger.info("✅ MultiLLM API Server started")
+    
+    # 分析エンジンと自動化エンジンを初期化
+    data_analyzer = DataAnalyzer()
+    task_automator = TaskAutomator(orchestrator)
+    
+    logger.info("✅ MultiLLM API Server started with Advanced Analytics")
 
 
 @app.on_event("shutdown")
@@ -155,7 +182,17 @@ async def chat_stream(request: ChatRequest):
             
             # ストリームハンドラー
             async def stream_handler(chunk: str):
-                await stream_queue.put(('chunk', chunk))
+                try:
+                    # JSONイベントの場合はパース
+                    if chunk.strip().startswith('{'):
+                        event = json.loads(chunk.strip())
+                        await stream_queue.put(('message', event))
+                    else:
+                        # テキストチャンクの場合
+                        await stream_queue.put(('chunk', chunk))
+                except json.JSONDecodeError:
+                    # JSONでない場合は通常のチャンクとして扱う
+                    await stream_queue.put(('chunk', chunk))
             
             # メッセージ処理のタスクタイプを判定
             message_lower = request.message.lower()
@@ -343,6 +380,224 @@ async def test_claude():
             "error": str(e),
             "api_status": "error"
         }
+
+
+# ========== Analytics Endpoints ==========
+
+@app.post("/api/analytics/analyze")
+async def analyze_data(request: AnalysisRequest):
+    """データ分析エンドポイント"""
+    try:
+        if request.analysis_type == "conversation_patterns":
+            # 会話履歴を取得
+            conversations = orchestrator.get_all_conversations()
+            result = await data_analyzer.analyze_conversation_patterns(conversations)
+            
+        elif request.analysis_type == "task_performance":
+            # タスク履歴を取得（実装に応じて調整）
+            tasks = request.data.get('tasks', []) if request.data else []
+            result = await data_analyzer.analyze_task_performance(tasks)
+            
+        elif request.analysis_type == "resource_prediction":
+            # リソース使用履歴を取得
+            historical_data = request.data.get('historical_data', []) if request.data else []
+            result = await data_analyzer.predict_resource_needs(historical_data)
+            
+        else:
+            raise HTTPException(status_code=400, detail="Invalid analysis type")
+        
+        return {
+            "success": True,
+            "analysis_type": request.analysis_type,
+            "result": result
+        }
+        
+    except Exception as e:
+        logger.error(f"Analytics error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/analytics/conversations")
+async def get_conversation_analytics():
+    """会話パターン分析の取得"""
+    try:
+        conversations = orchestrator.get_all_conversations()
+        result = await data_analyzer.analyze_conversation_patterns(conversations)
+        
+        return {
+            "success": True,
+            "total_conversations": len(conversations),
+            "analysis": result
+        }
+        
+    except Exception as e:
+        logger.error(f"Conversation analytics error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/analytics/tasks")
+async def get_task_analytics():
+    """タスクパフォーマンス分析の取得"""
+    try:
+        # タスク履歴を会話ログから抽出
+        conversations = orchestrator.get_all_conversations()
+        tasks = []
+        
+        for conv in conversations:
+            if conv.get('task_analysis'):
+                tasks.append({
+                    'conversation_id': conv['conversation_id'],
+                    'task': conv['task_analysis'],
+                    'duration': conv.get('duration'),
+                    'success': conv.get('success', True),
+                    'timestamp': conv['start_time']
+                })
+        
+        result = await data_analyzer.analyze_task_performance(tasks)
+        
+        return {
+            "success": True,
+            "total_tasks": len(tasks),
+            "analysis": result
+        }
+        
+    except Exception as e:
+        logger.error(f"Task analytics error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ========== Automation Endpoints ==========
+
+@app.post("/api/automation/rules")
+async def create_automation_rule(request: AutomationRuleRequest):
+    """自動化ルールの作成"""
+    try:
+        rule = {
+            "id": f"rule_{uuid.uuid4()}",
+            "name": request.name,
+            "description": request.description,
+            "trigger": {
+                "type": request.trigger_type,
+                "config": request.trigger_config
+            },
+            "actions": request.actions,
+            "active": request.active,
+            "created_at": datetime.now().isoformat()
+        }
+        
+        # AutomationRuleオブジェクトに変換
+        from orchestrator.automation.task_automator import AutomationRule, AutomationTrigger
+        
+        automation_rule = AutomationRule(
+            id=rule["id"],
+            name=rule["name"],
+            description=rule["description"],
+            trigger_type=AutomationTrigger(rule["trigger"]["type"]),
+            trigger_config=rule["trigger"]["config"],
+            actions=rule["actions"],
+            enabled=rule["active"],
+            created_at=datetime.now()
+        )
+        
+        success = task_automator.add_rule(automation_rule)
+        
+        if success:
+            return {
+                "success": True,
+                "rule_id": rule["id"],
+                "message": "自動化ルールが作成されました"
+            }
+        else:
+            raise HTTPException(status_code=400, detail="ルールの作成に失敗しました")
+            
+    except Exception as e:
+        logger.error(f"Automation rule creation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/automation/rules")
+async def get_automation_rules():
+    """自動化ルール一覧の取得"""
+    try:
+        rules = task_automator.list_rules()
+        return {
+            "success": True,
+            "rules": rules,
+            "count": len(rules)
+        }
+        
+    except Exception as e:
+        logger.error(f"Get automation rules error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/automation/rules/{rule_id}")
+async def delete_automation_rule(rule_id: str):
+    """自動化ルールの削除"""
+    try:
+        success = task_automator.remove_rule(rule_id)
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"ルール {rule_id} が削除されました"
+            }
+        else:
+            raise HTTPException(status_code=404, detail="ルールが見つかりません")
+            
+    except Exception as e:
+        logger.error(f"Delete automation rule error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/automation/execute/{rule_id}")
+async def execute_automation_rule(rule_id: str):
+    """自動化ルールの手動実行"""
+    try:
+        result = await task_automator.execute_rule(rule_id)
+        
+        return {
+            "success": result.success,
+            "executed_actions": result.executed_actions,
+            "results": result.outputs,
+            "timestamp": result.timestamp.isoformat() if result.timestamp else None,
+            "error": result.error,
+            "duration": result.duration
+        }
+        
+    except Exception as e:
+        logger.error(f"Execute automation rule error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/automation/suggest")
+async def suggest_automations():
+    """自動化の提案を取得"""
+    try:
+        # タスク履歴を取得
+        conversations = orchestrator.get_all_conversations()
+        task_history = []
+        
+        for conv in conversations:
+            if conv.get('messages'):
+                for msg in conv['messages']:
+                    task_history.append({
+                        'message': msg['content'],
+                        'timestamp': msg['timestamp'],
+                        'user_id': conv.get('user_id', 'default_user')
+                    })
+        
+        suggestions = task_automator.suggest_automations(task_history)
+        
+        return {
+            "success": True,
+            "suggestions": suggestions,
+            "count": len(suggestions)
+        }
+        
+    except Exception as e:
+        logger.error(f"Suggest automations error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":

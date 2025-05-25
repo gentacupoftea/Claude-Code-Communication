@@ -6,6 +6,7 @@ OrchestratorでGPT-4を使用するためのクライアント
 import asyncio
 import logging
 import json
+import subprocess
 from typing import Dict, List, Any, Optional, AsyncGenerator
 from dataclasses import dataclass
 import aiohttp
@@ -231,8 +232,34 @@ class ClaudeClient:
         """デモ用のタスク分析（Claude APIキーなしの場合）"""
         request_lower = user_request.lower()
         
+        # OpenMemory連携の処理
+        if '思い出して' in request_lower:
+            # OpenMemory CLIを実行
+            import subprocess
+            try:
+                # 検索クエリを抽出
+                query = user_request.replace('思い出して', '').strip()
+                result = subprocess.run(
+                    ['/Users/mourigenta/openmemory_cli.sh', '思い出して', query],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                if result.returncode == 0:
+                    memory_content = result.stdout.strip()
+                    return TaskAnalysis(
+                        task_type='MEMORY_RETRIEVAL',
+                        priority='HIGH',
+                        complexity='simple',
+                        subtasks=[f'メモリ検索結果: {memory_content}'],
+                        assigned_workers=['backend_worker'],
+                        reasoning='OpenMemoryからの検索結果'
+                    )
+            except Exception as e:
+                logger.error(f"OpenMemory CLI error: {e}")
+        
         # 簡単なキーワードベース分析（デモ用）
-        if any(kw in request_lower for kw in ['思い出して', '記憶して', '保存して', 'メモリ']):
+        if any(kw in request_lower for kw in ['記憶して', '保存して', 'メモリ']):
             return TaskAnalysis(
                 task_type='MEMORY_OPERATION',
                 priority='MEDIUM',
@@ -307,6 +334,53 @@ class ClaudeClient:
         一般的な会話応答を生成
         """
         user_message = messages[-1].content if messages else ""
+        
+        # OpenMemory連携チェック
+        if '思い出して' in user_message:
+            import subprocess
+            try:
+                query = user_message.replace('思い出して', '').strip()
+                result = subprocess.run(
+                    ['/Users/mourigenta/openmemory_cli.sh', '思い出して', query],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                if result.returncode == 0:
+                    memory_content = result.stdout.strip()
+                    if memory_content and '見つかりました:' in memory_content:
+                        # 検索結果をパース
+                        lines = memory_content.split('\n')
+                        count_line = [line for line in lines if '件の記憶が見つかりました:' in line]
+                        
+                        # Coneaに関する情報を抽出
+                        conea_info = []
+                        for i, line in enumerate(lines):
+                            if 'Conea' in line and '内容:' in line:
+                                content = line.split('内容: ')[1] if '内容: ' in line else line
+                                conea_info.append(content)
+                        
+                        # 要約レスポンスを生成
+                        if conea_info:
+                            response = f"📚 OpenMemoryから{len(conea_info)}件のConeaに関する情報が見つかりました:\n\n"
+                            response += f"**主な情報:**\n"
+                            for info in conea_info[:3]:  # 最初の3件のみ表示
+                                response += f"• {info}\n"
+                            
+                            if len(conea_info) > 3:
+                                response += f"\n他に{len(conea_info) - 3}件の関連情報があります。"
+                        else:
+                            response = "📚 OpenMemoryから検索結果が見つかりましたが、Coneaに直接関連する情報は含まれていませんでした。"
+                        
+                        if stream_callback:
+                            for char in response:
+                                await stream_callback(char)
+                                await asyncio.sleep(0.01)
+                        return response
+                    else:
+                        return "🔍 該当するメモリが見つかりませんでした"
+            except Exception as e:
+                logger.error(f"OpenMemory error: {e}")
         
         # システムプロンプト
         system_prompt = """あなたは親切で知識豊富なAIアシスタントです。ユーザーの質問に適切に回答してください。"""
