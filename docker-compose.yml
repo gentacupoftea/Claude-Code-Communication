@@ -3,24 +3,24 @@ version: '3.8'
 services:
   postgres:
     image: postgres:13-alpine
-    container_name: shopify_mcp_db
+    container_name: conea_db
     environment:
-      POSTGRES_USER: ${DB_USER:-shopify_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-shopify_pass}
-      POSTGRES_DB: ${DB_NAME:-shopify_mcp}
+      POSTGRES_USER: ${DB_USER:-conea_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-conea_pass}
+      POSTGRES_DB: ${DB_NAME:-conea}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-shopify_user}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-conea_user}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: shopify_mcp_redis
+    container_name: conea_redis
     ports:
       - "6379:6379"
     healthcheck:
@@ -33,9 +33,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: shopify_mcp_backend
+    container_name: conea_backend
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-shopify_user}:${DB_PASSWORD:-shopify_pass}@postgres:5432/${DB_NAME:-shopify_mcp}
+      DATABASE_URL: postgresql://${DB_USER:-conea_user}:${DB_PASSWORD:-conea_pass}@postgres:5432/${DB_NAME:-conea}
       REDIS_URL: redis://redis:6379/0
       SECRET_KEY: ${SECRET_KEY:-your-secret-key-here}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
@@ -60,7 +60,7 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: shopify_mcp_nginx
+    container_name: conea_nginx
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./frontend/build:/usr/share/nginx/html:ro
@@ -75,4 +75,4 @@ volumes:
 
 networks:
   default:
-    name: shopify_mcp_network
+    name: conea_network

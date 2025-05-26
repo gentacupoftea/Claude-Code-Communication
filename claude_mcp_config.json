@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "shopify-simple": {
+      "command": "python3",
+      "args": ["/Users/mourigenta/shopify-mcp-server/simple_mcp_server.py"],
+      "env": {}
+    }
+  }
+}

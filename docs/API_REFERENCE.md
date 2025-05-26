@@ -48,9 +48,9 @@ headers = {
 
 `.env` ファイル:
 ```
-SHOPIFY_ACCESS_TOKEN=shppa_xxxxxxxxxxxxx
-SHOPIFY_SHOP_NAME=your-shop-name
-SHOPIFY_API_VERSION=2024-01
+CONEA_ACCESS_TOKEN=shppa_xxxxxxxxxxxxx
+CONEA_SHOP_NAME=your-shop-name
+CONEA_API_VERSION=2024-01
 ```
 
 ## REST API
@@ -653,11 +653,11 @@ Retry-After: 2.0
 
 ```python
 import asyncio
-from shopify_mcp_server import ShopifyMCPServer  # v0.3.1以降は 'from conea import ConeaServer' に変更予定
+from conea import ConeaServer  # v0.3.1以降は 'from conea import ConeaServer' に変更予定
 
 async def analyze_store_performance():
     """ストアのパフォーマンスを分析"""
-    server = ShopifyMCPServer()  # v0.3.1以降は ConeaServer() に変更予定
+    server = ConeaServer()  # v0.3.1以降は ConeaServer() に変更予定
     
     # 注文データの取得
     orders = await server.get_orders_summary(

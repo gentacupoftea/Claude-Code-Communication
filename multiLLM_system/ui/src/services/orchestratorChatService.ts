@@ -40,7 +40,7 @@ class OrchestratorChatService {
 
   constructor() {
     // Use environment variable or default to local development
-    this.apiUrl = process.env.REACT_APP_ORCHESTRATOR_API_URL || 'http://localhost:8000';
+    this.apiUrl = process.env.REACT_APP_ORCHESTRATOR_API_URL || 'http://localhost:9001';
     this.userId = localStorage.getItem('userId') || uuidv4();
     localStorage.setItem('userId', this.userId);
   }
@@ -75,16 +75,16 @@ class OrchestratorChatService {
     this.activeStreams.set(messageId, abortController);
     
     try {
-      const response = await fetch(`${this.apiUrl}/api/chat`, {
+      const response = await fetch(`${this.apiUrl}/chat/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          content,
-          context,
+          message: content,
+          conversation_id: context?.conversationId,
           user_id: this.userId,
-          include_thinking: true
+          context
         }),
         signal: abortController.signal
       });

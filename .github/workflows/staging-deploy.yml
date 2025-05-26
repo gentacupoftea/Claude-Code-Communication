@@ -44,8 +44,8 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_SHOPIFY_API_KEY: ${{ secrets.STAGING_SHOPIFY_API_KEY }}
-          VITE_SHOPIFY_API_VERSION: ${{ secrets.STAGING_SHOPIFY_API_VERSION }}
+          VITE_CONEA_API_KEY: ${{ secrets.STAGING_CONEA_API_KEY }}
+          VITE_CONEA_API_VERSION: ${{ secrets.STAGING_CONEA_API_VERSION }}
           VITE_API_BASE_URL: ${{ secrets.STAGING_API_BASE_URL }}
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
@@ -115,8 +115,8 @@ jobs:
       - name: Run integration tests against staging
         run: npm run test:integration:staging
         env:
-          VITE_SHOPIFY_API_KEY: ${{ secrets.STAGING_SHOPIFY_API_KEY }}
-          VITE_SHOPIFY_API_VERSION: ${{ secrets.STAGING_SHOPIFY_API_VERSION }}
+          VITE_CONEA_API_KEY: ${{ secrets.STAGING_CONEA_API_KEY }}
+          VITE_CONEA_API_VERSION: ${{ secrets.STAGING_CONEA_API_VERSION }}
           VITE_API_BASE_URL: ${{ secrets.STAGING_API_BASE_URL }}
       - name: Alert on integration test failure
         if: failure()
