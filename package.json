@@ -1,6 +1,6 @@
 {
   "name": "conea-ai-platform",
-  "version": "0.3.1",
+  "version": "1.1.0",
   "description": "Conea AI推薦システム - 2025年完全知能化プラットフォーム",
   "main": "index.js",
   "scripts": {
