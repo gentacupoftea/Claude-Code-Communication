@@ -76,16 +76,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!tokens || isTokenExpired()) return;
     
     try {
-      const apiUser = await authService.getCurrentUser() as any;
-      const userData: User = {
-        id: apiUser.id,
-        email: apiUser.email,
-        full_name: apiUser.full_name,
-        is_active: apiUser.is_active,
-        is_superuser: apiUser.is_superuser,
-        created_at: apiUser.created_at
-      };
-      setUser(userData);
+      const userData = await authService.getCurrentUser();
+      setUser(userData as any);
       saveUserToStorage(userData);
     } catch (error) {
       console.error('Error fetching current user:', error);
@@ -127,13 +119,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await authService.login(credentials.email, credentials.password);
       
-      const authTokens: AuthTokens = {
-        access_token: response.access_token,
-        refresh_token: response.refresh_token,
-        token_type: response.token_type || 'Bearer'
-      };
-      setTokens(authTokens);
-      saveTokensToStorage(authTokens);
+      setTokens(response as any);
+      saveTokensToStorage(response as any);
       
       // ユーザー情報を取得
       await fetchCurrentUser();
@@ -158,13 +145,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         name: data.fullName || '',
       });
       
-      const authTokens: AuthTokens = {
-        access_token: response.access_token,
-        refresh_token: response.refresh_token,
-        token_type: response.token_type || 'Bearer'
-      };
-      setTokens(authTokens);
-      saveTokensToStorage(authTokens);
+      setTokens(response as any);
+      saveTokensToStorage(response as any);
       
       // ユーザー情報を取得
       await fetchCurrentUser();
@@ -196,14 +178,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!tokens?.refresh_token) return;
     
     try {
-      const response = await authService.refreshToken(tokens.refresh_token);
-      const authTokens: AuthTokens = {
-        access_token: response.access_token,
-        refresh_token: response.refresh_token,
-        token_type: response.token_type || 'Bearer'
-      };
-      setTokens(authTokens);
-      saveTokensToStorage(authTokens);
+      const newTokens = await authService.refreshToken(tokens.refresh_token);
+      setTokens(newTokens as any);
+      saveTokensToStorage(newTokens as any);
       
       // リフレッシュ成功後に現在のユーザー情報を取得
       await fetchCurrentUser();
@@ -222,7 +199,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const { user: userData, tokens: authTokens } = await oauthService.authenticate(credentials);
       
-      setUser(userData);
+      setUser(userData as any);
       setTokens(authTokens);
       saveUserToStorage(userData);
       saveTokensToStorage(authTokens);

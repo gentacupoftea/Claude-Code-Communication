@@ -1,0 +1,20 @@
+以下をコピーして、data/slack-config.json ファイルに貼り付けてください：
+
+{
+  "bot_token": "xoxb-ここに実際のBot User OAuth Tokenを貼り付け",
+  "signing_secret": "ここに実際のSigning Secretを貼り付け",
+  "app_token": "xapp-ここに実際のApp Tokenを貼り付け"
+}
+
+例：
+{
+  "bot_token": "xoxb-1234567890-abcdefghijk...",
+  "signing_secret": "1a2b3c4d5e6f7g8h9i0j...",
+  "app_token": "xapp-1-A1234567890-1234567890-abcdefghijk..."
+}
+
+手順：
+1. Slack App Portal からトークンをコピー
+2. 上記テンプレートの該当部分に貼り付け
+3. data/slack-config.json ファイルを上書き保存
+4. curl -X POST http://localhost:8000/api/test-slack-init でテスト

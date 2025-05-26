@@ -3,8 +3,6 @@ import apiService from './api';
 import websocketService from './websocketService';
 import authService from './authService';
 
-const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
-
 /**
  * Connection status type
  */
@@ -81,9 +79,7 @@ class ConnectionService extends EventEmitter {
       await this.validateApiConnection();
       
       // Then connect WebSocket if API is available
-      // Recheck status after validation
-      const currentStatus = this._connectionDetails.apiStatus as ConnectionStatus;
-      if (currentStatus === 'connected') {
+      if ((this._connectionDetails.apiStatus as ConnectionStatus) === 'connected') {
         websocketService.connect();
         
         // Start ping interval to keep connection alive
@@ -107,27 +103,6 @@ class ConnectionService extends EventEmitter {
    */
   private async validateApiConnection(): Promise<void> {
     try {
-      if (isMockMode) {
-        // Mock server info for development
-        const serverInfo = {
-          version: '1.0.0-mock',
-          name: 'Shopify MCP Server (Mock)',
-          status: 'healthy',
-          features: ['shopify', 'rakuten', 'amazon'],
-          uptime: 3600,
-        };
-        
-        this._connectionDetails.apiStatus = 'connected';
-        this._connectionDetails.lastConnected = new Date();
-        this._connectionDetails.serverVersion = serverInfo.version;
-        this._connectionDetails.serverInfo = serverInfo;
-        this.apiReconnectAttempts = 0;
-        
-        this.emit('connection:status', this._connectionDetails);
-        this.emit('connection:connected', this._connectionDetails);
-        return;
-      }
-      
       // Get server info to validate connection
       const serverInfo = await apiService.get('/api/v1/server/info');
       
@@ -203,11 +178,7 @@ class ConnectionService extends EventEmitter {
     
     this.pingInterval = window.setInterval(async () => {
       try {
-        if (this._connectionDetails.apiStatus === 'connected') {
-          if (isMockMode) {
-            // Mock ping is always successful
-            return;
-          }
+        if ((this._connectionDetails.apiStatus as ConnectionStatus) === 'connected') {
           await apiService.get('/api/v1/ping');
         }
       } catch (error) {

@@ -8,7 +8,6 @@ import logging
 import json
 import os
 import re
-import psutil
 from typing import Dict, Any, List, Optional, Callable
 from datetime import datetime, timedelta
 from dataclasses import dataclass
@@ -16,6 +15,15 @@ from enum import Enum
 import subprocess
 import traceback
 from pathlib import Path
+import warnings
+
+# Optional imports with graceful fallbacks
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
+    warnings.warn("psutil not available - system resource monitoring will be disabled", UserWarning)
 
 class ErrorSeverity(Enum):
     """エラー重要度"""
@@ -361,6 +369,10 @@ class ErrorDetector:
     
     async def _monitor_system_resources(self):
         """システムリソース監視"""
+        if not PSUTIL_AVAILABLE:
+            self.logger.warning("psutil not available - skipping system resource monitoring")
+            return
+            
         while True:
             try:
                 # CPU使用率チェック

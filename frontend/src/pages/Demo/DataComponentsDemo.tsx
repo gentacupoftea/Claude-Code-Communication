@@ -75,7 +75,6 @@ const DataComponentsDemo: React.FC = () => {
     refetch: refetchProducts 
   } = useFetchData<Product[]>({
     url: '/api/products',
-    // In a real application, this would make an actual API call
     initialData: [
       { id: '1', name: 'Laptop', category: 'Electronics', price: 1299, stock: 45, status: 'active', createdAt: '2025-01-15T08:30:00Z' },
       { id: '2', name: 'Smartphone', category: 'Electronics', price: 899, stock: 78, status: 'active', createdAt: '2025-01-20T10:15:00Z' },
@@ -100,7 +99,6 @@ const DataComponentsDemo: React.FC = () => {
     setSort
   } = usePaginatedData<Product>({
     url: '/api/products',
-    initialPagination: { page: 0, perPage: 10 },
     initialSort: { field: 'createdAt', direction: 'desc' },
     cacheKey: 'paginated-products',
   });
@@ -110,9 +108,7 @@ const DataComponentsDemo: React.FC = () => {
     modify: modifyProduct,
     loading: isModifying,
     error: modifyError
-  } = useModifyData({
-    url: '/api/products'
-  });
+  } = useModifyData({ url: '/api/products' });
 
   // Table columns
   const columns: Column<Product>[] = [
@@ -158,8 +154,13 @@ const DataComponentsDemo: React.FC = () => {
         { label: 'Stock', value: 'stock' },
         { 
           label: 'Status', 
-          value: 'status',
-          variant: 'chip'
+          value: (item) => (
+            <Chip 
+              label={item.status} 
+              color={item.status === 'active' ? 'success' : 'default'} 
+              size="small" 
+            />
+          )
         },
         { 
           label: 'Created At', 
@@ -234,7 +235,7 @@ const DataComponentsDemo: React.FC = () => {
         { label: 'Inactive', value: 'inactive' },
       ] 
     },
-    { id: 'price', label: 'Price Range', type: 'number' },
+    { id: 'price', label: 'Price Range', type: 'text' },
   ];
 
   // Handle row click
@@ -310,7 +311,7 @@ const DataComponentsDemo: React.FC = () => {
         <TabPanel value={activeTab} index={0}>
           <FilterBar 
             fields={filterOptions} 
-            onFilterChange={(newFilters) => setFilters(newFilters)} 
+            onFilterChange={(newFilters) => setFilters(newFilters)}
             initialFilters={filters}
           />
           
@@ -362,9 +363,9 @@ const DataComponentsDemo: React.FC = () => {
                 </Button>
               </Box>
               
-              <DetailView<Product>
+              <DetailView
                 item={selectedProduct}
-                sections={detailSections}
+                sections={detailSections as any}
               />
             </>
           )}
@@ -378,7 +379,7 @@ const DataComponentsDemo: React.FC = () => {
           
           <DataForm
             sections={formSections}
-            initialValues={isEditMode && selectedProduct ? selectedProduct : {}}
+            initialValues={isEditMode ? (selectedProduct || {}) : {}}
             onSubmit={handleSubmit}
             onCancel={() => {
               setIsEditMode(false);

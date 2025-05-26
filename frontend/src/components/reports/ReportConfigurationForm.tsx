@@ -213,16 +213,13 @@ const ReportConfigurationForm: React.FC<ReportConfigurationFormProps> = ({
       }
     } else {
       const [parent, child] = pathParts;
-      const parentConfig = config[parent as keyof ReportConfig];
-      if (typeof parentConfig === 'object' && parentConfig !== null) {
-        setConfig({
-          ...config,
-          [parent]: {
-            ...parentConfig,
-            [child]: value,
-          },
-        });
-      }
+      setConfig({
+        ...config,
+        [parent]: {
+          ...(config[parent as keyof ReportConfig] as Record<string, any>),
+          [child]: value,
+        },
+      });
       
       // エラーをクリア
       if (validationErrors[path]) {

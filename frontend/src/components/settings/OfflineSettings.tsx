@@ -54,9 +54,8 @@ export const OfflineSettings: React.FC = () => {
     setSyncResult(null);
     try {
       await syncNow();
-      // syncNowが結果を返さない場合は成功とみなす
       setSyncResult({
-        success: pendingActionsCount,
+        success: 0,
         failed: 0
       });
     } catch (error) {

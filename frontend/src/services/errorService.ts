@@ -5,7 +5,7 @@
  * 本番環境とステージング環境では、エラーを収集し、開発チームに報告します。
  */
 
-import type { Environment } from '../config/environments';
+type Environment = 'development' | 'production' | 'staging';
 
 // 初期化状態を追跡
 let isInitialized = false;
@@ -169,7 +169,7 @@ export const trackNetworkError = (error: any, request: Request) => {
       type: 'network_error',
       url: request.url,
       method: request.method,
-      headers: Array.from(request.headers.entries()),
+      headers: request.headers ? Array.from(request.headers.entries()) : [],
     }
   );
 };

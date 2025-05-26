@@ -23,11 +23,22 @@ import LoginPage from './pages/Auth/LoginPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 import AgentMonitoring from './pages/Agents/AgentMonitoring';
 import EditableAPIKeyManager from './pages/APIKeys/EditableAPIKeyManager';
+import SimpleAPIKeys from './pages/SimpleAPIKeys';
 import MonitoringPage from './pages/Monitoring/MonitoringPage';
 import ProjectBoxes from './pages/Projects/ProjectBoxes';
 import BillingPage from './pages/Billing/BillingPage';
 import SettingsPage from './pages/Settings/SettingsPage';
 import SlackIntegration from './pages/SlackIntegration/SlackIntegration';
+import MemoryDashboard from './pages/MemoryDashboard';
+import SyncMonitor from './components/SyncMonitor';
+import TerminalDashboard from './pages/TerminalDashboard';
+import GitHubDashboard from './pages/GitHubDashboard';
+
+// Configure React Router future flags to suppress warnings
+const routerFuture = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
 
 // Theme configuration
 const theme = createTheme({
@@ -95,7 +106,7 @@ const App: React.FC = () => {
       <CssBaseline />
       <AuthProvider>
         <DashboardProvider>
-          <Router>
+          <Router future={routerFuture}>
             <Box sx={{ display: 'flex', minHeight: '100vh' }}>
               <Routes>
                 {/* 認証ページ */}
@@ -115,10 +126,23 @@ const App: React.FC = () => {
                   <Route path="agents" element={<AgentMonitoring />} />
                   
                   {/* API キー管理 */}
-                  <Route path="api-keys" element={<EditableAPIKeyManager />} />
+                  <Route path="api-keys" element={<SimpleAPIKeys />} />
+                  <Route path="api-keys-advanced" element={<EditableAPIKeyManager />} />
                   
                   {/* Slack統合 */}
                   <Route path="slack" element={<SlackIntegration />} />
+                  
+                  {/* メモリ管理 */}
+                  <Route path="memory" element={<MemoryDashboard />} />
+                  
+                  {/* Phase 2: 同期モニター */}
+                  <Route path="sync" element={<SyncMonitor />} />
+                  
+                  {/* Phase 3: Terminal */}
+                  <Route path="terminal" element={<TerminalDashboard />} />
+                  
+                  {/* Phase 4: GitHub */}
+                  <Route path="github" element={<GitHubDashboard />} />
                   
                   {/* 監視・分析 */}
                   <Route path="monitoring" element={<MonitoringPage />} />

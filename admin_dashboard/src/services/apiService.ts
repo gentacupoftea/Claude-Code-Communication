@@ -137,6 +137,20 @@ class ApiService {
     });
   }
 
+  // Real AI API Key Management
+  async updateAIAPIKey(provider: string, apiKey: string): Promise<{ success: boolean; message: string }> {
+    return this.request<{ success: boolean; message: string }>(`/api/ai/keys/${provider}`, {
+      method: 'PUT',
+      body: JSON.stringify({ apiKey }),
+    });
+  }
+
+  async testAIAPIKey(provider: string): Promise<{ success: boolean; message: string }> {
+    return this.request<{ success: boolean; message: string }>(`/api/ai/test/${provider}`, {
+      method: 'GET',
+    });
+  }
+
   // Slack Configuration
   async getSlackConfig(): Promise<SlackConfig | null> {
     try {
@@ -147,10 +161,13 @@ class ApiService {
   }
 
   async saveSlackConfig(config: Omit<SlackConfig, 'id' | 'status' | 'lastConnected'>): Promise<SlackConfig> {
-    return this.request<SlackConfig>('/api/slack/config', {
+    console.log('🔧 ApiService.saveSlackConfig called with:', config);
+    const result = await this.request<SlackConfig>('/api/slack/config', {
       method: 'POST',
       body: JSON.stringify(config),
     });
+    console.log('🔧 ApiService.saveSlackConfig result:', result);
+    return result;
   }
 
   async updateSlackConfig(data: Partial<SlackConfig>): Promise<SlackConfig> {
@@ -464,6 +481,7 @@ class MockApiService extends ApiService {
 const useRealAPI = process.env.REACT_APP_USE_REAL_API === 'true';
 const isProduction = process.env.NODE_ENV === 'production';
 
-export const apiService = (useRealAPI || isProduction) ? new ApiService() : new MockApiService();
+// 強制的に実際のAPIを使用（バックエンド統合のため）
+export const apiService = new ApiService();
 
 export default apiService;

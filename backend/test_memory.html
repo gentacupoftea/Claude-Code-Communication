@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenMemory Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .memory { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+        .stats { background: #f0f0f0; padding: 10px; margin-bottom: 20px; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; margin: 5px; cursor: pointer; }
+        input[type="text"] { width: 300px; padding: 5px; margin: 5px; }
+        #result { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>OpenMemory データ確認テスト</h1>
+    
+    <div class="stats">
+        <h3>統計情報</h3>
+        <div id="stats">読み込み中...</div>
+        <button onclick="loadStats()">統計更新</button>
+    </div>
+    
+    <div>
+        <h3>メモリ検索</h3>
+        <input type="text" id="searchQuery" placeholder="検索キーワード" value="OpenMemory">
+        <button onclick="searchMemories()">検索</button>
+    </div>
+    
+    <div>
+        <h3>メモリ保存</h3>
+        <input type="text" id="newMemory" placeholder="新しいメモリ" value="テストメモリ from HTML">
+        <button onclick="saveMemory()">保存</button>
+    </div>
+    
+    <div id="result"></div>
+
+    <script>
+        const CONEA_API = 'http://localhost:8000';
+        const OPENMEMORY_API = 'http://localhost:8765';
+        
+        function log(message) {
+            document.getElementById('result').innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+        }
+        
+        async function loadStats() {
+            try {
+                log('統計読み込み中...');
+                const response = await fetch(`${CONEA_API}/api/memory/stats/mourigenta`);
+                const data = await response.json();
+                document.getElementById('stats').innerHTML = 
+                    `総メモリ数: ${data.total_memories}<br>` +
+                    `最近のメモリ: ${data.recent_memories}<br>` +
+                    `サービス状態: ${data.service_status}<br>` +
+                    `最終更新: ${data.last_updated}`;
+                log('統計読み込み完了');
+            } catch (error) {
+                log('統計読み込みエラー: ' + error.message);
+            }
+        }
+        
+        async function searchMemories() {
+            const query = document.getElementById('searchQuery').value;
+            try {
+                log(`"${query}" を検索中...`);
+                const response = await fetch(`${CONEA_API}/api/memory/search`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: 'mourigenta', query: query, limit: 5 })
+                });
+                const data = await response.json();
+                log(`検索結果: ${data.memories.length}件`);
+                if (data.memories.length > 0) {
+                    data.memories.forEach((memory, index) => {
+                        log(`${index + 1}. ${memory.content.substring(0, 100)}...`);
+                    });
+                }
+            } catch (error) {
+                log('検索エラー: ' + error.message);
+            }
+        }
+        
+        async function saveMemory() {
+            const text = document.getElementById('newMemory').value;
+            try {
+                log(`"${text}" を保存中...`);
+                const response = await fetch(`${CONEA_API}/api/memory/save`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: 'mourigenta', text: text, source: 'html-test' })
+                });
+                const data = await response.json();
+                log('保存結果: ' + JSON.stringify(data));
+            } catch (error) {
+                log('保存エラー: ' + error.message);
+            }
+        }
+        
+        async function testOpenMemoryDirect() {
+            try {
+                log('OpenMemory API直接テスト...');
+                const response = await fetch(`${OPENMEMORY_API}/api/v1/apps/e8df73f3-bd96-437f-932a-dfecd1465815/memories`);
+                const data = await response.json();
+                log(`直接API結果: ${data.memories ? data.memories.length : 0}件`);
+            } catch (error) {
+                log('直接APIエラー: ' + error.message);
+            }
+        }
+        
+        // 初期読み込み
+        window.onload = function() {
+            loadStats();
+            testOpenMemoryDirect();
+        };
+    </script>
+</body>
+</html>

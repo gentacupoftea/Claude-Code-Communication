@@ -1,14 +1,47 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import {
+  Box,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Typography,
+  Container,
+  Alert,
+  IconButton,
+  InputAdornment,
+  Checkbox,
+  FormControlLabel,
+  Divider,
+  useTheme,
+} from '@mui/material';
+import {
+  Visibility,
+  VisibilityOff,
+  Email,
+  Lock,
+  LightMode,
+  DarkMode,
+} from '@mui/icons-material';
+// import { useAuth } from '../contexts/AuthContext';
+import { ConeaLogo } from '../components/branding/ConeaLogo';
+import { useTheme as useAppTheme } from '../hooks/useTheme';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, error, isLoading, clearError } = useAuth();
+  const theme = useTheme();
+  const { toggleTheme, themeMode } = useAppTheme();
+  // const { login, error, isLoading, clearError } = useAuth();
+  const error = null;
+  const isLoading = false;
+  const clearError = () => {};
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const from = location.state?.from?.pathname || '/dashboard';
 
@@ -16,124 +49,220 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     
     try {
-      await login({ email, password });
+      // Simulated login for demo
+      console.log('Login attempt:', { email, password });
+      // await login({ email, password });
       navigate(from, { replace: true });
     } catch (err) {
       // Error is handled in AuthContext
+      console.error('Login error:', err);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link to="/signup" className="font-medium text-primary-600 hover:text-primary-500">
-              create a new account
-            </Link>
-          </p>
-        </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">{error}</h3>
-                </div>
-                <div className="ml-auto pl-3">
-                  <div className="-mx-1.5 -my-1.5">
-                    <button
-                      type="button"
-                      onClick={clearError}
-                      className="inline-flex bg-red-50 rounded-md p-1.5 text-red-500 hover:bg-red-100 focus:outline-none"
-                    >
-                      <span className="sr-only">Dismiss</span>
-                      <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
+    <Box
+      sx={{
+        minHeight: '100vh',
+        background: theme.palette.mode === 'dark'
+          ? 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)'
+          : 'linear-gradient(135deg, #34D399 0%, #60A5FA 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+      }}
+    >
+      {/* テーマ切り替えボタン */}
+      <IconButton
+        onClick={toggleTheme}
+        sx={{
+          position: 'absolute',
+          top: 16,
+          right: 16,
+          color: 'white',
+          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+          },
+        }}
+      >
+        {themeMode === 'dark' ? <LightMode /> : <DarkMode />}
+      </IconButton>
+
+      <Container maxWidth="sm">
+        <Card
+          sx={{
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            borderRadius: 4,
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+          }}
+        >
+          <CardContent sx={{ p: 6 }}>
+            {/* ロゴ */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  background: 'linear-gradient(135deg, #34D399 0%, #60A5FA 100%)',
+                  boxShadow: '0 10px 25px -5px rgba(52, 211, 153, 0.4)',
+                }}
+              >
+                <ConeaLogo variant="icon-only" size="md" />
+              </Box>
+            </Box>
+
+            {/* ヘッダー */}
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Typography
+                variant="h4"
+                component="h1"
+                sx={{ 
+                  fontWeight: 700, 
+                  mb: 1,
+                  background: 'linear-gradient(135deg, #34D399 0%, #60A5FA 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                Coneaにログイン
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                アカウント情報を入力してログインしてください
+              </Typography>
+            </Box>
+
+            {/* エラーメッセージ */}
+            {error && (
+              <Alert 
+                severity="error" 
+                sx={{ mb: 3, borderRadius: 2 }}
+                onClose={clearError}
+              >
+                {error}
+              </Alert>
+            )}
+
+            {/* ログインフォーム */}
+            <form onSubmit={handleSubmit}>
+              <TextField
+                fullWidth
+                label="メールアドレス"
                 type="email"
-                autoComplete="email"
-                required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
                 required
+                sx={{ mb: 3 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Email color="action" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              <TextField
+                fullWidth
+                label="パスワード"
+                type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                required
+                sx={{ mb: 3 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Lock color="action" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
-            </div>
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                Remember me
-              </label>
-            </div>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      color="primary"
+                    />
+                  }
+                  label="ログイン状態を保持"
+                />
+                <Link 
+                  to="/forgot-password" 
+                  style={{ 
+                    textDecoration: 'none',
+                    color: theme.palette.primary.main,
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                  }}
+                >
+                  パスワードをお忘れですか？
+                </Link>
+              </Box>
 
-            <div className="text-sm">
-              <Link to="/forgot-password" className="font-medium text-primary-600 hover:text-primary-500">
-                Forgot your password?
-              </Link>
-            </div>
-          </div>
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                size="large"
+                disabled={isLoading}
+                sx={{
+                  py: 1.5,
+                  mb: 3,
+                  background: 'linear-gradient(135deg, #34D399 0%, #60A5FA 100%)',
+                  boxShadow: '0 4px 14px 0 rgba(52, 211, 153, 0.4)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)',
+                    boxShadow: '0 6px 20px 0 rgba(52, 211, 153, 0.6)',
+                  },
+                  '&:disabled': {
+                    background: 'linear-gradient(135deg, rgba(52, 211, 153, 0.5) 0%, rgba(96, 165, 250, 0.5) 100%)',
+                  },
+                }}
+              >
+                {isLoading ? 'ログイン中...' : 'ログイン'}
+              </Button>
 
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+              <Divider sx={{ mb: 3 }}>
+                <Typography variant="body2" color="text.secondary">
+                  または
+                </Typography>
+              </Divider>
+
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  アカウントをお持ちでないですか？{' '}
+                  <Link 
+                    to="/signup" 
+                    style={{ 
+                      textDecoration: 'none',
+                      color: theme.palette.primary.main,
+                      fontWeight: 600,
+                    }}
+                  >
+                    新規登録
+                  </Link>
+                </Typography>
+              </Box>
+            </form>
+          </CardContent>
+        </Card>
+      </Container>
+    </Box>
   );
 };
 

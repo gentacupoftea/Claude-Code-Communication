@@ -25,7 +25,8 @@ import {
   Palette as ThemeIcon,
   Notifications as NotificationsIcon
 } from '@mui/icons-material';
-import { useAuth, User } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { User } from '../../types/auth';
 
 interface UserSettingsProps {
   className?: string;
@@ -71,7 +72,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ className, onSaved }) => {
   useEffect(() => {
     if (user) {
       setFormData({
-        name: user.name || '',
+        full_name: user.full_name || '',
         email: user.email,
       });
     }
@@ -159,8 +160,8 @@ const UserSettings: React.FC<UserSettingsProps> = ({ className, onSaved }) => {
   
   // Get initials for avatar when no image is available
   const getInitials = () => {
-    if (!user.name) return 'U';
-    return user.name
+    if (!user.full_name) return 'U';
+    return user.full_name
       .split(' ')
       .map(part => part[0])
       .join('')
@@ -248,8 +249,8 @@ const UserSettings: React.FC<UserSettingsProps> = ({ className, onSaved }) => {
               <TextField
                 fullWidth
                 label="名前"
-                name="name"
-                value={formData.name || ''}
+                name="full_name"
+                value={formData.full_name || ''}
                 onChange={handleInputChange}
                 margin="normal"
                 variant="outlined"

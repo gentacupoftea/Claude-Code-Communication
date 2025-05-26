@@ -21,7 +21,7 @@ import {
   BugReport as BugIcon,
   Home as HomeIcon
 } from '@mui/icons-material';
-import diagnosticsService from '../../services/diagnosticsService';
+// import diagnosticsService from '../../services/diagnosticsService';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -57,14 +57,16 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // エラー情報を診断サービスに記録
+    // エラー情報を診断サービスに記録（一時的に無効化）
     const componentName = this.props.componentName || 'unknown';
     
-    diagnosticsService.log('error', 'react', `Error in component: ${componentName}`, {
-      error,
-      componentStack: errorInfo.componentStack,
-      component: componentName,
-    });
+    // diagnosticsService.log('error', 'react', `Error in component: ${componentName}`, {
+    //   error,
+    //   componentStack: errorInfo.componentStack,
+    //   component: componentName,
+    // });
+    
+    console.error(`Error in component: ${componentName}`, error, errorInfo);
     
     this.setState({
       errorInfo

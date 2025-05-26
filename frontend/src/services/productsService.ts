@@ -2,7 +2,7 @@
  * 商品関連サービス
  */
 import api from './api';
-import { Product, PaginationParams, FilterParams, APIResponse } from '@/types';
+import { Product, PaginationParams, FilterParams, APIResponse } from '../types';
 
 const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
 

@@ -78,6 +78,7 @@ export const DebugDemoComponent: React.FC = () => {
     logInfo, 
     logWarning, 
     logError,
+    measurePerformance,
     summary
   } = useDiagnostics();
   

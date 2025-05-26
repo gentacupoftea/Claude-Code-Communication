@@ -6,14 +6,13 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 // 認証が不要なページ
 import LoginPage from '../pages/LoginPage';
 import SignupPage from '../pages/SignupPage';
-import ForgotPasswordPage from '../pages/ForgotPasswordPage';
-import ResetPasswordPage from '../pages/ResetPasswordPage';
 import { LandingPage } from '../pages/LandingPage/LandingPage';
 import OAuthCallback from '../pages/OAuthCallback';
 
 // 認証が必要なページ
 import Dashboard from '../pages/Dashboard/Dashboard';
 import OrdersPage from '../pages/OrdersPage';
+import AnalyticsDashboard from '../pages/AnalyticsDashboard';
 import { ApiSettings } from '../pages/ApiSettings/ApiSettings';
 import { ChatAnalysis } from '../pages/ChatAnalysis/ChatAnalysis';
 import { DashboardEditor } from '../pages/DashboardEditor/DashboardEditor';
@@ -28,7 +27,7 @@ import { Notifications } from '../pages/Notifications/Notifications';
 import DataComponentsDemo from '../pages/Demo/DataComponentsDemo';
 
 // 環境設定
-import { currentEnvironment } from '../config/environments';
+const currentEnvironment = process.env.NODE_ENV || 'development';
 
 // エラーハンドリングサービス
 import { trackPageView } from '../services/analyticsService';
@@ -79,8 +78,6 @@ const AppRoutes: React.FC = () => {
         {/* 公開ルート */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
         <Route path="/landing" element={<LandingPage />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
         
@@ -91,6 +88,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/customers" element={<Customers />} />
+            <Route path="/analytics" element={<AnalyticsDashboard />} />
             <Route path="/api-settings" element={<ApiSettings />} />
             <Route path="/chat" element={<ChatAnalysis />} />
             <Route path="/dashboard-editor" element={<DashboardEditor />} />

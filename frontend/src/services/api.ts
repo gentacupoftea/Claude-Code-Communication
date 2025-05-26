@@ -7,7 +7,7 @@ class ApiService {
   private isMockMode: boolean;
 
   constructor() {
-    const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+    const baseURL = process.env.REACT_APP_API_URL || 'https://shopify-mcp-server-259335331171.asia-northeast1.run.app';
     console.log('API baseURL:', baseURL);
     
     this.isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';

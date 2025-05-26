@@ -1,0 +1,1262 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  Button,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  Paper,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert,
+  AlertTitle,
+  Tabs,
+  Tab,
+  Badge,
+  LinearProgress,
+  Tooltip,
+  Menu,
+  Switch,
+  FormControlLabel,
+  Divider,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  Avatar,
+  CardMedia,
+  ImageList,
+  ImageListItem,
+  ImageListItemBar,
+  useTheme,
+  alpha
+} from '@mui/material';
+import {
+  Inventory as ProductIcon,
+  Inventory2 as InventoryIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Search as SearchIcon,
+  FilterList as FilterIcon,
+  GetApp as ExportIcon,
+  Refresh as RefreshIcon,
+  Visibility as ViewIcon,
+  VisibilityOff as HideIcon,
+  PhotoCamera as PhotoIcon,
+  QrCode as QrCodeIcon,
+  Category as CategoryIcon,
+  Store as StoreIcon,
+  AttachMoney as MoneyIcon,
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  Star as StarIcon,
+  Warning as WarningIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  MoreVert as MoreVertIcon,
+  ShoppingCart as CartIcon,
+  Assessment as AssessmentIcon,
+  Timeline as TimelineIcon,
+  LocalOffer as OfferIcon,
+  Sync as SyncIcon,
+  CloudUpload as UploadIcon
+} from '@mui/icons-material';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts';
+
+interface Product {
+  id: string;
+  sku: string;
+  name: string;
+  nameJa?: string;
+  description: string;
+  shortDescription?: string;
+  category: string;
+  subcategory?: string;
+  brand?: string;
+  type: 'simple' | 'variable' | 'digital' | 'bundle';
+  status: 'active' | 'inactive' | 'draft' | 'archived';
+  visibility: 'public' | 'private' | 'hidden';
+  featured: boolean;
+  price: number;
+  salePrice?: number;
+  costPrice: number;
+  currency: string;
+  taxClass: string;
+  weight?: number;
+  dimensions?: {
+    length: number;
+    width: number;
+    height: number;
+    unit: string;
+  };
+  images: ProductImage[];
+  gallery: string[];
+  inventory: ProductInventory;
+  seo: ProductSEO;
+  variations?: ProductVariation[];
+  attributes: ProductAttribute[];
+  tags: string[];
+  platforms: ProductPlatform[];
+  analytics: ProductAnalytics;
+  supplier?: string;
+  manufacturerCode?: string;
+  barcode?: string;
+  notes: string;
+  createdAt: Date;
+  updatedAt: Date;
+  publishedAt?: Date;
+}
+
+interface ProductImage {
+  id: string;
+  url: string;
+  alt: string;
+  isPrimary: boolean;
+  order: number;
+}
+
+interface ProductInventory {
+  trackInventory: boolean;
+  stockQuantity: number;
+  lowStockThreshold: number;
+  manageStock: boolean;
+  allowBackorders: boolean;
+  stockStatus: 'in_stock' | 'out_of_stock' | 'on_backorder';
+}
+
+interface ProductSEO {
+  title?: string;
+  description?: string;
+  keywords: string[];
+  metaTitle?: string;
+  metaDescription?: string;
+  slug: string;
+}
+
+interface ProductVariation {
+  id: string;
+  sku: string;
+  attributes: Record<string, string>;
+  price: number;
+  salePrice?: number;
+  stockQuantity: number;
+  image?: string;
+  enabled: boolean;
+}
+
+interface ProductAttribute {
+  name: string;
+  value: string;
+  isVariation: boolean;
+  isVisible: boolean;
+}
+
+interface ProductPlatform {
+  platform: string;
+  platformId: string;
+  url?: string;
+  status: 'active' | 'inactive' | 'pending' | 'error';
+  lastSync?: Date;
+  syncErrors?: string[];
+}
+
+interface ProductAnalytics {
+  views: number;
+  sales: number;
+  revenue: number;
+  conversionRate: number;
+  averageRating: number;
+  reviewCount: number;
+  clickThroughRate: number;
+  impressions: number;
+  wishlistAdds: number;
+  cartAdds: number;
+  abandons: number;
+}
+
+const ProductManagement: React.FC = () => {
+  const theme = useTheme();
+  const [activeTab, setActiveTab] = useState(0);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [productDialog, setProductDialog] = useState(false);
+  const [importDialog, setImportDialog] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterPlatform, setFilterPlatform] = useState('all');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Mock data generation
+  useEffect(() => {
+    generateMockData();
+  }, []);
+
+  const generateMockData = () => {
+    const mockProducts: Product[] = [
+      {
+        id: '1',
+        sku: 'TSH-001',
+        name: 'プレミアム コットン Tシャツ',
+        nameJa: 'プレミアム コットン Tシャツ',
+        description: '100%オーガニックコットンを使用した高品質なTシャツ。快適な着心地と耐久性を兼ね備えています。',
+        shortDescription: '100%オーガニックコットンTシャツ',
+        category: 'アパレル',
+        subcategory: 'Tシャツ',
+        brand: 'EcoWear',
+        type: 'variable',
+        status: 'active',
+        visibility: 'public',
+        featured: true,
+        price: 3500,
+        salePrice: 2800,
+        costPrice: 1200,
+        currency: 'JPY',
+        taxClass: '10%',
+        weight: 0.2,
+        dimensions: {
+          length: 30,
+          width: 25,
+          height: 2,
+          unit: 'cm'
+        },
+        images: [
+          {
+            id: '1',
+            url: '/images/tshirt-white.jpg',
+            alt: 'ホワイト Tシャツ',
+            isPrimary: true,
+            order: 0
+          }
+        ],
+        gallery: ['/images/tshirt-detail1.jpg', '/images/tshirt-detail2.jpg'],
+        inventory: {
+          trackInventory: true,
+          stockQuantity: 145,
+          lowStockThreshold: 10,
+          manageStock: true,
+          allowBackorders: false,
+          stockStatus: 'in_stock'
+        },
+        seo: {
+          title: 'プレミアム オーガニック コットン Tシャツ',
+          description: '環境に優しいオーガニックコットン100%使用',
+          keywords: ['Tシャツ', 'オーガニック', 'コットン', 'エコ'],
+          metaTitle: 'プレミアム Tシャツ | EcoWear',
+          metaDescription: '100%オーガニックコットンTシャツ。環境に配慮した高品質なアパレル。',
+          slug: 'premium-cotton-tshirt'
+        },
+        variations: [
+          {
+            id: '1-s-white',
+            sku: 'TSH-001-S-WHITE',
+            attributes: { size: 'S', color: 'ホワイト' },
+            price: 3500,
+            salePrice: 2800,
+            stockQuantity: 25,
+            enabled: true
+          },
+          {
+            id: '1-m-white',
+            sku: 'TSH-001-M-WHITE',
+            attributes: { size: 'M', color: 'ホワイト' },
+            price: 3500,
+            salePrice: 2800,
+            stockQuantity: 45,
+            enabled: true
+          },
+          {
+            id: '1-l-white',
+            sku: 'TSH-001-L-WHITE',
+            attributes: { size: 'L', color: 'ホワイト' },
+            price: 3500,
+            salePrice: 2800,
+            stockQuantity: 35,
+            enabled: true
+          }
+        ],
+        attributes: [
+          { name: 'サイズ', value: 'S, M, L, XL', isVariation: true, isVisible: true },
+          { name: 'カラー', value: 'ホワイト, ブラック, グレー', isVariation: true, isVisible: true },
+          { name: '素材', value: '100%オーガニックコットン', isVariation: false, isVisible: true },
+          { name: '原産国', value: '日本', isVariation: false, isVisible: true }
+        ],
+        tags: ['オーガニック', 'エコフレンドリー', 'コットン', '日本製'],
+        platforms: [
+          {
+            platform: 'Shopify',
+            platformId: 'shopify_123',
+            url: 'https://store.example.com/products/premium-tshirt',
+            status: 'active',
+            lastSync: new Date()
+          },
+          {
+            platform: 'Rakuten',
+            platformId: 'rakuten_456',
+            status: 'active',
+            lastSync: new Date()
+          }
+        ],
+        analytics: {
+          views: 2340,
+          sales: 87,
+          revenue: 304500,
+          conversionRate: 3.7,
+          averageRating: 4.6,
+          reviewCount: 23,
+          clickThroughRate: 5.2,
+          impressions: 45000,
+          wishlistAdds: 124,
+          cartAdds: 234,
+          abandons: 147
+        },
+        supplier: 'SUP001',
+        manufacturerCode: 'ECO-TSH-001',
+        barcode: '4901234567890',
+        notes: '人気商品、定期的に在庫補充必要',
+        createdAt: new Date('2024-01-15'),
+        updatedAt: new Date(),
+        publishedAt: new Date('2024-01-20')
+      },
+      {
+        id: '2',
+        sku: 'SHO-001',
+        name: 'スニーカー クラシック',
+        description: 'クラシックデザインの快適なスニーカー',
+        category: 'シューズ',
+        subcategory: 'スニーカー',
+        brand: 'WalkComfort',
+        type: 'variable',
+        status: 'active',
+        visibility: 'public',
+        featured: false,
+        price: 12000,
+        costPrice: 4500,
+        currency: 'JPY',
+        taxClass: '10%',
+        weight: 0.8,
+        images: [
+          {
+            id: '2',
+            url: '/images/sneaker-white.jpg',
+            alt: 'ホワイト スニーカー',
+            isPrimary: true,
+            order: 0
+          }
+        ],
+        gallery: [],
+        inventory: {
+          trackInventory: true,
+          stockQuantity: 23,
+          lowStockThreshold: 30,
+          manageStock: true,
+          allowBackorders: false,
+          stockStatus: 'in_stock'
+        },
+        seo: {
+          keywords: ['スニーカー', 'シューズ', 'クラシック'],
+          slug: 'classic-sneaker'
+        },
+        attributes: [
+          { name: 'サイズ', value: '24.0, 24.5, 25.0, 25.5, 26.0, 26.5, 27.0', isVariation: true, isVisible: true }
+        ],
+        tags: ['快適', 'カジュアル'],
+        platforms: [
+          {
+            platform: 'Amazon',
+            platformId: 'amazon_789',
+            status: 'active',
+            lastSync: new Date()
+          }
+        ],
+        analytics: {
+          views: 1240,
+          sales: 15,
+          revenue: 180000,
+          conversionRate: 1.2,
+          averageRating: 4.2,
+          reviewCount: 8,
+          clickThroughRate: 2.8,
+          impressions: 44286,
+          wishlistAdds: 67,
+          cartAdds: 89,
+          abandons: 74
+        },
+        notes: '在庫少なめ、補充検討',
+        createdAt: new Date('2024-02-01'),
+        updatedAt: new Date()
+      },
+      {
+        id: '3',
+        sku: 'ELE-001',
+        name: 'ワイヤレスイヤホン プロ',
+        description: 'ノイズキャンセリング機能付きワイヤレスイヤホン',
+        category: 'エレクトロニクス',
+        subcategory: 'オーディオ',
+        brand: 'SoundTech',
+        type: 'simple',
+        status: 'active',
+        visibility: 'public',
+        featured: true,
+        price: 8900,
+        salePrice: 7900,
+        costPrice: 2800,
+        currency: 'JPY',
+        taxClass: '10%',
+        weight: 0.1,
+        images: [
+          {
+            id: '3',
+            url: '/images/earphone-black.jpg',
+            alt: 'ブラック ワイヤレスイヤホン',
+            isPrimary: true,
+            order: 0
+          }
+        ],
+        gallery: [],
+        inventory: {
+          trackInventory: true,
+          stockQuantity: 0,
+          lowStockThreshold: 25,
+          manageStock: true,
+          allowBackorders: true,
+          stockStatus: 'out_of_stock'
+        },
+        seo: {
+          keywords: ['イヤホン', 'ワイヤレス', 'ノイズキャンセリング'],
+          slug: 'wireless-earphone-pro'
+        },
+        attributes: [
+          { name: 'バッテリー', value: '24時間', isVariation: false, isVisible: true },
+          { name: 'ノイズキャンセリング', value: 'あり', isVariation: false, isVisible: true }
+        ],
+        tags: ['ワイヤレス', 'ノイズキャンセリング', 'プレミアム'],
+        platforms: [
+          {
+            platform: 'Shopify',
+            platformId: 'shopify_789',
+            status: 'active',
+            lastSync: new Date()
+          }
+        ],
+        analytics: {
+          views: 3450,
+          sales: 0,
+          revenue: 0,
+          conversionRate: 0,
+          averageRating: 4.8,
+          reviewCount: 45,
+          clickThroughRate: 4.2,
+          impressions: 82143,
+          wishlistAdds: 234,
+          cartAdds: 145,
+          abandons: 145
+        },
+        notes: '在庫切れ、人気商品のため早急な補充必要',
+        createdAt: new Date('2024-01-10'),
+        updatedAt: new Date()
+      }
+    ];
+
+    setProducts(mockProducts);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'success';
+      case 'inactive': return 'default';
+      case 'draft': return 'warning';
+      case 'archived': return 'error';
+      default: return 'default';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'active': return 'アクティブ';
+      case 'inactive': return '非アクティブ';
+      case 'draft': return '下書き';
+      case 'archived': return 'アーカイブ';
+      default: return status;
+    }
+  };
+
+  const getStockStatusColor = (status: string) => {
+    switch (status) {
+      case 'in_stock': return 'success';
+      case 'out_of_stock': return 'error';
+      case 'on_backorder': return 'warning';
+      default: return 'default';
+    }
+  };
+
+  const getStockStatusLabel = (status: string) => {
+    switch (status) {
+      case 'in_stock': return '在庫あり';
+      case 'out_of_stock': return '在庫切れ';
+      case 'on_backorder': return '取り寄せ';
+      default: return status;
+    }
+  };
+
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.sku.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = filterCategory === 'all' || product.category === filterCategory;
+    const matchesStatus = filterStatus === 'all' || product.status === filterStatus;
+    const matchesPlatform = filterPlatform === 'all' || 
+                           product.platforms.some(p => p.platform === filterPlatform);
+    
+    return matchesSearch && matchesCategory && matchesStatus && matchesPlatform;
+  });
+
+  const renderOverview = () => {
+    const totalProducts = products.length;
+    const activeProducts = products.filter(p => p.status === 'active').length;
+    const totalValue = products.reduce((sum, p) => sum + (p.inventory.stockQuantity * p.costPrice), 0);
+    const lowStockProducts = products.filter(p => 
+      p.inventory.trackInventory && 
+      p.inventory.stockQuantity <= p.inventory.lowStockThreshold
+    ).length;
+    const outOfStockProducts = products.filter(p => p.inventory.stockStatus === 'out_of_stock').length;
+
+    const categoryData = [
+      { name: 'アパレル', value: products.filter(p => p.category === 'アパレル').length, color: '#8884d8' },
+      { name: 'シューズ', value: products.filter(p => p.category === 'シューズ').length, color: '#82ca9d' },
+      { name: 'エレクトロニクス', value: products.filter(p => p.category === 'エレクトロニクス').length, color: '#ffc658' }
+    ];
+
+    const salesData = products.slice(0, 5).map(p => ({
+      name: p.name.substring(0, 10) + '...',
+      sales: p.analytics.sales,
+      revenue: p.analytics.revenue
+    }));
+
+    const performanceData = [
+      { month: '1月', views: 12000, sales: 340, revenue: 2400000 },
+      { month: '2月', views: 15000, sales: 420, revenue: 2800000 },
+      { month: '3月', views: 18000, sales: 510, revenue: 3200000 },
+      { month: '4月', views: 16000, sales: 480, revenue: 3000000 },
+      { month: '5月', views: 20000, sales: 580, revenue: 3600000 }
+    ];
+
+    return (
+      <Grid container spacing={3}>
+        {/* KPI Cards */}
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`, color: 'white' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h4" fontWeight="bold">{totalProducts}</Typography>
+                  <Typography variant="body2">総商品数</Typography>
+                </Box>
+                <ProductIcon sx={{ fontSize: 40, opacity: 0.8 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ background: `linear-gradient(135deg, ${theme.palette.success.main}, ${theme.palette.success.dark})`, color: 'white' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h4" fontWeight="bold">{activeProducts}</Typography>
+                  <Typography variant="body2">公開中</Typography>
+                </Box>
+                <CheckCircleIcon sx={{ fontSize: 40, opacity: 0.8 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ background: `linear-gradient(135deg, ${theme.palette.info.main}, ${theme.palette.info.dark})`, color: 'white' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h4" fontWeight="bold">¥{totalValue.toLocaleString()}</Typography>
+                  <Typography variant="body2">在庫価値</Typography>
+                </Box>
+                <MoneyIcon sx={{ fontSize: 40, opacity: 0.8 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ background: `linear-gradient(135deg, ${theme.palette.warning.main}, ${theme.palette.warning.dark})`, color: 'white' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h4" fontWeight="bold">{lowStockProducts}</Typography>
+                  <Typography variant="body2">在庫少</Typography>
+                </Box>
+                <WarningIcon sx={{ fontSize: 40, opacity: 0.8 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Charts */}
+        <Grid item xs={12} md={6}>
+          <Card sx={{ height: 400 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>カテゴリ別商品分布</Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Card sx={{ height: 400 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>売上上位商品</Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={salesData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <RechartsTooltip />
+                  <Bar dataKey="revenue" fill={theme.palette.primary.main} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Performance Trend */}
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>月次パフォーマンス推移</Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={performanceData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <RechartsTooltip />
+                  <Area type="monotone" dataKey="views" stackId="1" stroke="#8884d8" fill="#8884d8" name="閲覧数" />
+                  <Area type="monotone" dataKey="sales" stackId="2" stroke="#82ca9d" fill="#82ca9d" name="販売数" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    );
+  };
+
+  const renderProductsList = () => (
+    <Card>
+      <CardContent>
+        {/* Search and Filter Controls */}
+        <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <TextField
+            placeholder="商品名またはSKUで検索..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
+            }}
+            sx={{ minWidth: 300 }}
+          />
+          
+          <FormControl sx={{ minWidth: 120 }}>
+            <InputLabel>カテゴリ</InputLabel>
+            <Select
+              value={filterCategory}
+              label="カテゴリ"
+              onChange={(e) => setFilterCategory(e.target.value)}
+            >
+              <MenuItem value="all">すべて</MenuItem>
+              <MenuItem value="アパレル">アパレル</MenuItem>
+              <MenuItem value="シューズ">シューズ</MenuItem>
+              <MenuItem value="エレクトロニクス">エレクトロニクス</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl sx={{ minWidth: 120 }}>
+            <InputLabel>ステータス</InputLabel>
+            <Select
+              value={filterStatus}
+              label="ステータス"
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <MenuItem value="all">すべて</MenuItem>
+              <MenuItem value="active">アクティブ</MenuItem>
+              <MenuItem value="inactive">非アクティブ</MenuItem>
+              <MenuItem value="draft">下書き</MenuItem>
+              <MenuItem value="archived">アーカイブ</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl sx={{ minWidth: 150 }}>
+            <InputLabel>プラットフォーム</InputLabel>
+            <Select
+              value={filterPlatform}
+              label="プラットフォーム"
+              onChange={(e) => setFilterPlatform(e.target.value)}
+            >
+              <MenuItem value="all">すべて</MenuItem>
+              <MenuItem value="Shopify">Shopify</MenuItem>
+              <MenuItem value="Rakuten">Rakuten</MenuItem>
+              <MenuItem value="Amazon">Amazon</MenuItem>
+            </Select>
+          </FormControl>
+
+          <Box sx={{ flexGrow: 1 }} />
+
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setProductDialog(true)}
+          >
+            商品追加
+          </Button>
+
+          <Button
+            variant="outlined"
+            startIcon={<UploadIcon />}
+            onClick={() => setImportDialog(true)}
+          >
+            インポート
+          </Button>
+
+          <Button
+            variant="outlined"
+            startIcon={<ExportIcon />}
+          >
+            エクスポート
+          </Button>
+        </Box>
+
+        {/* Products Table */}
+        <TableContainer component={Paper} variant="outlined">
+          <Table>
+            <TableHead>
+              <TableRow sx={{ backgroundColor: alpha(theme.palette.primary.main, 0.1) }}>
+                <TableCell>商品情報</TableCell>
+                <TableCell>カテゴリ</TableCell>
+                <TableCell align="right">価格</TableCell>
+                <TableCell align="right">在庫</TableCell>
+                <TableCell align="right">売上</TableCell>
+                <TableCell>プラットフォーム</TableCell>
+                <TableCell>ステータス</TableCell>
+                <TableCell>操作</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredProducts
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((product) => (
+                <TableRow key={product.id} hover>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      {product.images.length > 0 ? (
+                        <Avatar
+                          src={product.images[0].url}
+                          alt={product.images[0].alt}
+                          variant="rounded"
+                          sx={{ width: 60, height: 60 }}
+                        />
+                      ) : (
+                        <Avatar variant="rounded" sx={{ width: 60, height: 60, bgcolor: 'grey.300' }}>
+                          <PhotoIcon />
+                        </Avatar>
+                      )}
+                      <Box>
+                        <Typography variant="subtitle2" fontWeight="bold">{product.name}</Typography>
+                        <Typography variant="body2" color="text.secondary">{product.sku}</Typography>
+                        <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
+                          {product.featured && <Chip label="注目" size="small" color="primary" />}
+                          {product.salePrice && <Chip label="セール" size="small" color="secondary" />}
+                        </Box>
+                      </Box>
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">{product.category}</Typography>
+                    {product.subcategory && (
+                      <Typography variant="caption" color="text.secondary">{product.subcategory}</Typography>
+                    )}
+                  </TableCell>
+                  <TableCell align="right">
+                    <Box>
+                      <Typography variant="body2" fontWeight="bold">
+                        ¥{product.price.toLocaleString()}
+                      </Typography>
+                      {product.salePrice && (
+                        <Typography variant="caption" color="text.secondary" sx={{ textDecoration: 'line-through' }}>
+                          ¥{product.salePrice.toLocaleString()}
+                        </Typography>
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Box>
+                      <Typography variant="body2" fontWeight="bold">
+                        {product.inventory.stockQuantity}
+                      </Typography>
+                      <Chip 
+                        label={getStockStatusLabel(product.inventory.stockStatus)} 
+                        color={getStockStatusColor(product.inventory.stockStatus) as any}
+                        size="small"
+                      />
+                    </Box>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Typography variant="body2" fontWeight="bold">
+                      {product.analytics.sales}個
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      ¥{product.analytics.revenue.toLocaleString()}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                      {product.platforms.map(platform => (
+                        <Chip 
+                          key={platform.platform}
+                          label={platform.platform} 
+                          size="small" 
+                          color={platform.status === 'active' ? 'success' : 'default'}
+                          variant="outlined"
+                        />
+                      ))}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Chip 
+                      label={getStatusLabel(product.status)} 
+                      color={getStatusColor(product.status) as any}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <IconButton 
+                      size="small" 
+                      onClick={(e) => {
+                        setSelectedProduct(product);
+                        setAnchorEl(e.currentTarget);
+                      }}
+                    >
+                      <MoreVertIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        <TablePagination
+          component="div"
+          count={filteredProducts.length}
+          page={page}
+          onPageChange={(e, newPage) => setPage(newPage)}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(e) => setRowsPerPage(parseInt(e.target.value, 10))}
+        />
+      </CardContent>
+    </Card>
+  );
+
+  const renderInventoryManagement = () => {
+    // 在庫統計の計算
+    const outOfStockProducts = products.filter(p => p.inventory.stockStatus === 'out_of_stock').length;
+    const totalValue = products.reduce((sum, p) => sum + (p.costPrice * p.inventory.stockQuantity), 0);
+    
+    return (
+      <Grid container spacing={3}>
+        {/* Inventory Overview Cards */}
+        <Grid item xs={12}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ background: `linear-gradient(135deg, ${theme.palette.success.main}, ${theme.palette.success.dark})`, color: 'white' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant="h4" fontWeight="bold">
+                      {products.filter(p => p.inventory.stockStatus === 'in_stock').length}
+                    </Typography>
+                    <Typography variant="body2">在庫あり</Typography>
+                  </Box>
+                  <CheckCircleIcon sx={{ fontSize: 40, opacity: 0.8 }} />
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ background: `linear-gradient(135deg, ${theme.palette.warning.main}, ${theme.palette.warning.dark})`, color: 'white' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant="h4" fontWeight="bold">
+                      {products.filter(p => p.inventory.stockQuantity <= p.inventory.lowStockThreshold).length}
+                    </Typography>
+                    <Typography variant="body2">在庫少</Typography>
+                  </Box>
+                  <WarningIcon sx={{ fontSize: 40, opacity: 0.8 }} />
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ background: `linear-gradient(135deg, ${theme.palette.error.main}, ${theme.palette.error.dark})`, color: 'white' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant="h4" fontWeight="bold">
+                      {outOfStockProducts}
+                    </Typography>
+                    <Typography variant="body2">在庫切れ</Typography>
+                  </Box>
+                  <CancelIcon sx={{ fontSize: 40, opacity: 0.8 }} />
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ background: `linear-gradient(135deg, ${theme.palette.info.main}, ${theme.palette.info.dark})`, color: 'white' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant="h4" fontWeight="bold">
+                      ¥{totalValue.toLocaleString()}
+                    </Typography>
+                    <Typography variant="body2">総在庫価値</Typography>
+                  </Box>
+                  <MoneyIcon sx={{ fontSize: 40, opacity: 0.8 }} />
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Grid>
+
+      {/* Inventory Movement Chart */}
+      <Grid item xs={12} md={8}>
+        <Card>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>在庫動向 (過去7日間)</Typography>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={[
+                { date: '1/15', in: 45, out: 23, stock: 234 },
+                { date: '1/16', in: 52, out: 31, stock: 255 },
+                { date: '1/17', in: 38, out: 28, stock: 265 },
+                { date: '1/18', in: 61, out: 34, stock: 292 },
+                { date: '1/19', in: 42, out: 29, stock: 305 },
+                { date: '1/20', in: 55, out: 41, stock: 319 },
+                { date: '1/21', in: 48, out: 25, stock: 342 }
+              ]}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <RechartsTooltip />
+                <Legend />
+                <Line type="monotone" dataKey="in" stroke="#4caf50" strokeWidth={2} name="入庫" />
+                <Line type="monotone" dataKey="out" stroke="#f44336" strokeWidth={2} name="出庫" />
+                <Line type="monotone" dataKey="stock" stroke="#2196f3" strokeWidth={2} name="在庫数" />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </Grid>
+
+      {/* Quick Actions */}
+      <Grid item xs={12} md={4}>
+        <Card>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>クイックアクション</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Button variant="contained" startIcon={<AddIcon />} fullWidth>
+                一括在庫調整
+              </Button>
+              <Button variant="outlined" startIcon={<QrCodeIcon />} fullWidth>
+                QRコード生成
+              </Button>
+              <Button variant="outlined" startIcon={<ExportIcon />} fullWidth>
+                在庫レポート出力
+              </Button>
+              <Button variant="outlined" startIcon={<SyncIcon />} fullWidth>
+                プラットフォーム同期
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
+      </Grid>
+    </Grid>
+  );
+
+  const renderInventoryAlerts = () => {
+    const lowStockProducts = products.filter(p => 
+      p.inventory.trackInventory && 
+      p.inventory.stockQuantity <= p.inventory.lowStockThreshold
+    );
+
+    const outOfStockProducts = products.filter(p => 
+      p.inventory.stockStatus === 'out_of_stock'
+    );
+
+    return (
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <WarningIcon color="warning" />
+                在庫少商品
+                <Badge badgeContent={lowStockProducts.length} color="warning" />
+              </Typography>
+
+              <List>
+                {lowStockProducts.map(product => (
+                  <ListItem key={product.id} divider>
+                    <ListItemText
+                      primary={product.name}
+                      secondary={`SKU: ${product.sku} | 在庫: ${product.inventory.stockQuantity}個`}
+                    />
+                    <ListItemSecondaryAction>
+                      <Chip 
+                        label={`閾値: ${product.inventory.lowStockThreshold}`} 
+                        size="small" 
+                        color="warning"
+                      />
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CancelIcon color="error" />
+                在庫切れ商品
+                <Badge badgeContent={outOfStockProducts.length} color="error" />
+              </Typography>
+
+              <List>
+                {outOfStockProducts.map(product => (
+                  <ListItem key={product.id} divider>
+                    <ListItemText
+                      primary={product.name}
+                      secondary={`SKU: ${product.sku} | 売上機会損失: ${product.analytics.abandons}回`}
+                    />
+                    <ListItemSecondaryAction>
+                      <Button size="small" variant="outlined" color="primary">
+                        発注
+                      </Button>
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    );
+  };
+
+  const renderAnalytics = () => {
+    const topProducts = products
+      .sort((a, b) => b.analytics.revenue - a.analytics.revenue)
+      .slice(0, 5);
+
+    const conversionData = products.map(p => ({
+      name: p.name.substring(0, 10) + '...',
+      views: p.analytics.views,
+      cartAdds: p.analytics.cartAdds,
+      sales: p.analytics.sales,
+      conversionRate: p.analytics.conversionRate
+    }));
+
+    return (
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>商品別コンバージョン率</Typography>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={conversionData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <RechartsTooltip />
+                  <Bar dataKey="conversionRate" fill={theme.palette.primary.main} name="CVR %" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>売上トップ商品</Typography>
+              <Grid container spacing={2}>
+                {topProducts.map((product, index) => (
+                  <Grid item xs={12} md={6} lg={4} key={product.id}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                          <Badge badgeContent={index + 1} color="primary">
+                            {product.images.length > 0 ? (
+                              <Avatar
+                                src={product.images[0].url}
+                                alt={product.images[0].alt}
+                                variant="rounded"
+                                sx={{ width: 60, height: 60 }}
+                              />
+                            ) : (
+                              <Avatar variant="rounded" sx={{ width: 60, height: 60 }}>
+                                <PhotoIcon />
+                              </Avatar>
+                            )}
+                          </Badge>
+                          <Box>
+                            <Typography variant="h6">{product.name}</Typography>
+                            <Typography variant="body2" color="text.secondary">{product.sku}</Typography>
+                          </Box>
+                        </Box>
+                        
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          売上: ¥{product.analytics.revenue.toLocaleString()}
+                        </Typography>
+                        
+                        <Box sx={{ mt: 2 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography variant="body2">販売数</Typography>
+                            <Typography variant="body2">{product.analytics.sales}個</Typography>
+                          </Box>
+                          
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography variant="body2">CVR</Typography>
+                            <Typography variant="body2">{product.analytics.conversionRate}%</Typography>
+                          </Box>
+
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <StarIcon fontSize="small" color="primary" />
+                              <Typography variant="body2" sx={{ ml: 0.5 }}>
+                                {product.analytics.averageRating.toFixed(1)}
+                              </Typography>
+                            </Box>
+                            <Typography variant="caption">({product.analytics.reviewCount})</Typography>
+                          </Box>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    );
+  };
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <ProductIcon color="primary" sx={{ fontSize: 40 }} />
+        商品・在庫管理
+      </Typography>
+
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
+          <Tab label="概要" icon={<AssessmentIcon />} />
+          <Tab label="商品一覧" icon={<ProductIcon />} />
+          <Tab label="在庫管理" icon={<InventoryIcon />} />
+          <Tab label="在庫アラート" icon={<Badge badgeContent={products.filter(p => p.inventory.stockQuantity <= p.inventory.lowStockThreshold).length} color="warning"><WarningIcon /></Badge>} />
+          <Tab label="分析" icon={<TimelineIcon />} />
+        </Tabs>
+      </Box>
+
+      {activeTab === 0 && renderOverview()}
+      {activeTab === 1 && renderProductsList()}
+      {activeTab === 2 && renderInventoryManagement()}
+      {activeTab === 3 && renderInventoryAlerts()}
+      {activeTab === 4 && renderAnalytics()}
+
+      {/* Action Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+      >
+        <MenuItem onClick={() => {
+          setProductDialog(true);
+          setAnchorEl(null);
+        }}>
+          <EditIcon sx={{ mr: 1 }} />
+          編集
+        </MenuItem>
+        <MenuItem onClick={() => setAnchorEl(null)}>
+          <ViewIcon sx={{ mr: 1 }} />
+          詳細表示
+        </MenuItem>
+        <MenuItem onClick={() => setAnchorEl(null)}>
+          <SyncIcon sx={{ mr: 1 }} />
+          プラットフォーム同期
+        </MenuItem>
+        <MenuItem onClick={() => setAnchorEl(null)}>
+          <QrCodeIcon sx={{ mr: 1 }} />
+          QRコード生成
+        </MenuItem>
+      </Menu>
+    </Box>
+  );
+};
+
+export default ProductManagement;

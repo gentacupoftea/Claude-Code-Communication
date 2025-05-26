@@ -151,6 +151,9 @@ const useConnection = () => {
     }
   }, [isOnline]);
 
+  const getApiEndpoint = () => apiEndpoint;
+  const setApiEndpointState = (endpoint: string | null) => setApiEndpoint(endpoint);
+
   return {
     isOnline,
     connectionType,
@@ -158,7 +161,9 @@ const useConnection = () => {
     apiEndpoint,
     lastChecked,
     checkConnection,
-    testConnectionQuality
+    testConnectionQuality,
+    getApiEndpoint,
+    setApiEndpoint: setApiEndpointState
   };
 };
 

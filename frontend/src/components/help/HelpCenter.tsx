@@ -57,8 +57,7 @@ import { useHelp } from '../../hooks/useHelp';
 import ReactMarkdown from 'react-markdown';
 import { formatDistanceToNow } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { HelpCategory, HelpCategoryId } from '../../services/helpService';
-import helpService from '../../services/helpService';
+import helpService, { HelpCategory, HelpCategoryId } from '../../services/helpService';
 
 interface HelpCenterProps {
   open: boolean;

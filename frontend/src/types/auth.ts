@@ -6,6 +6,9 @@ export interface User {
   is_superuser: boolean;
   created_at: string;
   last_login?: string;
+  role?: string;
+  avatar?: string;
+  permissions?: string[];
 }
 
 export interface Organization {

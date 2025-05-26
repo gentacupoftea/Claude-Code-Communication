@@ -1,0 +1,94 @@
+# Google Cloud Run service configuration
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: shopify-mcp-server
+  annotations:
+    # Cloud Run specific configurations
+    run.googleapis.com/ingress: all
+    run.googleapis.com/execution-environment: gen2
+spec:
+  template:
+    metadata:
+      annotations:
+        # Scaling configuration
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "10"
+        # Resource allocation
+        run.googleapis.com/memory: "2Gi"
+        run.googleapis.com/cpu: "2"
+        # Environment configuration
+        run.googleapis.com/vpc-access-connector: projects/PROJECT_ID/locations/REGION/connectors/vpc-connector
+        run.googleapis.com/vpc-access-egress: all-traffic
+    spec:
+      containerConcurrency: 100
+      timeoutSeconds: 3600
+      containers:
+      - image: gcr.io/PROJECT_ID/shopify-mcp-server
+        ports:
+        - containerPort: 8000
+        env:
+        # Database Configuration
+        - name: DATABASE_URL
+          value: "postgresql://user:password@/dbname?host=/cloudsql/PROJECT_ID:REGION:INSTANCE_NAME"
+        
+        # Application Configuration
+        - name: NODE_ENV
+          value: "production"
+        - name: API_HOST
+          value: "0.0.0.0"
+        - name: API_PORT
+          value: "8000"
+        
+        # Security Configuration
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: secret-key
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: jwt-secret
+        
+        # Shopify Configuration
+        - name: SHOPIFY_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: shopify-secrets
+              key: api-key
+        - name: SHOPIFY_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: shopify-secrets
+              key: api-secret
+        - name: SHOPIFY_APP_URL
+          value: "https://shopify-mcp-server-PROJECT_ID.a.run.app"
+        
+        # CORS Configuration
+        - name: CORS_ORIGINS
+          value: "https://staging-conea-ai.web.app,https://conea-ai.web.app"
+        
+        resources:
+          limits:
+            cpu: "2000m"
+            memory: "2Gi"
+          requests:
+            cpu: "1000m"
+            memory: "512Mi"
+        
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10

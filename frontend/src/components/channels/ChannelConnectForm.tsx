@@ -177,6 +177,38 @@ const ApiKeyForm: React.FC<ApiKeyFormProps> = ({ channelType, onSubmit, isSubmit
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               />
             </div>
+            <div>
+              <label htmlFor="accessToken" className="block text-sm font-medium text-gray-700">
+                アクセストークン <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                id="accessToken"
+                name="accessToken"
+                value={credentials.accessToken || ''}
+                onChange={(e) => setCredentials({ ...credentials, accessToken: e.target.value })}
+                placeholder="shpat_で始まるトークン"
+                required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+              <p className="mt-1 text-xs text-gray-500">OAuth認証後に取得されるアクセストークン</p>
+            </div>
+            <div>
+              <label htmlFor="storeId" className="block text-sm font-medium text-gray-700">
+                ストアID <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="storeId"
+                name="storeId"
+                value={credentials.storeId || ''}
+                onChange={(e) => setCredentials({ ...credentials, storeId: e.target.value })}
+                placeholder="store-123"
+                required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+              <p className="mt-1 text-xs text-gray-500">Shopifyストアの一意識別子</p>
+            </div>
           </>
         );
       case 'rakuten':
