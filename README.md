@@ -1,6 +1,6 @@
-# Shopify MCP Server
+# Shopify MCP Server 🚀
 
-Enterprise-level authentication system with Shopify integration capabilities.
+Enterprise-grade E-Commerce Integration Platform - Unifying Shopify, Amazon, Rakuten, and Next Engine with AI-powered automation and real-time synchronization.
 
 ## 🚀 Features
 
@@ -13,10 +13,12 @@ Enterprise-level authentication system with Shopify integration capabilities.
 - **Audit Logging** - Complete audit trail of all security events
 
 ### Core Capabilities
-- **Multi-tenant Architecture** - Organization-based access control
-- **Role-Based Access Control** - Owner, Admin, Member, Viewer roles
-- **API Token Management** - Secure API access for integrations
-- **Shopify Store Integration** - Connect multiple Shopify stores per organization
+- **Multi-Platform Integration** - Shopify, Amazon SP-API, Rakuten RMS, Next Engine
+- **Real-time Synchronization** - WebSocket-based instant updates across all platforms
+- **AI/ML Analytics** - Sales forecasting, inventory optimization, customer insights
+- **GraphQL API** - High-performance API with depth limiting and security
+- **Kubernetes Ready** - Scalable microservices architecture
+- **Event Streaming** - Apache Kafka integration for real-time processing
 
 ## 📋 Requirements
 
