@@ -145,16 +145,22 @@ jest.mock('./services/aiRecommendationEngine', () => ({
 }));
 
 // 機械学習パイプライン モック
-jest.mock('./services/mlPipeline', () => ({
-  MLPipeline: jest.fn().mockImplementation(() => ({
-    trainModel: jest.fn().mockResolvedValue({ success: true }),
-    validateModel: jest.fn().mockResolvedValue({ 
-      accuracy: 0.92,
-      loss: 0.08 
-    }),
-    deployModel: jest.fn().mockResolvedValue({ deployed: true })
-  }))
-}));
+// MLパイプラインのモック（条件付き）
+try {
+  require.resolve('./services/mlPipeline');
+  jest.mock('./services/mlPipeline', () => ({
+    MLPipeline: jest.fn().mockImplementation(() => ({
+      trainModel: jest.fn().mockResolvedValue({ success: true }),
+      validateModel: jest.fn().mockResolvedValue({ 
+        accuracy: 0.92,
+        loss: 0.08 
+      }),
+      deployModel: jest.fn().mockResolvedValue({ deployed: true })
+    }))
+  }));
+} catch (e) {
+  // MLパイプラインファイルが存在しない場合はスキップ
+}
 
 // ==================== Component Mocks ====================
 

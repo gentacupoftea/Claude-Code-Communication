@@ -15,6 +15,7 @@ import Workers from './pages/Workers';
 import Tasks from './pages/Tasks';
 import Memory from './pages/Memory';
 import Analytics from './pages/Analytics';
+import Automation from './pages/Automation';
 import Settings from './pages/Settings';
 import Logs from './pages/Logs';
 import Chat from './pages/Chat';
@@ -107,6 +108,7 @@ function App() {
                   <Route path="/tasks" element={<Tasks />} />
                   <Route path="/memory" element={<Memory />} />
                   <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/automation" element={<Automation />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/logs" element={<Logs />} />
                   <Route path="/chat" element={<Chat />} />

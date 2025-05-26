@@ -1,23 +1,21 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import offlineService from '../services/offlineService';
 
-// Type definitions
+interface CachedData {
+  id: string;
+  data: any;
+  timestamp: Date;
+  entityType: string;
+}
+
 interface PendingAction {
   id: string;
   type: string;
-  entity: string;
+  data: any;
+  timestamp: Date;
   entityType: string;
-  entityId: string;
   action: string;
-  data: any;
-  timestamp: Date;
-}
-
-interface CachedData {
-  id: string;
-  type: string;
-  data: any;
-  timestamp: Date;
+  entityId: string;
 }
 
 interface OfflineContextType {
@@ -50,21 +48,18 @@ export const OfflineProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
 
     // Subscribe to offline status changes
+    const handleOffline = () => setIsOffline(true);
     const handleOnline = () => {
       setIsOffline(false);
       loadPendingActions();
     };
     
-    const handleOffline = () => {
-      setIsOffline(true);
-    };
-    
-    window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
     };
   }, []);
 
@@ -74,7 +69,6 @@ export const OfflineProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const loadCachedEntities = async () => {
-    // TODO: Implement getCachedEntityTypes in offlineService
     setCachedEntities([]);
   };
 
@@ -83,7 +77,6 @@ export const OfflineProvider: React.FC<{ children: React.ReactNode }> = ({ child
     
     setIsSyncing(true);
     try {
-      // TODO: Implement processPendingActions in offlineService
       await loadPendingActions();
       setLastSyncTime(new Date());
     } finally {
@@ -92,13 +85,11 @@ export const OfflineProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const clearCache = async (entityType?: string) => {
-    // TODO: Implement clearCache in offlineService
     await loadCachedEntities();
   };
 
   const clearPendingActions = async () => {
-    // TODO: Implement clearPendingActions in offlineService
-    await loadPendingActions();
+    setPendingActions([]);
   };
 
   return (

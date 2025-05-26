@@ -2,25 +2,17 @@ import React, { createContext, useContext, ReactNode } from 'react';
 import useConnection from '../hooks/useConnection';
 import { ConnectionDetails, ConnectionStatus } from '../services/connectionService';
 
-// Define the context shape
+// Define the context shape based on useConnection return type
 interface ConnectionContextValue {
-  // Connection state
-  connectionDetails: ConnectionDetails;
-  serverUrl: string;
-  apiStatus: ConnectionStatus;
-  wsStatus: ConnectionStatus;
-  isConnected: boolean;
-  isConnecting: boolean;
-  
-  // Connection info
-  serverVersion?: string;
-  serverInfo?: Record<string, any>;
-  lastConnected?: Date;
-  lastError?: string;
-  
-  // Methods
-  connect: (serverUrl: string) => Promise<boolean>;
-  disconnect: () => void;
+  isOnline: boolean;
+  connectionType: string;
+  connectionQuality: string;
+  apiEndpoint: string | null;
+  lastChecked: Date | null;
+  checkConnection: () => Promise<boolean>;
+  testConnectionQuality: () => Promise<string>;
+  getApiEndpoint: () => string | null;
+  setApiEndpoint: (endpoint: string | null) => void;
 }
 
 // Create the context

@@ -47,6 +47,7 @@ import {
   NetworkCheck,
   ClearAll,
   LightbulbOutlined,
+  Brightness4,
   WarningAmber,
   TerminalOutlined,
   AccessTime,
@@ -115,16 +116,13 @@ const AdvancedSettings: React.FC = () => {
         [key]: value
       });
     } else {
-      const sectionSettings = localAdvancedSettings[section];
-      if (typeof sectionSettings === 'object' && sectionSettings !== null) {
-        setLocalAdvancedSettings({
-          ...localAdvancedSettings,
-          [section]: {
-            ...sectionSettings,
-            [key]: value
-          }
-        });
-      }
+      setLocalAdvancedSettings({
+        ...localAdvancedSettings,
+        [section]: {
+          ...(localAdvancedSettings[section] as Record<string, any>),
+          [key]: value
+        }
+      });
     }
   };
   

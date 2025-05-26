@@ -31,10 +31,11 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/api/v1/shopify", tags=["shopify"])
 
 # Initialize Shopify components (these would be dependency injected in production)
+import os
 oauth_config = OAuthConfig(
-    client_id="your_client_id",  # From environment
-    client_secret="your_client_secret",  # From environment
-    redirect_uri="https://api.conea.ai/api/v1/shopify/oauth/callback",
+    client_id=os.getenv("SHOPIFY_CLIENT_ID", "your_client_id"),
+    client_secret=os.getenv("SHOPIFY_CLIENT_SECRET", "your_client_secret"),
+    redirect_uri=os.getenv("SHOPIFY_REDIRECT_URI", "https://api.conea.ai/api/v1/shopify/oauth/callback"),
     scopes=["read_products", "write_products", "read_orders", "read_customers", "write_inventory"]
 )
 

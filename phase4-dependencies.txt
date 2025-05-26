@@ -1,0 +1,6 @@
+AI関連の依存関係を追加予定:
+- @tensorflow/tfjs
+- natural (NLP)
+- ml-matrix
+- brain.js
+- kmeans-js

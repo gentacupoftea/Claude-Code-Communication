@@ -27,10 +27,13 @@ interface Message {
 
 interface Process {
   id: number;
-  type: 'thinking' | 'tool';
+  type: 'thinking' | 'tool' | 'worker' | 'analysis';
   content?: string;
   tool?: string;
   action?: string;
+  worker?: string;
+  timestamp?: string;
+  details?: any;
 }
 
 // Styled Components
@@ -251,6 +254,7 @@ const IntermediateMessage = styled(motion.div)`
   margin-bottom: 12px;
 `;
 
+
 // Main Component
 export const ImprovedChatInterface: React.FC = () => {
   const theme = useTheme();
@@ -377,22 +381,48 @@ export const ImprovedChatInterface: React.FC = () => {
   };
 
   const handleSSEEvent = (data: any, currentMessageId: string | null) => {
+    const timestamp = new Date().toISOString();
+    
     switch (data.type) {
       case 'thinking':
-        setCurrentProcesses(prev => [...prev, {
+        const thinkingLog = {
           id: Date.now(),
-          type: 'thinking',
-          content: data.content
-        }]);
+          type: 'thinking' as const,
+          content: data.content,
+          timestamp
+        };
+        setCurrentProcesses(prev => [...prev, thinkingLog]);
         break;
         
       case 'tool_use':
-        setCurrentProcesses(prev => [...prev, {
+        const toolLog = {
           id: Date.now(),
-          type: 'tool',
+          type: 'tool' as const,
           tool: data.tool,
-          action: data.action
-        }]);
+          action: data.action,
+          timestamp
+        };
+        setCurrentProcesses(prev => [...prev, toolLog]);
+        break;
+        
+      case 'worker':
+        const workerLog = {
+          id: Date.now(),
+          type: 'worker' as const,
+          worker: data.worker,
+          content: data.content,
+          timestamp
+        };
+        break;
+        
+      case 'analysis':
+        const analysisLog = {
+          id: Date.now(),
+          type: 'analysis' as const,
+          content: data.content,
+          details: data.details,
+          timestamp
+        };
         break;
         
       case 'response':
@@ -598,6 +628,7 @@ export const ImprovedChatInterface: React.FC = () => {
         
         <div ref={messagesEndRef} />
       </MessagesContainer>
+      
       
       <InputContainer>
         <InputWrapper>

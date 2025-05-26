@@ -24,7 +24,6 @@ import {
   Paper,
   Tab,
   Tabs,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -39,12 +38,9 @@ import {
   Psychology as ClaudeIcon,
   SmartToy as OpenAIIcon,
   AutoAwesome as GeminiIcon,
-  PlayArrow as StartIcon,
-  Stop as StopIcon,
   Settings as SettingsIcon,
   TrendingUp as TrendingUpIcon,
   Speed as SpeedIcon,
-  Memory as MemoryIcon,
   BugReport as ErrorIcon,
   CheckCircle as SuccessIcon,
   Warning as WarningIcon,
@@ -101,6 +97,8 @@ interface Task {
 }
 
 const AgentMonitoring: React.FC = () => {
+  console.log('AgentMonitoring component loaded');
+  
   const [tabValue, setTabValue] = useState(0);
   const [agents, setAgents] = useState<AgentStatus[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -130,125 +128,132 @@ const AgentMonitoring: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const loadAgentData = () => {
-    // Mock data - 実際の実装では API から取得
-    const mockAgents: AgentStatus[] = [
-      {
-        id: 'claude-1',
-        name: 'Claude Analysis Agent',
-        provider: 'claude',
-        status: 'active',
-        currentTask: 'Strategic analysis for Q1 planning',
-        uptime: '24h 15m',
-        requestsToday: 156,
-        avgResponseTime: 2.3,
-        successRate: 98.5,
-        errorCount: 2,
-        lastActivity: '2 minutes ago',
-        memoryUsage: 45,
-        cpuUsage: 23,
-        configuration: {
-          model: 'claude-3-sonnet',
-          temperature: 0.3,
-          maxTokens: 8000,
-          timeout: 45,
-        },
-      },
-      {
-        id: 'openai-1',
-        name: 'OpenAI Code Agent',
-        provider: 'openai',
-        status: 'active',
-        currentTask: 'Code review for PR #123',
-        uptime: '18h 42m',
-        requestsToday: 203,
-        avgResponseTime: 1.8,
-        successRate: 96.2,
-        errorCount: 8,
-        lastActivity: '5 minutes ago',
-        memoryUsage: 38,
-        cpuUsage: 31,
-        configuration: {
-          model: 'gpt-4-turbo',
-          temperature: 0.2,
-          maxTokens: 6000,
-          timeout: 30,
-        },
-      },
-      {
-        id: 'gemini-1',
-        name: 'Gemini Infrastructure Agent',
-        provider: 'gemini',
-        status: 'idle',
-        uptime: '12h 8m',
-        requestsToday: 89,
-        avgResponseTime: 2.1,
-        successRate: 94.7,
-        errorCount: 4,
-        lastActivity: '15 minutes ago',
-        memoryUsage: 22,
-        cpuUsage: 12,
-        configuration: {
-          model: 'gemini-pro',
-          temperature: 0.1,
-          maxTokens: 4000,
-          timeout: 25,
-        },
-      },
-    ];
-    
-    setAgents(mockAgents);
+  const loadAgentData = async () => {
+    console.log('Loading agent data...');
+    try {
+      // 実際のAI設定を取得
+      const response = await fetch('http://localhost:8000/api/ai/config');
+      const aiConfig = await response.json();
+      
+      const activeAgents: AgentStatus[] = [];
+      
+      // Claude Agent
+      if (aiConfig.claude?.enabled) {
+        activeAgents.push({
+          id: 'claude-1',
+          name: 'Claude Analysis Agent',
+          provider: 'claude',
+          status: 'active',
+          currentTask: 'Ready for tasks',
+          uptime: '0h 0m',
+          requestsToday: 0,
+          avgResponseTime: 0,
+          successRate: 100,
+          errorCount: 0,
+          lastActivity: 'Just configured',
+          memoryUsage: 15,
+          cpuUsage: 5,
+          configuration: {
+            model: aiConfig.claude.model,
+            temperature: aiConfig.settings.temperature,
+            maxTokens: aiConfig.settings.maxTokens,
+            timeout: aiConfig.settings.requestTimeout / 1000,
+          },
+        });
+      }
+      
+      // OpenAI Agent
+      if (aiConfig.openai?.enabled) {
+        activeAgents.push({
+          id: 'openai-1',
+          name: 'OpenAI Assistant',
+          provider: 'openai',
+          status: 'idle',
+          currentTask: 'Standby',
+          uptime: '0h 0m',
+          requestsToday: 0,
+          avgResponseTime: 0,
+          successRate: 100,
+          errorCount: 0,
+          lastActivity: 'Ready',
+          memoryUsage: 12,
+          cpuUsage: 3,
+          configuration: {
+            model: aiConfig.openai.model,
+            temperature: aiConfig.settings.temperature,
+            maxTokens: aiConfig.settings.maxTokens,
+            timeout: aiConfig.settings.requestTimeout / 1000,
+          },
+        });
+      }
+      
+      // Gemini Agent
+      if (aiConfig.gemini?.enabled) {
+        activeAgents.push({
+          id: 'gemini-1',
+          name: 'Gemini Research Agent',
+          provider: 'gemini',
+          status: 'idle',
+          currentTask: 'Standby',
+          uptime: '0h 0m',
+          requestsToday: 0,
+          avgResponseTime: 0,
+          successRate: 100,
+          errorCount: 0,
+          lastActivity: 'Ready',
+          memoryUsage: 10,
+          cpuUsage: 2,
+          configuration: {
+            model: aiConfig.gemini.model,
+            temperature: aiConfig.settings.temperature,
+            maxTokens: aiConfig.settings.maxTokens,
+            timeout: aiConfig.settings.requestTimeout / 1000,
+          },
+        });
+      }
+      
+      setAgents(activeAgents);
+    } catch (error) {
+      console.error('Failed to load agent data:', error);
+      // フォールバック：設定されていない場合は空配列
+      setAgents([]);
+    }
   };
 
-  const loadTaskData = () => {
-    // Mock task data
-    const mockTasks: Task[] = [
-      {
-        id: 'task-1',
-        type: 'code_generation',
-        description: 'Generate React component for user profile',
-        agentId: 'openai-1',
-        status: 'completed',
-        startTime: '10:30 AM',
-        endTime: '10:32 AM',
-        duration: 2.3,
-        cost: 0.0234,
-        tokens: 1250,
-      },
-      {
-        id: 'task-2',
-        type: 'strategic_analysis',
-        description: 'Analyze market trends for Q1 strategy',
-        agentId: 'claude-1',
-        status: 'running',
-        startTime: '10:45 AM',
-        cost: 0.0156,
-        tokens: 890,
-      },
-      {
-        id: 'task-3',
-        type: 'deployment',
-        description: 'Deploy infrastructure to production',
-        agentId: 'gemini-1',
-        status: 'pending',
-        startTime: '',
-        cost: 0,
-        tokens: 0,
-      },
-    ];
-    
-    setTasks(mockTasks);
+  const loadTaskData = async () => {
+    try {
+      // 実際のタスクデータを取得（実装予定）
+      // const response = await fetch('http://localhost:8000/api/tasks');
+      // const tasksData = await response.json();
+      
+      // 現在は空の配列を設定（実際のタスクが実行されると更新される）
+      setTasks([]);
+    } catch (error) {
+      console.error('Failed to load task data:', error);
+      setTasks([]);
+    }
   };
 
-  const updateRealTimeData = () => {
-    // リアルタイムデータ更新をシミュレート
-    setAgents(prev => prev.map(agent => ({
-      ...agent,
-      requestsToday: agent.requestsToday + Math.floor(Math.random() * 3),
-      avgResponseTime: Math.max(1, agent.avgResponseTime + (Math.random() - 0.5) * 0.2),
-      memoryUsage: Math.max(10, Math.min(80, agent.memoryUsage + (Math.random() - 0.5) * 5)),
-      cpuUsage: Math.max(5, Math.min(60, agent.cpuUsage + (Math.random() - 0.5) * 8)),
-    })));
+  const updateRealTimeData = async () => {
+    try {
+      // 実際のエージェント統計を取得
+      const response = await fetch('http://localhost:8000/api/ai/stats');
+      if (response.ok) {
+        const stats = await response.json();
+        // 実際の統計データでエージェント情報を更新
+        setAgents(prev => prev.map(agent => ({
+          ...agent,
+          requestsToday: stats[agent.provider]?.requestsToday || agent.requestsToday,
+          avgResponseTime: stats[agent.provider]?.avgResponseTime || agent.avgResponseTime,
+          successRate: stats[agent.provider]?.successRate || agent.successRate,
+          errorCount: stats[agent.provider]?.errorCount || agent.errorCount,
+          lastActivity: stats[agent.provider]?.lastActivity || agent.lastActivity,
+        })));
+      }
+    } catch (error) {
+      console.log('Stats API not available yet, keeping current values');
+      // APIが未実装の場合は値を変更しない
+    }
   };
 
   const handleAgentToggle = (agentId: string, newStatus: 'active' | 'stopped') => {
@@ -279,9 +284,16 @@ const AgentMonitoring: React.FC = () => {
   };
 
   const openConfigDialog = (agent: AgentStatus) => {
+    console.log('📝 openConfigDialog called with agent:', agent.name);
+    console.log('📝 Agent configuration:', agent.configuration);
+    console.log('📝 Setting selectedAgent to:', agent.id);
+    console.log('📝 Setting configDialogOpen to true');
+    
     setSelectedAgent(agent.id);
     setTempConfig(agent.configuration);
     setConfigDialogOpen(true);
+    
+    console.log('📝 Dialog state updated');
   };
 
   const getAgentIcon = (provider: string) => {
@@ -332,9 +344,10 @@ const AgentMonitoring: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+    <>
+      <Box sx={{ p: 3 }}>
+        {/* Header */}
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" component="h1">
           🤖 AI Agent Monitoring
         </Typography>
@@ -354,13 +367,35 @@ const AgentMonitoring: React.FC = () => {
       <Paper sx={{ mb: 3 }}>
         <Tabs
           value={tabValue}
-          onChange={(_, newValue) => setTabValue(newValue)}
+          onChange={(_, newValue) => {
+            console.log('Tab changed to:', newValue);
+            setTabValue(newValue);
+          }}
           sx={{ borderBottom: 1, borderColor: 'divider' }}
+          variant="fullWidth"
+          indicatorColor="primary"
+          textColor="primary"
         >
-          <Tab icon={<ClaudeIcon />} label="Agent Status" />
-          <Tab icon={<ChartIcon />} label="Task Queue" />
-          <Tab icon={<SpeedIcon />} label="Performance" />
-          <Tab icon={<SettingsIcon />} label="Configuration" />
+          <Tab 
+            icon={<ClaudeIcon />} 
+            label="エージェント状態" 
+            sx={{ minHeight: 72, fontSize: '0.875rem' }}
+          />
+          <Tab 
+            icon={<ChartIcon />} 
+            label="タスクキュー" 
+            sx={{ minHeight: 72, fontSize: '0.875rem' }}
+          />
+          <Tab 
+            icon={<SpeedIcon />} 
+            label="パフォーマンス" 
+            sx={{ minHeight: 72, fontSize: '0.875rem' }}
+          />
+          <Tab 
+            icon={<SettingsIcon />} 
+            label="設定" 
+            sx={{ minHeight: 72, fontSize: '0.875rem' }}
+          />
         </Tabs>
 
         {/* Agent Status Tab */}
@@ -452,7 +487,7 @@ const AgentMonitoring: React.FC = () => {
                     </Box>
                   </CardContent>
 
-                  <CardActions sx={{ justifyContent: 'space-between' }}>
+                  <CardActions sx={{ justifyContent: 'space-between', p: 2 }}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -465,12 +500,26 @@ const AgentMonitoring: React.FC = () => {
                       }
                       label={agent.status === 'active' ? 'Active' : 'Stopped'}
                     />
-                    <IconButton
-                      onClick={() => openConfigDialog(agent)}
-                      color="primary"
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<TuneIcon />}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('🔧 Settings button clicked for agent:', agent.name);
+                        console.log('🔧 Agent ID:', agent.id);
+                        console.log('🔧 Opening config dialog...');
+                        openConfigDialog(agent);
+                      }}
+                      sx={{ 
+                        minWidth: 'auto',
+                        zIndex: 10,
+                        position: 'relative'
+                      }}
                     >
-                      <TuneIcon />
-                    </IconButton>
+                      Settings
+                    </Button>
                   </CardActions>
                 </Card>
               </Grid>
@@ -573,8 +622,12 @@ const AgentMonitoring: React.FC = () => {
                     </Box>
                     <Button
                       size="small"
+                      variant="outlined"
                       startIcon={<SettingsIcon />}
-                      onClick={() => openConfigDialog(agent)}
+                      onClick={() => {
+                        console.log('Config button clicked for agent:', agent.name);
+                        openConfigDialog(agent);
+                      }}
                     >
                       Configure
                     </Button>
@@ -596,7 +649,16 @@ const AgentMonitoring: React.FC = () => {
       </Paper>
 
       {/* Configuration Dialog */}
-      <Dialog open={configDialogOpen} onClose={() => setConfigDialogOpen(false)} maxWidth="sm" fullWidth>
+      {console.log('🔧 Rendering Dialog with open:', configDialogOpen)}
+      <Dialog 
+        open={configDialogOpen} 
+        onClose={() => {
+          console.log('🔧 Dialog close called');
+          setConfigDialogOpen(false);
+        }} 
+        maxWidth="sm" 
+        fullWidth
+      >
         <DialogTitle>
           Agent Configuration
         </DialogTitle>
@@ -666,7 +728,8 @@ const AgentMonitoring: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+      </Box>
+    </>
   );
 };
 

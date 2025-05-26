@@ -4,14 +4,7 @@
  */
 
 import axios, { AxiosResponse } from 'axios';
-import apiService from './api';
-
-const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
-
-// Mock data - empty when in mock mode
-const mockStores: ShopifyStore[] = [];
-
-const mockProducts: ShopifyProduct[] = [];
+import { apiClient } from './apiClient';
 
 // ================================
 // Type Definitions
@@ -245,6 +238,34 @@ class ShopifyService {
   // ================================
 
   /**
+   * Test Shopify store connection
+   */
+  async testConnection(config: {
+    store_url: string;
+    store_id?: string;
+    api_key: string;
+    api_secret: string;
+    access_token: string;
+  }): Promise<{ success: boolean; message: string; store_info?: any }> {
+    const response = await apiClient.post(`${this.baseUrl}/stores/test-connection`, config);
+    return response.data;
+  }
+
+  /**
+   * Connect Shopify store with configuration
+   */
+  async connectStore(config: {
+    store_url: string;
+    store_id?: string;
+    api_key: string;
+    api_secret: string;
+    access_token: string;
+  }): Promise<{ success: boolean; message: string; store_id: string; store_data: any }> {
+    const response = await apiClient.post(`${this.baseUrl}/stores/connect`, config);
+    return response.data;
+  }
+
+  /**
    * Get OAuth URL to connect a new Shopify store
    */
   async getConnectUrl(shopDomain: string, redirectUrl?: string): Promise<{
@@ -252,7 +273,7 @@ class ShopifyService {
     state: string;
     shop: string;
   }> {
-    const response = await apiService.post(`${this.baseUrl}/stores/connect`, {
+    const response = await apiClient.post(`${this.baseUrl}/stores/connect`, {
       shop_domain: shopDomain,
       redirect_url: redirectUrl
     });
@@ -263,10 +284,7 @@ class ShopifyService {
    * Get list of connected Shopify stores
    */
   async getStores(): Promise<ShopifyStore[]> {
-    if (isMockMode) {
-      return Promise.resolve([]);
-    }
-    const response = await apiService.get(`${this.baseUrl}/stores`);
+    const response = await apiClient.get(`${this.baseUrl}/stores`);
     return response.data;
   }
 
@@ -274,7 +292,7 @@ class ShopifyService {
    * Disconnect a Shopify store
    */
   async disconnectStore(storeId: string): Promise<{ success: boolean; message: string }> {
-    const response = await apiService.delete(`${this.baseUrl}/stores/${storeId}`);
+    const response = await apiClient.delete(`${this.baseUrl}/stores/${storeId}`);
     return response.data;
   }
 
@@ -282,7 +300,7 @@ class ShopifyService {
    * Check health of store connection
    */
   async checkStoreHealth(storeId: string): Promise<any> {
-    const response = await apiService.get(`${this.baseUrl}/stores/${storeId}/health`);
+    const response = await apiClient.get(`${this.baseUrl}/stores/${storeId}/health`);
     return response.data;
   }
 
@@ -303,18 +321,6 @@ class ShopifyService {
       product_type?: string;
     } = {}
   ): Promise<PaginatedResponse<ShopifyProduct>> {
-    if (isMockMode) {
-      const limit = options.limit || 10;
-      return Promise.resolve({
-        items: [],
-        total_count: 0,
-        page: 1,
-        per_page: limit,
-        has_next: false,
-        has_previous: false,
-      });
-    }
-    
     const params = new URLSearchParams();
     
     if (options.limit) params.append('limit', options.limit.toString());
@@ -323,7 +329,7 @@ class ShopifyService {
     if (options.vendor) params.append('vendor', options.vendor);
     if (options.product_type) params.append('product_type', options.product_type);
 
-    const response = await apiService.get(
+    const response = await apiClient.get(
       `${this.baseUrl}/stores/${storeId}/products?${params.toString()}`
     );
     return response.data;
@@ -333,7 +339,7 @@ class ShopifyService {
    * Get a specific product
    */
   async getProduct(storeId: string, productId: number): Promise<ShopifyProduct> {
-    const response = await apiService.get(
+    const response = await apiClient.get(
       `${this.baseUrl}/stores/${storeId}/products/${productId}`
     );
     return response.data;
@@ -343,7 +349,7 @@ class ShopifyService {
    * Create a new product
    */
   async createProduct(storeId: string, product: Partial<ShopifyProduct>): Promise<ShopifyProduct> {
-    const response = await apiService.post(
+    const response = await apiClient.post(
       `${this.baseUrl}/stores/${storeId}/products`,
       product
     );
@@ -358,7 +364,7 @@ class ShopifyService {
     productId: number,
     updates: Partial<ShopifyProduct>
   ): Promise<ShopifyProduct> {
-    const response = await apiService.put(
+    const response = await apiClient.put(
       `${this.baseUrl}/stores/${storeId}/products/${productId}`,
       updates
     );
@@ -390,7 +396,7 @@ class ShopifyService {
     if (options.financial_status) params.append('financial_status', options.financial_status);
     if (options.fulfillment_status) params.append('fulfillment_status', options.fulfillment_status);
 
-    const response = await apiService.get(
+    const response = await apiClient.get(
       `${this.baseUrl}/stores/${storeId}/orders?${params.toString()}`
     );
     return response.data;
@@ -400,7 +406,7 @@ class ShopifyService {
    * Get a specific order
    */
   async getOrder(storeId: string, orderId: number): Promise<ShopifyOrder> {
-    const response = await apiService.get(
+    const response = await apiClient.get(
       `${this.baseUrl}/stores/${storeId}/orders/${orderId}`
     );
     return response.data;
@@ -425,7 +431,7 @@ class ShopifyService {
     if (options.limit) params.append('limit', options.limit.toString());
     if (options.page_info) params.append('page_info', options.page_info);
 
-    const response = await apiService.get(
+    const response = await apiClient.get(
       `${this.baseUrl}/stores/${storeId}/customers?${params.toString()}`
     );
     return response.data;
@@ -444,7 +450,7 @@ class ShopifyService {
     fullSync: boolean = false,
     customFilters: Record<string, any> = {}
   ): Promise<{ success: boolean; operation_id: string; message: string }> {
-    const response = await apiService.post(`${this.baseUrl}/stores/${storeId}/sync`, {
+    const response = await apiClient.post(`${this.baseUrl}/stores/${storeId}/sync`, {
       entity_type: entityType,
       full_sync: fullSync,
       custom_filters: customFilters
@@ -456,20 +462,7 @@ class ShopifyService {
    * Get synchronization status
    */
   async getSyncStatus(storeId: string): Promise<SyncStatus> {
-    if (isMockMode) {
-      return Promise.resolve({
-        store_id: storeId,
-        last_sync: undefined,
-        sync_in_progress: false,
-        next_scheduled_sync: undefined,
-        products_synced: 0,
-        orders_synced: 0,
-        customers_synced: 0,
-        webhook_status: 'inactive',
-        api_health: 'unknown',
-      });
-    }
-    const response = await apiService.get(`${this.baseUrl}/stores/${storeId}/sync/status`);
+    const response = await apiClient.get(`${this.baseUrl}/stores/${storeId}/sync/status`);
     return response.data;
   }
 
@@ -484,7 +477,7 @@ class ShopifyService {
     storeId: string,
     forceReregister: boolean = false
   ): Promise<{ success: boolean; registered_webhooks: number; webhooks: any[] }> {
-    const response = await apiService.post(`${this.baseUrl}/stores/${storeId}/webhooks/register`, {
+    const response = await apiClient.post(`${this.baseUrl}/stores/${storeId}/webhooks/register`, {
       force_reregister: forceReregister
     });
     return response.data;
@@ -494,7 +487,7 @@ class ShopifyService {
    * Get webhook status
    */
   async getWebhookStatus(storeId: string): Promise<WebhookStatus> {
-    const response = await apiService.get(`${this.baseUrl}/stores/${storeId}/webhooks/status`);
+    const response = await apiClient.get(`${this.baseUrl}/stores/${storeId}/webhooks/status`);
     return response.data;
   }
 
@@ -506,7 +499,7 @@ class ShopifyService {
    * Get store analytics summary
    */
   async getStoreAnalytics(storeId: string, period: '7d' | '30d' | '90d' = '30d'): Promise<any> {
-    const response = await apiService.get(
+    const response = await apiClient.get(
       `${this.baseUrl}/stores/${storeId}/analytics?period=${period}`
     );
     return response.data;
@@ -520,7 +513,7 @@ class ShopifyService {
       ? `${this.baseUrl}/stores/${storeId}/products/${productId}/metrics`
       : `${this.baseUrl}/stores/${storeId}/products/metrics`;
     
-    const response = await apiService.get(url);
+    const response = await apiClient.get(url);
     return response.data;
   }
 
@@ -528,7 +521,7 @@ class ShopifyService {
    * Get inventory insights
    */
   async getInventoryInsights(storeId: string): Promise<any> {
-    const response = await apiService.get(`${this.baseUrl}/stores/${storeId}/inventory/insights`);
+    const response = await apiClient.get(`${this.baseUrl}/stores/${storeId}/inventory/insights`);
     return response.data;
   }
 
@@ -543,7 +536,7 @@ class ShopifyService {
     storeId: string,
     updates: Array<{ id: number; updates: Partial<ShopifyProduct> }>
   ): Promise<{ success: boolean; results: any[] }> {
-    const response = await apiService.post(
+    const response = await apiClient.post(
       `${this.baseUrl}/stores/${storeId}/products/bulk-update`,
       { updates }
     );
@@ -559,7 +552,7 @@ class ShopifyService {
     format: 'csv' | 'json' = 'csv',
     filters: Record<string, any> = {}
   ): Promise<{ download_url: string; expires_at: string }> {
-    const response = await apiService.post(
+    const response = await apiClient.post(
       `${this.baseUrl}/stores/${storeId}/export`,
       {
         entity_type: entityType,
@@ -578,7 +571,7 @@ class ShopifyService {
    * Retry failed operations
    */
   async retryFailedOperations(storeId: string): Promise<{ success: boolean; retry_count: number }> {
-    const response = await apiService.post(`${this.baseUrl}/stores/${storeId}/retry-failed`);
+    const response = await apiClient.post(`${this.baseUrl}/stores/${storeId}/retry-failed`);
     return response.data;
   }
 
@@ -601,7 +594,7 @@ class ShopifyService {
     if (options.level) params.append('level', options.level);
     if (options.operation_type) params.append('operation_type', options.operation_type);
 
-    const response = await apiService.get(
+    const response = await apiClient.get(
       `${this.baseUrl}/stores/${storeId}/logs?${params.toString()}`
     );
     return response.data;

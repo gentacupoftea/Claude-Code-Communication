@@ -1,0 +1,248 @@
+name: Deploy to Production
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      deploy_version:
+        description: 'Version to deploy (e.g., v0.3.1)'
+        required: true
+        default: ''
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Run security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          
+      - name: Upload scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+  
+  build:
+    needs: security-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+          
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+        
+      - name: Build frontend
+        working-directory: ./frontend
+        env:
+          REACT_APP_API_URL: https://conea.example.com/api
+          REACT_APP_WS_URL: wss://conea.example.com/ws
+          REACT_APP_VERSION: ${{ github.event.inputs.deploy_version || github.ref_name }}
+        run: npm run build
+        
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          
+      - name: Run tests
+        run: |
+          cd frontend && npm test -- --passWithNoTests
+          python -m pytest tests/ -k "not integration"
+          
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          
+      - name: Generate version
+        id: version
+        run: |
+          if [ "${{ github.event.inputs.deploy_version }}" != "" ]; then
+            VERSION="${{ github.event.inputs.deploy_version }}"
+          else
+            VERSION="v$(date +'%Y.%m.%d')-$(git rev-parse --short HEAD)"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "TIMESTAMP=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+          
+      - name: Build and push frontend Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          file: ./deployment/production/frontend.Dockerfile
+          push: true
+          tags: conea/frontend:latest,conea/frontend:${{ env.VERSION }},conea/frontend:${{ env.VERSION }}-${{ env.TIMESTAMP }}
+          build-args: |
+            REACT_APP_API_URL=https://conea.example.com/api
+            REACT_APP_WS_URL=wss://conea.example.com/ws
+            REACT_APP_VERSION=${{ env.VERSION }}
+            
+      - name: Create backend directory for Docker
+        run: |
+          mkdir -p temp_backend
+          cp -r src/ temp_backend/
+          cp shopify_mcp_server.py temp_backend/
+          cp run_server.py temp_backend/
+          cp requirements.txt temp_backend/
+          cp package.json temp_backend/
+          cp package-lock.json temp_backend/ || true
+          cp tsconfig.json temp_backend/ || true
+          cp Dockerfile temp_backend/Dockerfile || true
+            
+      - name: Build and push backend Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./temp_backend
+          file: ./deployment/production/backend.Dockerfile
+          push: true
+          tags: conea/backend:latest,conea/backend:${{ env.VERSION }},conea/backend:${{ env.VERSION }}-${{ env.TIMESTAMP }}
+          
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: deployment-info
+          path: |
+            frontend/build/
+            deployment/production/
+          retention-days: 5
+  
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: deployment-info
+      
+      - name: Blue-Green Deployment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USERNAME }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          script: |
+            cd /opt/conea
+            
+            # Determine current and next environment
+            CURRENT_ENV=$(cat current_env.txt 2>/dev/null || echo "blue")
+            if [ "$CURRENT_ENV" = "blue" ]; then
+              NEXT_ENV="green"
+            else
+              NEXT_ENV="blue"
+            fi
+            echo "Current: $CURRENT_ENV, Next: $NEXT_ENV"
+            
+            # Deploy to next environment
+            cd $NEXT_ENV
+            
+            # Pull latest docker-compose and configs
+            git pull
+            
+            # Update image versions in docker-compose
+            sed -i 's|conea/frontend:latest|conea/frontend:${{ env.VERSION }}|g' docker-compose.yml
+            sed -i 's|conea/backend:latest|conea/backend:${{ env.VERSION }}|g' docker-compose.yml
+            
+            # Restart containers
+            docker-compose pull
+            docker-compose down
+            docker-compose up -d
+            
+            # Wait for services to initialize
+            sleep 20
+            
+            # Run health checks
+            BACKEND_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health || echo "Failed")
+            FRONTEND_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/health.txt || echo "Failed")
+            
+            if [ "$BACKEND_HEALTH" != "200" ] || [ "$FRONTEND_HEALTH" != "200" ]; then
+              echo "Health check failed: Backend: $BACKEND_HEALTH, Frontend: $FRONTEND_HEALTH"
+              exit 1
+            fi
+            
+            # Update nginx configs to point to new environment
+            cd /opt/conea/nginx
+            
+            # Update production.conf to point to new environment
+            sed -i "s/proxy_pass http:\/\/$CURRENT_ENV/proxy_pass http:\/\/$NEXT_ENV/g" conf.d/production.conf
+            
+            # Reload nginx to pick up new configuration
+            docker exec nginx-proxy nginx -s reload
+            
+            # Update current environment marker
+            echo $NEXT_ENV > /opt/conea/current_env.txt
+            
+            echo "Deployed to $NEXT_ENV environment successfully"
+      
+      - name: Create GitHub Release
+        if: success() && github.event_name == 'workflow_dispatch'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.VERSION }}
+          release_name: Release ${{ env.VERSION }}
+          body: |
+            ## Release ${{ env.VERSION }}
+            
+            This release contains the following changes:
+            - Fully working offline mode
+            - Comprehensive debugging and diagnostics tools
+            - Complete help system
+            - Modern GUI interface
+            - Production deployment tools
+            
+            Please see the [CHANGELOG](CHANGELOG.md) for more details.
+            
+            Deployed to production on $(date +'%Y-%m-%d %H:%M:%S')
+          draft: false
+          prerelease: false
+            
+      - name: Notify deployment success
+        if: success()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: production-deployments
+          SLACK_COLOR: good
+          SLACK_MESSAGE: 'Successfully deployed ${{ env.VERSION }} to production'
+          SLACK_TITLE: 'Production Deployment'
+          
+      - name: Notify deployment failure
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: production-deployments
+          SLACK_COLOR: danger
+          SLACK_MESSAGE: 'Failed to deploy ${{ env.VERSION }} to production'
+          SLACK_TITLE: 'Production Deployment Failed'

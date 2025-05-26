@@ -12,7 +12,6 @@ from urllib.parse import urljoin, urlencode
 from decimal import Decimal
 
 import aiohttp
-import asyncio
 from aiohttp import ClientSession, ClientTimeout, ClientError
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
@@ -21,7 +20,8 @@ from .models import (
     ShopifyStoreConnection, ShopifyAPIResponse, PaginatedResponse,
     SyncStatus, WebhookEvent
 )
-from ..cache.cache_manager import CacheManager
+# TODO: Implement cache_manager
+# from ..cache.cache_manager import CacheManager
 from ..utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -60,13 +60,13 @@ class ShopifyClient:
     def __init__(
         self,
         store_connection: ShopifyStoreConnection,
-        cache_manager: Optional[CacheManager] = None,
+        cache_manager: Optional[Any] = None,  # TODO: Type properly when CacheManager is implemented
         max_retries: int = 3,
         timeout: int = 30,
         rate_limit_buffer: float = 0.5
     ):
         self.store_connection = store_connection
-        self.cache_manager = cache_manager or CacheManager()
+        self.cache_manager = cache_manager  # TODO: or default cache implementation
         self.max_retries = max_retries
         self.timeout = ClientTimeout(total=timeout)
         self.rate_limit_buffer = rate_limit_buffer

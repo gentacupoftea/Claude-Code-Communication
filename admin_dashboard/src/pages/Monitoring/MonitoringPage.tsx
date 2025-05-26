@@ -152,6 +152,7 @@ const agentConfigs = {
 };
 
 const MonitoringPage: React.FC = () => {
+  console.log('📊 MonitoringPage component loaded');
   const { addNotification } = useDashboard();
   
   // State Management
@@ -168,42 +169,12 @@ const MonitoringPage: React.FC = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
-  // WebSocket Connection Management
+  // WebSocket Connection Management (DISABLED)
   const connectWebSocket = useCallback(() => {
-    try {
-      const ws = new WebSocket('ws://localhost:8080/monitoring');
-      
-      ws.onopen = () => {
-        setIsConnected(true);
-        console.log('WebSocket connected');
-      };
-      
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        handleWebSocketMessage(data);
-      };
-      
-      ws.onclose = () => {
-        setIsConnected(false);
-        console.log('WebSocket disconnected');
-        
-        // Attempt to reconnect after 3 seconds
-        if (autoRefresh) {
-          setTimeout(connectWebSocket, 3000);
-        }
-      };
-      
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setIsConnected(false);
-      };
-      
-      wsRef.current = ws;
-    } catch (error) {
-      console.error('Failed to connect WebSocket:', error);
-      setIsConnected(false);
-    }
-  }, [autoRefresh]);
+    // WebSocket connection disabled to prevent console errors
+    console.log('WebSocket connection disabled');
+    return;
+  }, []);
 
   // Handle WebSocket Messages
   const handleWebSocketMessage = useCallback((data: any) => {
@@ -257,20 +228,11 @@ const MonitoringPage: React.FC = () => {
     }
   }, [addNotification, soundEnabled]);
 
-  // Initialize Mock Data and WebSocket
+  // Initialize Mock Data (WebSocket disabled)
   useEffect(() => {
     initializeMockData();
-    
-    if (autoRefresh) {
-      connectWebSocket();
-    }
-    
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
-  }, [autoRefresh, connectWebSocket]);
+    // WebSocket connection disabled
+  }, []);
 
   // Auto-scroll chat to bottom
   useEffect(() => {
@@ -459,11 +421,9 @@ const MonitoringPage: React.FC = () => {
   };
 
   const refreshData = () => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'request_refresh' }));
-    } else {
-      initializeMockData();
-    }
+    console.log('🔄 Refresh button clicked');
+    // WebSocket disabled, just refresh mock data
+    initializeMockData();
   };
 
   // Render Agent Status Card
@@ -488,7 +448,13 @@ const MonitoringPage: React.FC = () => {
               />
             </Box>
             <Badge color="error" badgeContent={agent.errorCount} showZero={false}>
-              <IconButton size="small">
+              <IconButton 
+                size="small"
+                onClick={() => {
+                  console.log('🔧 Settings clicked for agent:', agent.name);
+                  alert(`Settings for ${agent.name} - This feature will be implemented soon!`);
+                }}
+              >
                 <Settings />
               </IconButton>
             </Badge>
@@ -689,7 +655,6 @@ const MonitoringPage: React.FC = () => {
             variant="outlined"
             startIcon={<Refresh />}
             onClick={refreshData}
-            disabled={!isConnected}
           >
             Refresh
           </Button>

@@ -5,7 +5,7 @@
  * データを収集するためのサービスを提供します。
  */
 
-import type { Environment } from '../config/environments';
+type Environment = 'development' | 'production' | 'staging';
 
 // 初期化状態を追跡
 let isInitialized = false;

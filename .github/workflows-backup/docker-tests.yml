@@ -1,0 +1,73 @@
+name: Docker Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Copy .env.example to .env
+      run: cp docker-test/.env.example docker-test/.env
+    
+    - name: Build and run tests
+      run: |
+        cd docker-test
+        docker-compose build
+        docker-compose run test-app all
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results
+        path: test-results/
+    
+    - name: Clean up
+      run: |
+        cd docker-test
+        docker-compose down -v
+      if: always()
+
+  test-types:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test-type: [unit, integration, e2e]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Copy .env.example to .env
+      run: cp docker-test/.env.example docker-test/.env
+    
+    - name: Build and run ${{ matrix.test-type }} tests
+      run: |
+        cd docker-test
+        docker-compose build
+        docker-compose run test-app ${{ matrix.test-type }}
+    
+    - name: Upload ${{ matrix.test-type }} test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: ${{ matrix.test-type }}-test-results
+        path: test-results/
+    
+    - name: Clean up
+      run: |
+        cd docker-test
+        docker-compose down -v
+      if: always()

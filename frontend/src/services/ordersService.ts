@@ -2,7 +2,7 @@
  * 注文関連サービス
  */
 import api from './api';
-import { Order, PaginationParams, FilterParams, APIResponse } from '@/types';
+import { Order, PaginationParams, FilterParams, APIResponse } from '../types';
 
 const isMockMode = process.env.REACT_APP_USE_MOCK_AUTH === 'true';
 

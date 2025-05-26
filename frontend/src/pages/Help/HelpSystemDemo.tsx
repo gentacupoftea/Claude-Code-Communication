@@ -22,8 +22,8 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemIcon,
-  ListItemButton
+  ListItemButton,
+  ListItemIcon
 } from '@mui/material';
 import {
   Help as HelpIcon,

@@ -52,8 +52,8 @@ const UserProfile: React.FC<UserProfileProps> = ({
   
   // Get initials for avatar when no image is available
   const getInitials = () => {
-    if (!user.name) return 'U';
-    return user.name
+    if (!user.full_name) return 'U';
+    return user.full_name
       .split(' ')
       .map(part => part[0])
       .join('')
@@ -120,7 +120,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
           
           <Box ml={3}>
             <Typography variant="h5" gutterBottom>
-              {user.name || 'User'}
+              {user.full_name || 'User'}
             </Typography>
             
             <Stack direction="row" spacing={1} alignItems="center">
@@ -184,7 +184,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
                     最終ログイン
                   </Typography>
                   <Typography variant="body1">
-                    {formatDate(user.lastLogin)}
+                    {formatDate(user.last_login)}
                   </Typography>
                 </Box>
               </Stack>

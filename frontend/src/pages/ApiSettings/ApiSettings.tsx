@@ -511,6 +511,14 @@ const ApiSettingsComponent: React.FC = () => {
                   }}
                 />
               </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="ストアID"
+                  placeholder="store-123"
+                  helperText="Shopifyストアの一意識別子"
+                />
+              </Grid>
             </Grid>
             <Box sx={{ mt: 2 }}>
               <Button

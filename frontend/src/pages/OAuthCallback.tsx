@@ -53,7 +53,7 @@ export const OAuthCallback: React.FC = () => {
           
           await oauthService.authenticate({
             code,
-            state: state || undefined,
+            state: state || '',
             provider: stateData.channelType || 'unknown',
             redirectUri: `${window.location.origin}/oauth/callback`
           });

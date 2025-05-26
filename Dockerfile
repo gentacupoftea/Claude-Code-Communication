@@ -1,72 +1,41 @@
-# Multi-stage build for Shopify MCP Server
+FROM python:3.12-slim
 
-# Backend build stage
-FROM python:3.9-slim as backend-builder
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PORT=8000
 
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     gcc \
-    g++ \
-    libpq-dev \
+    python3-dev \
+    build-essential \
+    curl \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
+# Install Python dependencies
+COPY requirements.txt ./
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
-
-# Frontend build stage
-FROM node:16-alpine as frontend-builder
-
-WORKDIR /app/frontend
-
-# Copy package files
-COPY frontend/package*.json ./
-
-# Install dependencies
-RUN npm ci --legacy-peer-deps
-
-# Copy frontend source
-COPY frontend/ .
-
-# Build frontend
-RUN npm run build
-
-# Final stage
-FROM python:3.9-slim
-
-WORKDIR /app
-
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
-    libpq5 \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy Python dependencies from builder
-COPY --from=backend-builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
-COPY --from=backend-builder /usr/local/bin /usr/local/bin
 
 # Copy application code
 COPY . .
 
-# Copy built frontend
-COPY --from=frontend-builder /app/frontend/build ./frontend/build
-
-# Create non-root user
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app
-
+# Create non-root user for security
+RUN groupadd -r appuser && useradd --no-log-init -r -g appuser appuser
+RUN chown -R appuser:appuser /app
 USER appuser
 
 # Expose port
-EXPOSE 8000
+EXPOSE $PORT
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+HEALTHCHECK --interval=30s --timeout=30s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:$PORT/health || exit 1
 
 # Run the application
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "simple_fastapi_server.py"]

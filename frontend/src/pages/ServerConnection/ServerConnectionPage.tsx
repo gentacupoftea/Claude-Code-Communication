@@ -5,19 +5,19 @@ import { useConnectionContext } from '../../contexts/ConnectionContext';
 import { useNavigate } from 'react-router-dom';
 
 const ServerConnectionPage: React.FC = () => {
-  const { isConnected, connectionDetails, lastError } = useConnectionContext();
+  const { isOnline, connectionQuality } = useConnectionContext();
   const navigate = useNavigate();
   
   // Redirect to dashboard if already connected
   useEffect(() => {
-    if (isConnected) {
+    if (isOnline) {
       const timer = setTimeout(() => {
         navigate('/dashboard');
       }, 2000);
       
       return () => clearTimeout(timer);
     }
-  }, [isConnected, navigate]);
+  }, [isOnline, navigate]);
   
   return (
     <Container maxWidth="lg">
@@ -32,7 +32,7 @@ const ServerConnectionPage: React.FC = () => {
         
         <Divider sx={{ my: 3 }} />
         
-        {isConnected && (
+        {isOnline && (
           <Alert severity="success" sx={{ mb: 3 }}>
             Successfully connected to MCP Server. Redirecting to dashboard...
           </Alert>
@@ -74,45 +74,6 @@ const ServerConnectionPage: React.FC = () => {
             <ConnectionForm />
           </Grid>
         </Grid>
-        
-        {connectionDetails.serverInfo && (
-          <Paper sx={{ mt: 4, p: 3 }} variant="outlined">
-            <Typography variant="h6" gutterBottom>
-              Server Details
-            </Typography>
-            
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Version
-                </Typography>
-                <Typography variant="body2">
-                  {connectionDetails.serverVersion}
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Environment
-                </Typography>
-                <Typography variant="body2">
-                  {connectionDetails.serverInfo.environment || 'Not specified'}
-                </Typography>
-              </Grid>
-              
-              {connectionDetails.serverInfo.features && (
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Available Features
-                  </Typography>
-                  <Typography variant="body2">
-                    {Object.keys(connectionDetails.serverInfo.features).join(', ')}
-                  </Typography>
-                </Grid>
-              )}
-            </Grid>
-          </Paper>
-        )}
       </Box>
     </Container>
   );

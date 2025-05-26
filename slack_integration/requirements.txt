@@ -1,18 +1,8 @@
-# Slack Bot 依存関係
-slack-bolt==1.18.0
-slack-sdk==3.27.0
+# Slack Integration Requirements
+slack-bolt==1.18.1
+slack-sdk==3.27.1
 python-dotenv==1.0.0
-aiohttp==3.9.1
 
-# MultiLLM システム依存関係
-openai==1.12.0
-anthropic==0.18.1
-google-generativeai==0.3.2
-
-# 監視とロギング
-psutil==5.9.8
-structlog==24.1.0
-
-# ユーティリティ
-pydantic==2.5.3
-tenacity==8.2.3
+# 既存のMultiLLMシステム依存関係
+asyncio-throttle==1.0.2
+httpx==0.27.0

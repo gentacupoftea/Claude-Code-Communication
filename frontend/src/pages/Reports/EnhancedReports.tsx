@@ -792,9 +792,9 @@ const EnhancedReportsPage: React.FC = () => {
                 start: new Date('2024-01-01'),
                 end: new Date('2024-01-31'),
               }}
-              insights={insights}
-              keyMetrics={keyMetrics}
-              topSegments={topSegments}
+              insights={insights as any}
+              keyMetrics={keyMetrics as any}
+              topSegments={topSegments as any}
               onExport={() => console.log('Exporting analytics summary')}
               onInsightPin={(id) => console.log('Pinning insight', id)}
             />

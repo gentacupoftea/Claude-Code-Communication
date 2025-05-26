@@ -1,31 +1,40 @@
 /**
  * 認証済みルートを保護するコンポーネント
  */
-import React, { useEffect } from 'react';
-import { Navigate, useLocation, Outlet } from 'react-router-dom';
-import { useAuth } from '../../contexts/MockAuthContext';
+import React from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { Box, CircularProgress } from '@mui/material';
 
 interface AuthGuardProps {
+  children: React.ReactNode;
   requireAuth?: boolean; // true: 認証が必要, false: 非認証用ルート（ログイン済みならリダイレクト）
   requiredPermissions?: string[]; // 必要な権限（配列）
 }
 
 export const AuthGuard: React.FC<AuthGuardProps> = ({
+  children,
   requireAuth = true,
   requiredPermissions = []
 }) => {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
+  const isAuthenticated = !!user;
 
   // ローディング中
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary-600"></div>
-          <p className="text-gray-500">読み込み中...</p>
-        </div>
-      </div>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column',
+        gap: 2
+      }}>
+        <CircularProgress />
+        <Box sx={{ color: 'text.secondary' }}>読み込み中...</Box>
+      </Box>
     );
   }
 
@@ -53,8 +62,8 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
     return <Navigate to="/forbidden" replace />;
   }
 
-  // 条件を満たす場合はルートコンテンツを表示
-  return <Outlet />;
+  // 条件を満たす場合はコンテンツを表示
+  return <>{children}</>;
 };
 
 export default AuthGuard;

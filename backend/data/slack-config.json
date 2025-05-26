@@ -1,0 +1,5 @@
+{
+  "bot_token": "実際のBot User OAuth Tokenをここに入力",
+  "signing_secret": "実際のSigning Secretをここに入力", 
+  "app_token": "実際のApp Tokenをここに入力"
+}

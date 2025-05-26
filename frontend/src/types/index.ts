@@ -5,21 +5,8 @@
 // ECプラットフォーム種別
 export type ECPlatform = 'shopify' | 'rakuten' | 'amazon' | 'yahoo' | 'base' | 'mercari';
 
-// ユーザー認証
-export interface User {
-  id: string;
-  email: string;
-  full_name?: string;
-  is_active: boolean;
-  is_superuser: boolean;
-  created_at: string;
-  last_login?: string;
-  // Frontend-specific fields (stored separately)
-  role?: 'admin' | 'manager' | 'user' | 'viewer';
-  language?: 'ja' | 'en';
-  theme?: 'light' | 'dark';
-  permissions?: string[];
-}
+// ユーザー認証を auth.ts から再エクスポート
+export type { User } from './auth';
 
 // API認証設定
 export interface APIConfig {
@@ -68,8 +55,6 @@ export interface Order {
   totalAmount: number;
   currency: string;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded';
-  fulfillmentStatus?: 'unfulfilled' | 'partial' | 'fulfilled';
   shippingMethod?: string;
   trackingNumber?: string;
   createdAt: Date;
@@ -78,11 +63,8 @@ export interface Order {
 
 // 注文商品
 export interface OrderItem {
-  id?: string;
   productId: string;
-  name?: string;  // alias for title
-  title?: string;
-  sku?: string;
+  title: string;
   quantity: number;
   price: number;
   discount?: number;
@@ -137,8 +119,8 @@ export interface ChartData {
   datasets: {
     label: string;
     data: number[];
-    backgroundColor?: string | string[];
-    borderColor?: string | string[];
+    backgroundColor?: string;
+    borderColor?: string;
     type?: 'line' | 'bar' | 'pie' | 'doughnut';
   }[];
 }

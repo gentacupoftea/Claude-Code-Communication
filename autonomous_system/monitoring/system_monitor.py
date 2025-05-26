@@ -7,7 +7,6 @@ import asyncio
 import logging
 import json
 import os
-import psutil
 import time
 from typing import Dict, Any, List, Optional, Callable
 from datetime import datetime, timedelta
@@ -15,6 +14,22 @@ from dataclasses import dataclass, asdict
 from collections import deque
 import subprocess
 import socket
+import warnings
+
+# Optional imports with graceful fallbacks
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
+    warnings.warn("psutil not available - system monitoring will be limited", UserWarning)
+
+try:
+    import aiohttp
+    AIOHTTP_AVAILABLE = True
+except ImportError:
+    AIOHTTP_AVAILABLE = False
+    warnings.warn("aiohttp not available - HTTP health checks will be disabled", UserWarning)
 
 @dataclass
 class SystemMetrics:
@@ -132,44 +147,77 @@ class SystemMonitor:
     
     async def _get_current_metrics(self) -> SystemMetrics:
         """現在のシステムメトリクス取得"""
-        # CPU情報
-        cpu_percent = psutil.cpu_percent(interval=0.1)
+        if not PSUTIL_AVAILABLE:
+            # Fallback metrics when psutil is not available
+            return SystemMetrics(
+                timestamp=datetime.now(),
+                cpu_percent=0.0,
+                memory_percent=0.0,
+                memory_available_gb=0.0,
+                disk_percent=0.0,
+                disk_free_gb=0.0,
+                network_bytes_sent=0,
+                network_bytes_recv=0,
+                process_count=0,
+                load_average_1m=0.0,
+                uptime_hours=0.0
+            )
         
-        # メモリ情報
-        memory = psutil.virtual_memory()
-        
-        # ディスク情報
-        disk = psutil.disk_usage('/')
-        
-        # ネットワーク情報
-        network = psutil.net_io_counters()
-        
-        # プロセス情報
-        process_count = len(psutil.pids())
-        
-        # 負荷平均（Unixのみ）
         try:
-            load_avg = os.getloadavg()[0]
-        except:
-            load_avg = 0.0
-        
-        # アップタイム
-        boot_time = psutil.boot_time()
-        uptime_hours = (time.time() - boot_time) / 3600
-        
-        return SystemMetrics(
-            timestamp=datetime.now(),
-            cpu_percent=cpu_percent,
-            memory_percent=memory.percent,
-            memory_available_gb=memory.available / (1024**3),
-            disk_percent=(disk.used / disk.total) * 100,
-            disk_free_gb=disk.free / (1024**3),
-            network_bytes_sent=network.bytes_sent,
-            network_bytes_recv=network.bytes_recv,
-            process_count=process_count,
-            load_average_1m=load_avg,
-            uptime_hours=uptime_hours
-        )
+            # CPU情報
+            cpu_percent = psutil.cpu_percent(interval=0.1)
+            
+            # メモリ情報
+            memory = psutil.virtual_memory()
+            
+            # ディスク情報
+            disk = psutil.disk_usage('/')
+            
+            # ネットワーク情報
+            network = psutil.net_io_counters()
+            
+            # プロセス情報
+            process_count = len(psutil.pids())
+            
+            # 負荷平均（Unixのみ）
+            try:
+                load_avg = os.getloadavg()[0]
+            except:
+                load_avg = 0.0
+            
+            # アップタイム
+            boot_time = psutil.boot_time()
+            uptime_hours = (time.time() - boot_time) / 3600
+            
+            return SystemMetrics(
+                timestamp=datetime.now(),
+                cpu_percent=cpu_percent,
+                memory_percent=memory.percent,
+                memory_available_gb=memory.available / (1024**3),
+                disk_percent=(disk.used / disk.total) * 100,
+                disk_free_gb=disk.free / (1024**3),
+                network_bytes_sent=network.bytes_sent,
+                network_bytes_recv=network.bytes_recv,
+                process_count=process_count,
+                load_average_1m=load_avg,
+                uptime_hours=uptime_hours
+            )
+        except Exception as e:
+            self.logger.error(f"Error collecting system metrics: {e}")
+            # Return zero metrics on error
+            return SystemMetrics(
+                timestamp=datetime.now(),
+                cpu_percent=0.0,
+                memory_percent=0.0,
+                memory_available_gb=0.0,
+                disk_percent=0.0,
+                disk_free_gb=0.0,
+                network_bytes_sent=0,
+                network_bytes_recv=0,
+                process_count=0,
+                load_average_1m=0.0,
+                uptime_hours=0.0
+            )
     
     async def _check_metric_alerts(self, metrics: SystemMetrics):
         """メトリクスアラートチェック"""
@@ -267,21 +315,30 @@ class SystemMonitor:
         
         return status
     
-    def _find_service_process(self, pattern: str) -> Optional[psutil.Process]:
+    def _find_service_process(self, pattern: str) -> Optional['psutil.Process']:
         """サービスプロセス検索"""
-        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-            try:
-                cmdline = ' '.join(proc.info['cmdline'] or [])
-                if pattern.lower() in cmdline.lower():
-                    return psutil.Process(proc.info['pid'])
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                continue
+        if not PSUTIL_AVAILABLE:
+            return None
+            
+        try:
+            for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+                try:
+                    cmdline = ' '.join(proc.info['cmdline'] or [])
+                    if pattern.lower() in cmdline.lower():
+                        return psutil.Process(proc.info['pid'])
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+        except Exception as e:
+            self.logger.error(f"Error finding service process: {e}")
         return None
     
     async def _perform_health_check(self, url: str) -> str:
         """ヘルスチェック実行"""
+        if not AIOHTTP_AVAILABLE:
+            self.logger.warning("aiohttp not available - skipping HTTP health check")
+            return 'unknown'
+            
         try:
-            import aiohttp
             timeout = aiohttp.ClientTimeout(total=5)
             
             async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -579,26 +636,37 @@ class SystemMonitor:
                     'release': os.uname().release,
                     'machine': os.uname().machine
                 },
-                'cpu': {
-                    'count': psutil.cpu_count(),
-                    'count_logical': psutil.cpu_count(logical=True),
-                    'frequency_mhz': psutil.cpu_freq().current if psutil.cpu_freq() else 0
-                },
-                'memory': {
-                    'total_gb': psutil.virtual_memory().total / (1024**3),
-                    'total_swap_gb': psutil.swap_memory().total / (1024**3)
-                },
-                'disk': {
-                    'total_gb': psutil.disk_usage('/').total / (1024**3)
-                },
-                'network': {
-                    'interfaces': list(psutil.net_if_addrs().keys())
-                },
                 'python': {
                     'version': os.sys.version,
                     'executable': os.sys.executable
                 }
             }
+            
+            # Add psutil-dependent info if available
+            if PSUTIL_AVAILABLE:
+                try:
+                    system_info.update({
+                        'cpu': {
+                            'count': psutil.cpu_count(),
+                            'count_logical': psutil.cpu_count(logical=True),
+                            'frequency_mhz': psutil.cpu_freq().current if psutil.cpu_freq() else 0
+                        },
+                        'memory': {
+                            'total_gb': psutil.virtual_memory().total / (1024**3),
+                            'total_swap_gb': psutil.swap_memory().total / (1024**3)
+                        },
+                        'disk': {
+                            'total_gb': psutil.disk_usage('/').total / (1024**3)
+                        },
+                        'network': {
+                            'interfaces': list(psutil.net_if_addrs().keys())
+                        }
+                    })
+                except Exception as e:
+                    self.logger.warning(f"Error collecting psutil system info: {e}")
+                    system_info['psutil_error'] = str(e)
+            else:
+                system_info['psutil_available'] = False
             
             self.system_info_cache = system_info
             self.cache_timestamp = now
