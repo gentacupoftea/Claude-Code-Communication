@@ -127,7 +127,7 @@ jobs:
         python -m pytest tests/e2e -v --html=e2e-report.html
         
     - name: Upload E2E report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: e2e-report-${{ github.run_id }}

@@ -126,7 +126,7 @@ jobs:
           tags: conea/backend:latest,conea/backend:${{ env.VERSION }},conea/backend:${{ env.VERSION }}-${{ env.TIMESTAMP }}
           
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: deployment-info
           path: |
@@ -140,7 +140,7 @@ jobs:
     environment: production
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: deployment-info
       

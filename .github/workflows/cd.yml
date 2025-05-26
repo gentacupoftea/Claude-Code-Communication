@@ -41,7 +41,7 @@ jobs:
           outputs: type=docker,dest=/tmp/shopify-mcp-server.tar
           
       - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: docker-image
           path: /tmp/shopify-mcp-server.tar
@@ -54,7 +54,7 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Download Docker image
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: docker-image
           path: /tmp
@@ -84,7 +84,7 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Download Docker image
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: docker-image
           path: /tmp
@@ -155,7 +155,7 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Download Docker image
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: docker-image
           path: /tmp

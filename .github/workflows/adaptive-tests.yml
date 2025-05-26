@@ -65,7 +65,7 @@ jobs:
       run: python run_adaptive_tests.py
     
     - name: Upload test report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: test-report-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.dependency-level }}
         path: |
@@ -74,7 +74,7 @@ jobs:
     
     - name: Upload coverage report
       if: matrix.dependency-level == 'full'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
         path: htmlcov/
@@ -84,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
     
     - name: Generate summary report
       run: |

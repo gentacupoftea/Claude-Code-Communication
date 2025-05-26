@@ -49,7 +49,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Upload PR inventory as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: pr-inventory
           path: pr_inventory.json
@@ -100,7 +100,7 @@ jobs:
           echo "dependency_data=$(echo $DEPS | jq -c .)" >> $GITHUB_OUTPUT
       
       - name: Upload analysis results as artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: pr-analysis-results
           path: |
@@ -134,7 +134,7 @@ jobs:
           python scripts/pr_stats.py --input '${{ needs.pr-inventory.outputs.pr_data }}' --output-dir ./pr_stats
       
       - name: Upload statistics as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: pr-statistics
           path: ./pr_stats
@@ -162,7 +162,7 @@ jobs:
           pip install -r scripts/requirements.txt
       
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
       
       - name: Generate triage report
         run: |
@@ -175,7 +175,7 @@ jobs:
             --output-file triage_report.md
       
       - name: Upload triage report as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: triage-report
           path: |
