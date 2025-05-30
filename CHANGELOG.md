@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2025-05-30
+
+### 🎉 Major Release
+
+This is a major release that includes breaking changes and new features.
+
+### Added
+- 楽天API統合機能
+- RAGシステムによるAI商品説明生成
+- ペルソナ分析サービス
+- Docker Compose環境
+- Google Cloud Run対応
+- 包括的なテストスイート
+
+### Changed
+- プロジェクト名をShopify MCP ServerからConea Integration Platformに変更
+- バックエンドアーキテクチャの全面リファクタリング
+- フロントエンドUIの刷新
+- APIエンドポイントの再設計
+
+### Fixed
+- TypeScript型定義エラー
+- Docker環境の安定性向上
+- 認証フローの改善
+
+### Breaking Changes
+- APIエンドポイントのパス変更
+- 環境変数名の変更
+- データベーススキーマの更新
+
+### Migration Guide
+詳細な移行ガイドは `docs/MIGRATION_GUIDE.md` を参照してください。
+
+## [1.1.0] - 2025-05-26
+- 初期リリース
+- Shopify基本統合機能
+
 ## [0.3.0] - 2025-05-31
 
 > 🔄 **Name Change**: With this release, we begin transitioning from "Shopify MCP Server" to our new name "Conea". Documentation has been updated to reflect this change, with full code migration coming in v0.3.1 and v0.3.2. See our [Rename Migration Plan](docs/RENAME_MIGRATION.md) for details.
