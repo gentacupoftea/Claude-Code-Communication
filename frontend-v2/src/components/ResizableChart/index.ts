@@ -1,1 +1,0 @@
-export { ResizableChart, default } from './ResizableChart';
