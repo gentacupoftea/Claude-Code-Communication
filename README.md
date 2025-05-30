@@ -259,3 +259,48 @@ MIT License - 詳細は [LICENSE](LICENSE) ファイルを参照
 ---
 
 *Powered by Conea AI Platform - 2024*
+## Frontend (Next.js)
+
+新しいNext.jsベースのフロントエンドアプリケーション。
+
+### 開発環境のセットアップ
+
+\\n
+開発サーバーが http://localhost:3001 で起動します。
+
+### ビルドとデプロイ
+
+\\n
+### Firebase Hostingへのデプロイ
+
+\\
+
+## Frontend (Next.js)
+
+新しいNext.jsベースのフロントエンドアプリケーション。
+
+### 開発環境のセットアップ
+
+```bash
+cd frontend-next
+npm install
+npm run dev
+```
+
+開発サーバーが http://localhost:3001 で起動します。
+
+### ビルドとデプロイ
+
+```bash
+cd frontend-next
+npm run build
+```
+
+### Firebase Hostingへのデプロイ
+
+```bash
+cd frontend-next
+npm run build
+firebase deploy --only hosting
+```
+EOF < /dev/null
