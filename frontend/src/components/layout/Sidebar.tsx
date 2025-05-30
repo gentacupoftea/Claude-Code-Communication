@@ -29,6 +29,7 @@ import {
   Notifications as BellIcon,
   Science as BeakerIcon,
   Help as HelpIcon,
+  Psychology as PsychologyIcon,
 } from '@mui/icons-material';
 
 interface NavItem {
@@ -47,6 +48,7 @@ const navigation: NavItem[] = [
   { name: 'Dashboard', path: '/dashboard', icon: HomeIcon },
   { name: 'Analytics', path: '/analytics', icon: ChartBarIcon },
   { name: 'AI Chat Space', path: '/chat', icon: CpuChipIcon },
+  { name: 'Persona Analysis', path: '/persona-analysis', icon: PsychologyIcon },
   { name: 'Orders', path: '/orders', icon: ShoppingBagIcon },
   { name: 'Customers', path: '/customers', icon: UserGroupIcon },
   { name: 'Products', path: '/products', icon: ShoppingBagIcon },
