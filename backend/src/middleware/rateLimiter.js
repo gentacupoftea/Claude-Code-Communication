@@ -7,8 +7,22 @@
  */
 
 const rateLimit = require('express-rate-limit');
-const RedisStore = require('rate-limit-redis');
 const Redis = require('ioredis');
+
+// Rate-limit-redis v4対応のためのインポート修正
+let RedisStore;
+try {
+  // v4では異なるインポート方法を使用
+  const { RedisStore: RLRedisStore } = require('rate-limit-redis');
+  RedisStore = RLRedisStore;
+} catch (error) {
+  try {
+    RedisStore = require('rate-limit-redis').default || require('rate-limit-redis');
+  } catch (secondError) {
+    console.warn('rate-limit-redis not available, using memory store for rate limiting');
+    RedisStore = null;
+  }
+}
 
 // Redis client for rate limiting
 const redisClient = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
@@ -16,8 +30,8 @@ const redisClient = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : n
 // Shopify API rate limiter
 const shopifyRateLimiter = rateLimit({
   // Use Redis store if available, otherwise use memory store
-  store: redisClient ? new RedisStore({
-    client: redisClient,
+  store: (redisClient && RedisStore) ? new RedisStore({
+    sendCommand: (...args) => redisClient.call(...args),
     prefix: 'shopify-api-rl:',
   }) : undefined,
   
@@ -60,8 +74,8 @@ const shopifyRateLimiter = rateLimit({
 
 // Burst limiter (40 requests per minute)
 const shopifyBurstLimiter = rateLimit({
-  store: redisClient ? new RedisStore({
-    client: redisClient,
+  store: (redisClient && RedisStore) ? new RedisStore({
+    sendCommand: (...args) => redisClient.call(...args),
     prefix: 'shopify-burst-rl:',
   }) : undefined,
   windowMs: 60 * 1000, // 1 minute

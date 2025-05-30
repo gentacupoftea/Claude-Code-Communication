@@ -182,8 +182,12 @@ app.get('/api/health', (req, res) => {
 app.get('/api/models', async (req, res) => {
   try {
     const models = aiService.getAvailableModels();
+    const status = aiService.getProviderStatus();
+    
     res.json({
       models: models,
+      availableProviders: aiService.getAvailableProviders(),
+      providerStatus: status,
       providers: {
         openai: ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo'],
         anthropic: ['claude-3-haiku-20240307', 'claude-3-sonnet-20240229', 'claude-3-opus-20240229'],
@@ -194,7 +198,29 @@ app.get('/api/models', async (req, res) => {
     log(`Error fetching models: ${error.message}`, 'ERROR');
     res.status(500).json({ 
       error: 'Failed to fetch models',
-      models: ['gpt-3.5-turbo']
+      models: [],
+      availableProviders: [],
+      providerStatus: {}
+    });
+  }
+});
+
+// プロバイダー状態確認エンドポイント
+app.get('/api/providers/status', async (req, res) => {
+  try {
+    const status = aiService.getProviderStatus();
+    res.json({
+      status: status,
+      available: aiService.getAvailableProviders(),
+      models: aiService.getAvailableModels()
+    });
+  } catch (error) {
+    log(`Error getting provider status: ${error.message}`, 'ERROR');
+    res.status(500).json({ 
+      error: 'Failed to get provider status',
+      status: {},
+      available: [],
+      models: []
     });
   }
 });
@@ -429,6 +455,18 @@ try {
   log('Shopify routes loaded');
 } catch (error) {
   console.warn('Failed to load Shopify routes:', error.message);
+  // Shopifyが利用できない場合のフォールバックエンドポイント
+  app.get('/api/shopify/*', (req, res) => {
+    res.status(503).json({
+      error: 'Shopify service unavailable',
+      message: 'Shopify integration is currently disabled due to configuration issues',
+      troubleshooting: {
+        checkDependencies: 'Ensure rate-limit-redis is properly installed',
+        checkRedis: 'Verify Redis connection settings',
+        checkConfig: 'Review Shopify API configuration'
+      }
+    });
+  });
 }
 
 try {
