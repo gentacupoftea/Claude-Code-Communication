@@ -31,6 +31,11 @@ export default function RootLayout({
       >
         <AuthProvider>
           {children}
+          <ConnectionStatusIndicator 
+            position="bottom-right"
+            theme="auto"
+            refreshInterval={30000}
+          />
         </AuthProvider>
       </body>
     </html>
