@@ -34,6 +34,16 @@ const { BetaAnalyticsDataClient } = require('@google-analytics/data');
 // conea-stagingからの機能
 const AIService = require('./lib/ai-service');
 
+// セキュリティミドルウェア
+const { 
+  basicValidation, 
+  validateField, 
+  validateEmail, 
+  validateJSON, 
+  validateApiKey,
+  limitArrayLength 
+} = require('./src/middleware/validation');
+
 // ファイルアップロード設定
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -138,6 +148,12 @@ app.use(express.json({
     }
   }
 }));
+
+// URL-encoded data parser
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// 基本的な入力値検証ミドルウェア（全エンドポイントに適用）
+app.use(basicValidation);
 
 // セキュアなSocket.IOセットアップ
 const server = http.createServer(app);

@@ -7,6 +7,9 @@
       "hosting": {
         "staging-conea-ai": [
           "staging-conea-ai"
+        ],
+        "stagingapp": [
+          "stagingapp-conea-ai"
         ]
       }
     }

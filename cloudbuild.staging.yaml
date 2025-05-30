@@ -88,9 +88,11 @@ steps:
 # ビルドオプション
 options:
   machineType: 'E2_HIGHCPU_8'
-  timeout: '1800s'
   diskSizeGb: 100
   logging: CLOUD_LOGGING_ONLY
+
+# タイムアウト設定
+timeout: '1800s'
 
 # 秘密情報の設定
 availableSecrets:
