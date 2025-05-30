@@ -1,5 +1,26 @@
 {
   "projects": {
-    "default": "conea-48fcf"
-  }
+    "default": "conea-service",
+    "staging": "conea-service"
+  },
+  "targets": {
+    "conea-service": {
+      "hosting": {
+        "production": [
+          "conea-service"
+        ],
+        "staging": [
+          "stagingapp-conea-ai"
+        ]
+      }
+    },
+    "conea-48fcf": {
+      "hosting": {
+        "staging": [
+          "stagingapp-conea-ai"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

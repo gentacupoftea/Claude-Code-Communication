@@ -1,41 +1,53 @@
-FROM python:3.12-slim
-
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PORT=8000
+# Multi-stage build for production optimization
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    gcc \
-    python3-dev \
-    build-essential \
-    curl \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Copy package files
+COPY package*.json ./
+COPY tsconfig.json ./
 
-# Install Python dependencies
-COPY requirements.txt ./
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# Install all dependencies (including dev for build)
+RUN npm ci
 
-# Copy application code
-COPY . .
+# Copy source code
+COPY src/ ./src/
 
-# Create non-root user for security
-RUN groupadd -r appuser && useradd --no-log-init -r -g appuser appuser
-RUN chown -R appuser:appuser /app
-USER appuser
+# Build the application
+RUN npm run build
 
-# Expose port
-EXPOSE $PORT
+# Production stage
+FROM node:18-alpine AS production
+
+# Security: Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S conea -u 1001
+
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src/knowledge ./dist/knowledge
+
+# Set correct ownership
+RUN chown -R conea:nodejs /app
+USER conea
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:$PORT/health || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
 
-# Run the application
-CMD ["python", "simple_fastapi_server.py"]
+# Expose port
+EXPOSE 3000
+
+# Start the application
+CMD ["node", "dist/server.js"]

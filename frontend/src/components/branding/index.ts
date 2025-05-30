@@ -1,1 +1,0 @@
-export { ConeaLogo } from './ConeaLogo';

@@ -1,0 +1,243 @@
+{
+  "conversion_rates": {
+    "overall_average": 2.86,
+    "by_industry": {
+      "fashion": 2.44,
+      "electronics": 1.95,
+      "home_garden": 3.12,
+      "health_beauty": 3.49,
+      "food_beverage": 4.95,
+      "sports_outdoor": 2.35,
+      "toys_hobbies": 2.78,
+      "books_media": 3.67,
+      "automotive": 1.55,
+      "b2b": 2.23
+    },
+    "by_device": {
+      "desktop": 3.71,
+      "mobile": 2.25,
+      "tablet": 3.44
+    },
+    "by_traffic_source": {
+      "organic_search": 3.43,
+      "paid_search": 2.88,
+      "social_media": 1.81,
+      "email": 4.29,
+      "direct": 3.96,
+      "referral": 2.65
+    }
+  },
+  "average_order_values": {
+    "overall_average": 128,
+    "by_industry": {
+      "fashion": 95,
+      "electronics": 278,
+      "home_garden": 198,
+      "health_beauty": 76,
+      "food_beverage": 65,
+      "sports_outdoor": 124,
+      "toys_hobbies": 87,
+      "books_media": 45,
+      "automotive": 385,
+      "b2b": 488
+    },
+    "by_customer_type": {
+      "new_customer": 102,
+      "returning_customer": 168,
+      "vip_customer": 385
+    }
+  },
+  "cart_abandonment_rates": {
+    "overall_average": 69.99,
+    "by_industry": {
+      "fashion": 68.3,
+      "electronics": 72.2,
+      "home_garden": 67.8,
+      "health_beauty": 64.2,
+      "food_beverage": 58.6,
+      "sports_outdoor": 71.5,
+      "toys_hobbies": 69.4,
+      "books_media": 66.1,
+      "automotive": 76.8,
+      "b2b": 73.3
+    },
+    "abandonment_reasons": {
+      "unexpected_costs": 48,
+      "account_creation_required": 24,
+      "complicated_checkout": 18,
+      "payment_security_concerns": 17,
+      "delivery_too_slow": 16,
+      "return_policy": 12,
+      "payment_options": 9,
+      "technical_errors": 6
+    }
+  },
+  "customer_retention": {
+    "repeat_purchase_rates": {
+      "overall_average": 27,
+      "by_industry": {
+        "fashion": 24,
+        "electronics": 19,
+        "home_garden": 29,
+        "health_beauty": 37,
+        "food_beverage": 43,
+        "sports_outdoor": 21,
+        "toys_hobbies": 25,
+        "books_media": 31,
+        "automotive": 15,
+        "b2b": 36
+      }
+    },
+    "customer_lifetime_values": {
+      "overall_average": 398,
+      "by_industry": {
+        "fashion": 285,
+        "electronics": 523,
+        "home_garden": 456,
+        "health_beauty": 342,
+        "food_beverage": 367,
+        "sports_outdoor": 298,
+        "toys_hobbies": 234,
+        "books_media": 189,
+        "automotive": 892,
+        "b2b": 1245
+      }
+    }
+  },
+  "marketing_metrics": {
+    "email_marketing": {
+      "open_rate": 15.22,
+      "click_through_rate": 2.19,
+      "conversion_rate": 1.33,
+      "unsubscribe_rate": 0.27,
+      "roi": 42
+    },
+    "social_media": {
+      "engagement_rates": {
+        "facebook": 1.91,
+        "instagram": 3.21,
+        "twitter": 0.86,
+        "pinterest": 2.45,
+        "tiktok": 5.96
+      },
+      "conversion_rates": {
+        "facebook": 1.85,
+        "instagram": 1.08,
+        "twitter": 0.77,
+        "pinterest": 2.93,
+        "tiktok": 1.53
+      }
+    },
+    "paid_advertising": {
+      "google_ads": {
+        "average_cpc": 1.16,
+        "average_ctr": 3.17,
+        "average_conversion_rate": 3.75,
+        "average_roas": 2.87
+      },
+      "facebook_ads": {
+        "average_cpm": 7.19,
+        "average_ctr": 1.51,
+        "average_conversion_rate": 2.89,
+        "average_roas": 2.64
+      }
+    }
+  },
+  "operational_metrics": {
+    "fulfillment": {
+      "average_shipping_time": 3.5,
+      "on_time_delivery_rate": 94.3,
+      "order_accuracy_rate": 97.8,
+      "shipping_cost_percentage": 8.2
+    },
+    "returns": {
+      "return_rate": {
+        "overall_average": 9.6,
+        "by_industry": {
+          "fashion": 12.2,
+          "electronics": 8.5,
+          "home_garden": 7.3,
+          "health_beauty": 5.4,
+          "food_beverage": 2.1,
+          "sports_outdoor": 9.8,
+          "toys_hobbies": 6.7,
+          "books_media": 4.2,
+          "automotive": 10.5,
+          "b2b": 6.9
+        }
+      },
+      "average_return_processing_time": 5.3,
+      "return_cost_percentage": 2.4
+    },
+    "customer_service": {
+      "average_response_time": {
+        "email": 24,
+        "chat": 0.75,
+        "phone": 2.5,
+        "social_media": 6
+      },
+      "first_contact_resolution_rate": 78.5,
+      "customer_satisfaction_score": 4.2
+    }
+  },
+  "technology_adoption": {
+    "features_adoption_rate": {
+      "mobile_app": 42,
+      "ar_try_on": 18,
+      "voice_search": 12,
+      "chatbot": 67,
+      "personalization": 74,
+      "subscription_model": 23,
+      "social_commerce": 31,
+      "live_shopping": 9
+    },
+    "payment_methods": {
+      "credit_card": 42,
+      "debit_card": 28,
+      "digital_wallet": 24,
+      "buy_now_pay_later": 11,
+      "bank_transfer": 8,
+      "cryptocurrency": 2
+    }
+  },
+  "seasonality_patterns": {
+    "peak_seasons": {
+      "black_friday_cyber_monday": {
+        "sales_increase": 189,
+        "traffic_increase": 156,
+        "conversion_rate_change": 23
+      },
+      "holiday_season": {
+        "sales_increase": 142,
+        "traffic_increase": 118,
+        "conversion_rate_change": 15
+      },
+      "back_to_school": {
+        "sales_increase": 67,
+        "traffic_increase": 54,
+        "conversion_rate_change": 8
+      },
+      "prime_day": {
+        "sales_increase": 98,
+        "traffic_increase": 87,
+        "conversion_rate_change": 12
+      }
+    }
+  },
+  "growth_benchmarks": {
+    "year_over_year_growth": {
+      "revenue": 15.8,
+      "orders": 12.3,
+      "new_customers": 18.7,
+      "average_order_value": 3.2
+    },
+    "market_share_leaders": {
+      "amazon": 37.8,
+      "walmart": 6.3,
+      "apple": 3.9,
+      "ebay": 3.5,
+      "target": 2.1,
+      "others": 46.4
+    }
+  }
+}

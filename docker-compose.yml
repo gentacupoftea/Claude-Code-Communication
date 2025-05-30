@@ -1,111 +1,121 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:13-alpine
-    container_name: conea_db
-    environment:
-      POSTGRES_USER: ${DB_USER:-conea_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-conea_pass}
-      POSTGRES_DB: ${DB_NAME:-conea}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-conea_user}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    container_name: conea_redis
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  backend:
+  conea-multillm:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: conea_backend
-    environment:
-      DATABASE_URL: postgresql://${DB_USER:-conea_user}:${DB_PASSWORD:-conea_pass}@postgres:5432/${DB_NAME:-conea}
-      REDIS_URL: redis://redis:6379/0
-      SECRET_KEY: ${SECRET_KEY:-your-secret-key-here}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
-      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      dockerfile: Dockerfile.dev
     ports:
-      - "8000:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    volumes:
-      - ./logs:/app/logs
-    command: >
-      sh -c "
-        alembic upgrade head &&
-        uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
-      "
-
-  persona-analysis:
-    build:
-      context: ./persona-analysis
-      dockerfile: Dockerfile
-    container_name: conea_persona_analysis
+      - "3000:3000"
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
-      PORT: 8002
-      REDIS_URL: redis://redis:6379/0
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      GOOGLE_APPLICATION_CREDENTIALS: /app/service-account-key.json
-      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-here}
-    ports:
-      - "8002:8002"
+      - NODE_ENV=development
+      - PORT=3000
+      - HOST=0.0.0.0
+    env_file:
+      - .env
     depends_on:
-      redis:
-        condition: service_healthy
-    volumes:
-      - ./persona-analysis/logs:/app/logs
-      - ./persona-analysis/reports:/app/reports
-      - ${GOOGLE_APPLICATION_CREDENTIALS:-./service-account-key.json}:/app/service-account-key.json:ro
+      - redis
+      - postgres
+    restart: unless-stopped
+    networks:
+      - conea-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8002/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - conea-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: conea
+      POSTGRES_USER: conea
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-conea123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    restart: unless-stopped
+    networks:
+      - conea-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U conea -d conea"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   nginx:
     image: nginx:alpine
-    container_name: conea_nginx
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./frontend/build:/usr/share/nginx/html:ro
     ports:
       - "80:80"
       - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
     depends_on:
-      - backend
-      - persona-analysis
+      - conea-multillm
+    restart: unless-stopped
+    networks:
+      - conea-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    networks:
+      - conea-network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - conea-network
 
 volumes:
+  redis_data:
   postgres_data:
+  prometheus_data:
+  grafana_data:
 
 networks:
-  default:
-    name: conea_network
+  conea-network:
+    driver: bridge

@@ -13,7 +13,8 @@ import {
   LinearProgress,
   Chip,
   IconButton,
-  Tooltip
+  Tooltip,
+  Button
 } from '@mui/material';
 import {
   BarChart,
@@ -34,6 +35,8 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import SpeedIcon from '@mui/icons-material/Speed';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import { DashboardList } from '../../../frontend/src/features/dashboard/components/DashboardList/DashboardList';
 
 interface AnalyticsDashboardProps {
   apiEndpoint?: string;
@@ -72,6 +75,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   const [conversationData, setConversationData] = useState<any>(null);
   const [taskData, setTaskData] = useState<any>(null);
   const [resourceData, setResourceData] = useState<any>(null);
+  const [showDashboardBuilder, setShowDashboardBuilder] = useState(false);
 
   const fetchAnalytics = async (type: string) => {
     setLoading(true);
@@ -132,6 +136,16 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     } else if (newValue === 2 && !resourceData) {
       fetchAnalytics('resources');
     }
+  };
+
+  const handleDashboardSelect = (dashboard: any) => {
+    // ダッシュボードが選択された時の処理
+    console.log('Selected dashboard:', dashboard);
+    // TODO: ダッシュボードビューアまたはエディターを開く
+  };
+
+  const handleCreateNew = () => {
+    setShowDashboardBuilder(true);
   };
 
   const handleRefresh = () => {
@@ -472,6 +486,11 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             icon={<TrendingUpIcon />} 
             iconPosition="start"
           />
+          <Tab 
+            label="ダッシュボード" 
+            icon={<DashboardIcon />} 
+            iconPosition="start"
+          />
         </Tabs>
         
         {loading ? (
@@ -488,6 +507,12 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             </TabPanel>
             <TabPanel value={tabValue} index={2}>
               {renderResourceAnalytics()}
+            </TabPanel>
+            <TabPanel value={tabValue} index={3}>
+              <DashboardList
+                onDashboardSelect={handleDashboardSelect}
+                onCreateNew={handleCreateNew}
+              />
             </TabPanel>
           </>
         )}

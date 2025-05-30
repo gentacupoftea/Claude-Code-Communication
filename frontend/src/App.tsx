@@ -1,144 +1,139 @@
-import React, { lazy, Suspense } from 'react';
-import { BrowserRouter } from 'react-router-dom';
+import React from 'react';
+import { Provider } from 'react-redux';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Provider } from 'react-redux';
-import { store } from './store';
-import { AuthProvider } from './contexts/AuthContext';
-import { ConnectionProvider } from './contexts/ConnectionContext';
-import { OfflineProvider } from './contexts/OfflineContext';
-import { NotificationProvider } from './contexts/NotificationContext';
-import './index.css';
+import { AppBar, Toolbar, Typography, Button, Container } from '@mui/material';
+import { DashboardBuilder, store } from './features/dashboard';
+import { MultiLLMProvider } from './features/multiLLM';
+import { DemoPage } from './features/dashboard/components/DemoPage';
+import { Login } from './pages/Login';
+import { Landing } from './pages/Landing';
+import LandingPage from './pages/LandingPage/LandingPage';
+import './App.css';
 
-// Lazy load routes for better performance
-const AppRoutes = lazy(() => import('./routes'));
-
-// Create a custom theme with Conea branding
 const theme = createTheme({
   palette: {
-    mode: 'light',
+    mode: 'dark',
     primary: {
-      main: '#34D399', // Teal/Emerald color
-      light: '#6EE7B7',
-      dark: '#10B981',
-      contrastText: '#FFFFFF',
+      main: '#00ff88',
+      light: '#66ffb2',
+      dark: '#00cc66',
     },
     secondary: {
-      main: '#14B8A6',
-      light: '#5EEAD4',
-      dark: '#0D9488',
-      contrastText: '#FFFFFF',
+      main: '#ff0088',
+      light: '#ff66b2',
+      dark: '#cc0066',
     },
     background: {
-      default: '#F9FAFB',
-      paper: '#FFFFFF',
+      default: '#0a0a0a',
+      paper: 'rgba(20, 20, 20, 0.8)',
     },
     text: {
-      primary: '#111827',
-      secondary: '#6B7280',
-    },
-    success: {
-      main: '#10B981',
-    },
-    error: {
-      main: '#EF4444',
-    },
-    warning: {
-      main: '#F59E0B',
-    },
-    info: {
-      main: '#3B82F6',
+      primary: '#ffffff',
+      secondary: 'rgba(255, 255, 255, 0.7)',
     },
   },
   typography: {
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
-    h1: {
-      fontWeight: 700,
-    },
-    h2: {
-      fontWeight: 700,
-    },
-    h3: {
-      fontWeight: 600,
-    },
-    h4: {
-      fontWeight: 600,
-    },
-    h5: {
-      fontWeight: 600,
-    },
-    h6: {
-      fontWeight: 600,
-    },
-  },
-  shape: {
-    borderRadius: 12,
+    fontFamily: '"Noto Sans JP", "Roboto", "Helvetica", "Arial", sans-serif',
   },
   components: {
-    MuiButton: {
+    MuiAppBar: {
       styleOverrides: {
         root: {
-          textTransform: 'none',
-          fontWeight: 600,
-          borderRadius: '9999px',
-          padding: '10px 24px',
+          background: 'linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(255, 0, 136, 0.1) 100%)',
+          backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         },
       },
     },
-    MuiCard: {
+    MuiPaper: {
       styleOverrides: {
         root: {
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-          borderRadius: 12,
+          background: 'rgba(20, 20, 20, 0.9)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
         },
       },
     },
   },
 });
 
-// Create a query client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 3,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
-    },
+// デモダッシュボードを作成
+const demoDashboard = {
+  id: 'demo-1',
+  name: 'Conea ビジネスダッシュボード',
+  description: 'AI駆動のビジネス分析ダッシュボード',
+  widgets: [],
+  layout: {
+    cols: 12,
+    rowHeight: 60,
+    margin: [10, 10] as [number, number],
+    containerPadding: [10, 10] as [number, number],
+    compactType: 'vertical' as const,
   },
-});
+  theme: {
+    primary: '#3498db',
+    secondary: '#2ecc71',
+    background: '#f5f6fa',
+    surface: '#ffffff',
+    text: '#2c3e50',
+    mode: 'light' as const,
+  },
+  filters: [],
+  created: new Date(),
+  updated: new Date(),
+  tags: ['demo', 'sales', 'analytics'],
+  isPublic: true,
+};
 
-// Loading fallback component
-const LoadingFallback = () => (
-  <div className="flex items-center justify-center min-h-screen bg-gray-50">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500 mx-auto"></div>
-      <p className="mt-4 text-gray-600">読み込み中...</p>
-    </div>
-  </div>
-);
+// ストアにデモダッシュボードを設定
+store.dispatch({
+  type: 'dashboard/setCurrentDashboard',
+  payload: demoDashboard,
+});
 
 function App() {
   return (
     <Provider store={store}>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <BrowserRouter>
-            <AuthProvider>
-              <ConnectionProvider>
-                <OfflineProvider>
-                  <NotificationProvider>
-                    <Suspense fallback={<LoadingFallback />}>
-                      <AppRoutes />
-                    </Suspense>
-                  </NotificationProvider>
-                </OfflineProvider>
-              </ConnectionProvider>
-            </AuthProvider>
-          </BrowserRouter>
-        </ThemeProvider>
-      </QueryClientProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Router>
+          <MultiLLMProvider>
+            <div className="App">
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/old-landing" element={<Landing />} />
+                <Route path="/login" element={<Login />} />
+                <Route 
+                  path="/dashboard" 
+                  element={
+                    <>
+                      <AppBar position="static" sx={{ mb: 4 }}>
+                        <Toolbar>
+                          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                            Conea Integration
+                          </Typography>
+                          <Button color="inherit" component={Link} to="/dashboard">
+                            Dashboard
+                          </Button>
+                          <Button color="inherit" component={Link} to="/demo">
+                            Components Demo
+                          </Button>
+                        </Toolbar>
+                      </AppBar>
+                      <Container maxWidth={false}>
+                        <DashboardBuilder />
+                      </Container>
+                    </>
+                  } 
+                />
+                <Route path="/demo" element={<DemoPage />} />
+              </Routes>
+            </div>
+          </MultiLLMProvider>
+        </Router>
+      </ThemeProvider>
     </Provider>
   );
 }

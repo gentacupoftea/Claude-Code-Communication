@@ -21,6 +21,7 @@ const HTTPS_PORT = process.env.HTTPS_PORT || 8443;
 app.use(cors());
 app.use(express.json());
 
+// API Routes
 // Shopify API Routes
 try {
   const shopifyRoutes = require('./src/routes/shopify');
@@ -29,6 +30,56 @@ try {
 } catch (error) {
   console.error('⚠️ Failed to load Shopify routes:', error.message);
 }
+
+// Google Analytics Routes
+try {
+  const googleAnalyticsRoutes = require('./src/routes/google-analytics.routes');
+  app.use('/api/google-analytics', googleAnalyticsRoutes);
+  console.log('✅ Google Analytics routes loaded');
+} catch (error) {
+  console.error('⚠️ Failed to load Google Analytics routes:', error.message);
+}
+
+// Search Console Routes
+try {
+  const searchConsoleRoutes = require('./src/routes/search-console.routes');
+  app.use('/api/search-console', searchConsoleRoutes);
+  console.log('✅ Search Console routes loaded');
+} catch (error) {
+  console.error('⚠️ Failed to load Search Console routes:', error.message);
+}
+
+// スマレジ Routes
+try {
+  const smaregiRoutes = require('./src/routes/smaregi.routes');
+  app.use('/api/smaregi', smaregiRoutes);
+  console.log('✅ スマレジ routes loaded');
+} catch (error) {
+  console.error('⚠️ Failed to load スマレジ routes:', error.message);
+}
+
+// 楽天 Routes
+try {
+  const rakutenRoutes = require('./src/routes/rakuten.routes');
+  app.use('/api/rakuten', rakutenRoutes);
+  console.log('✅ 楽天 routes loaded');
+} catch (error) {
+  console.error('⚠️ Failed to load 楽天 routes:', error.message);
+}
+
+// Analysis Routes (CSV処理など)
+try {
+  const analysisRoutes = require('./src/routes/analysis.routes');
+  app.use('/api/v2/analysis', analysisRoutes);
+  console.log('✅ Analysis routes loaded');
+} catch (error) {
+  console.error('⚠️ Failed to load Analysis routes:', error.message);
+}
+
+// BigQuery自動保存ミドルウェアを追加
+const BigQueryAutoSaveMiddleware = require('./src/middleware/bigquery-auto-save');
+const bigQueryAutoSave = new BigQueryAutoSaveMiddleware();
+app.use(bigQueryAutoSave.autoSaveMiddleware());
 
 // データファイルパス
 const DATA_DIR = path.join(__dirname, 'data');
@@ -3358,3 +3409,315 @@ app.get('/api/settings', async (req, res) => {
 });
 
 startServer();
+// ===== BigQuery統合 =====
+const BigQueryStorageService = require('./src/services/bigquery-storage.service');
+const bigQueryService = new BigQueryStorageService();
+
+// ===== ダッシュボードコンテキスト =====
+const DashboardContextService = require('./src/services/dashboard-context.service');
+const dashboardContext = new DashboardContextService();
+
+// AIチャート生成エンドポイント
+app.post('/api/charts/generate-ai', async (req, res) => {
+  try {
+    const { data, userQuery, context } = req.body;
+    
+    // LLMチャート生成機能の模擬実装
+    const generateAIChart = (data, query) => {
+      // データ分析
+      const fields = Object.keys(data[0] || {});
+      const numericFields = fields.filter(field => 
+        data.every(row => !isNaN(parseFloat(row[field])))
+      );
+      const timeFields = fields.filter(field => 
+        /date|time|年|月|日/.test(field.toLowerCase()) ||
+        data.some(row => row[field] && !isNaN(Date.parse(row[field])))
+      );
+      
+      // チャートタイプの自動判定
+      let chartType = 'bar';
+      let reasoning = 'データの特性を分析した結果、棒グラフが最適です';
+      
+      if (timeFields.length > 0) {
+        chartType = 'line';
+        reasoning = '時系列データが検出されたため、線グラフで推移を表示します';
+      } else if (query && query.includes('円グラフ')) {
+        chartType = 'pie';
+        reasoning = 'ユーザーの要求に基づき円グラフを選択しました';
+      } else if (numericFields.length >= 2) {
+        chartType = 'scatter';
+        reasoning = '複数の数値フィールドがあるため、散布図で相関を表示します';
+      }
+      
+      // データフォーマット
+      const labelField = timeFields[0] || fields[0];
+      const valueField = numericFields[0] || fields[1] || fields[0];
+      
+      let chartData;
+      
+      if (chartType === 'pie') {
+        const colors = [
+          'rgba(255, 99, 132, 0.8)',
+          'rgba(54, 162, 235, 0.8)',
+          'rgba(255, 205, 86, 0.8)',
+          'rgba(75, 192, 192, 0.8)',
+          'rgba(153, 102, 255, 0.8)'
+        ];
+        
+        chartData = {
+          labels: data.map(row => row[labelField]),
+          datasets: [{
+            data: data.map(row => parseFloat(row[valueField]) || 0),
+            backgroundColor: data.map((_, i) => colors[i % colors.length])
+          }]
+        };
+      } else if (chartType === 'scatter') {
+        chartData = {
+          datasets: [{
+            label: `${numericFields[0]} vs ${numericFields[1]}`,
+            data: data.map(row => ({
+              x: parseFloat(row[numericFields[0]]) || 0,
+              y: parseFloat(row[numericFields[1]]) || 0
+            })),
+            backgroundColor: 'rgba(54, 162, 235, 0.6)'
+          }]
+        };
+      } else {
+        chartData = {
+          labels: data.map(row => row[labelField]),
+          datasets: [{
+            label: valueField,
+            data: data.map(row => parseFloat(row[valueField]) || 0),
+            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+          }]
+        };
+      }
+      
+      return {
+        type: chartType,
+        title: `${valueField}の分析`,
+        data: chartData,
+        reasoning,
+        confidence: 0.85,
+        alternatives: [
+          { chartType: 'bar', reasoning: '棒グラフでの比較表示', confidence: 0.7 },
+          { chartType: 'line', reasoning: '線グラフでの推移表示', confidence: 0.6 }
+        ],
+        llmProvider: 'claude',
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top'
+            },
+            title: {
+              display: true,
+              text: `AI分析: ${valueField}の可視化`
+            }
+          }
+        }
+      };
+    };
+    
+    const result = generateAIChart(data, userQuery);
+    
+    res.json({
+      success: true,
+      ...result
+    });
+    
+  } catch (error) {
+    console.error('AI chart generation error:', error);
+    res.status(500).json({ 
+      error: 'AIチャート生成に失敗しました',
+      details: error.message 
+    });
+  }
+});
+
+// チャート保存エンドポイント
+app.post('/api/charts/save', async (req, res) => {
+  try {
+    const { queryData, chartData, aggregatedData } = req.body;
+    
+    // ユーザーIDを追加（実際の実装では認証から取得）
+    queryData.userId = req.headers['x-user-id'] || 'demo-user';
+    
+    const result = await bigQueryService.saveProcessedQuery(
+      queryData,
+      chartData,
+      aggregatedData
+    );
+    
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    console.error('チャート保存エラー:', error);
+    res.status(500).json({ error: 'Failed to save chart' });
+  }
+});
+
+// チャートをダッシュボードに追加
+app.post('/api/charts/:chartId/add-to-dashboard', async (req, res) => {
+  try {
+    const { chartId } = req.params;
+    const { dashboardId } = req.body;
+    const userId = req.headers['x-user-id'] || 'demo-user';
+    
+    const resultDashboardId = await bigQueryService.addChartToDashboard(
+      userId,
+      chartId,
+      dashboardId
+    );
+    
+    res.json({
+      success: true,
+      dashboardId: resultDashboardId
+    });
+  } catch (error) {
+    console.error('ダッシュボード追加エラー:', error);
+    res.status(500).json({ error: 'Failed to add to dashboard' });
+  }
+});
+
+// ダッシュボード読み込み
+app.get('/api/dashboards/:dashboardId?', async (req, res) => {
+  try {
+    const { dashboardId } = req.params;
+    const userId = req.headers['x-user-id'] || 'demo-user';
+    
+    const dashboard = await bigQueryService.loadDashboard(
+      userId,
+      dashboardId
+    );
+    
+    // ダッシュボードコンテキストの日付フィルターを適用
+    if (dashboard && dashboard.charts) {
+      dashboard.charts = dashboard.charts.map(chart => 
+        dashboardContext.filterChartData(dashboardId || 'default', chart)
+      );
+    }
+    
+    res.json({
+      success: true,
+      dashboard,
+      context: dashboardContext.getContext(dashboardId || 'default')
+    });
+  } catch (error) {
+    console.error('ダッシュボード読み込みエラー:', error);
+    res.status(500).json({ error: 'Failed to load dashboard' });
+  }
+});
+
+// BigQueryヘルスチェック
+app.get('/api/bigquery/health', async (req, res) => {
+  try {
+    const enabled = bigQueryService.enabled;
+    res.json({
+      success: true,
+      enabled,
+      message: enabled ? 'BigQuery is connected' : 'BigQuery is not configured'
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Health check failed' });
+  }
+});
+
+// ===== カレンダーモジュール連携 =====
+
+// カレンダーの日付範囲を設定
+app.post('/api/dashboards/:dashboardId/date-range', async (req, res) => {
+  try {
+    const { dashboardId } = req.params;
+    const { startDate, endDate } = req.body;
+    
+    // コンテキストに日付範囲を保存
+    dashboardContext.setDateRange(dashboardId, startDate, endDate);
+    
+    res.json({
+      success: true,
+      message: 'Date range updated',
+      dateRange: { startDate, endDate }
+    });
+  } catch (error) {
+    console.error('日付範囲設定エラー:', error);
+    res.status(500).json({ error: 'Failed to set date range' });
+  }
+});
+
+// 日付フィルターを適用したデータ取得
+app.post('/api/dashboards/:dashboardId/query', async (req, res) => {
+  try {
+    const { dashboardId } = req.params;
+    const { query, chartType = 'bar' } = req.body;
+    const userId = req.headers['x-user-id'] || 'demo-user';
+    
+    // ダッシュボードコンテキストから日付範囲を取得
+    const context = dashboardContext.getContext(dashboardId);
+    const { dateRange } = context;
+    
+    // 各APIにリクエストを送る際に日付フィルターを適用
+    const filteredQuery = dashboardContext.applyDateFilter(dashboardId, {
+      query,
+      userId
+    });
+    
+    // 集計期間を自動調整
+    const aggregationPeriod = dashboardContext.adjustAggregationPeriod(
+      dashboardId, 
+      'monthly' // デフォルト
+    );
+    
+    // ここで実際のAPIを呼び出す（例：Shopify、スマレジなど）
+    // この例では、モックデータを返す
+    const mockData = {
+      success: true,
+      data: generateMockDataWithDateFilter(dateRange, aggregationPeriod),
+      chartType,
+      dateFiltered: true,
+      dateRange,
+      aggregationPeriod
+    };
+    
+    res.json(mockData);
+  } catch (error) {
+    console.error('クエリ実行エラー:', error);
+    res.status(500).json({ error: 'Failed to execute query' });
+  }
+});
+
+// モックデータ生成（実際の実装では各APIから取得）
+function generateMockDataWithDateFilter(dateRange, period) {
+  if (!dateRange.start || !dateRange.end) {
+    return [];
+  }
+  
+  const data = [];
+  const start = new Date(dateRange.start);
+  const end = new Date(dateRange.end);
+  
+  if (period === 'daily') {
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      data.push({
+        date: d.toISOString().split('T')[0],
+        value: Math.floor(Math.random() * 10000) + 1000
+      });
+    }
+  } else if (period === 'monthly') {
+    const current = new Date(start);
+    while (current <= end) {
+      data.push({
+        month: current.toISOString().substring(0, 7),
+        value: Math.floor(Math.random() * 100000) + 10000
+      });
+      current.setMonth(current.getMonth() + 1);
+    }
+  }
+  
+  return data;
+}
+
