@@ -334,12 +334,52 @@ app.get('/api/providers/status', async (req, res) => {
 });
 
 // チャットメッセージ送信
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', 
+  limitArrayLength('messages', 50), // メッセージ数制限
+  async (req, res) => {
   try {
     const { messages, model = 'gpt-3.5-turbo', temperature = 0.7, max_tokens = 1000, system_prompt } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Messages array is required' });
+    }
+
+    // 各メッセージの内容長制限
+    for (const message of messages) {
+      if (message.content && message.content.length > 10000) {
+        return res.status(400).json({ 
+          error: 'Message content too long',
+          message: 'Each message content must be less than 10,000 characters'
+        });
+      }
+    }
+
+    // モデル名の検証
+    const allowedModels = [
+      'gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo',
+      'claude-3-haiku-20240307', 'claude-3-sonnet-20240229', 'claude-3-opus-20240229',
+      'gemini-1.5-flash', 'gemini-1.5-pro'
+    ];
+    if (!allowedModels.includes(model)) {
+      return res.status(400).json({ 
+        error: 'Invalid model',
+        message: 'Specified model is not supported'
+      });
+    }
+
+    // パラメータの範囲検証
+    if (temperature < 0 || temperature > 2) {
+      return res.status(400).json({ 
+        error: 'Invalid temperature',
+        message: 'Temperature must be between 0 and 2'
+      });
+    }
+
+    if (max_tokens < 1 || max_tokens > 4000) {
+      return res.status(400).json({ 
+        error: 'Invalid max_tokens',
+        message: 'max_tokens must be between 1 and 4000'
+      });
     }
 
     let chatMessages = [...messages];
@@ -438,9 +478,32 @@ app.get('/api/settings/apis', async (req, res) => {
   }
 });
 
-app.post('/api/settings/apis', async (req, res) => {
+app.post('/api/settings/apis', 
+  validateJSON('apiKeys', false), // オプショナルなJSON検証
+  async (req, res) => {
   try {
     const apiKeys = req.body;
+    
+    // APIキーオブジェクトの構造検証
+    if (!apiKeys || typeof apiKeys !== 'object') {
+      return res.status(400).json({ 
+        error: 'Invalid request body',
+        message: 'API keys must be provided as an object'
+      });
+    }
+
+    // 各サービスの設定を検証
+    const allowedServices = ['amazon', 'rakuten', 'shopify', 'nextengine'];
+    Object.keys(apiKeys).forEach(service => {
+      if (!allowedServices.includes(service)) {
+        return res.status(400).json({
+          error: 'Invalid service',
+          message: `Service '${service}' is not supported`,
+          allowedServices: allowedServices
+        });
+      }
+    });
+
     await fs.writeFile(API_KEYS_FILE, JSON.stringify(apiKeys, null, 2));
     log('API keys updated successfully');
     res.json({ success: true, message: 'API settings saved' });
@@ -501,9 +564,43 @@ app.get('/api/learning-data', async (req, res) => {
   }
 });
 
-app.post('/api/learning-data/upload', async (req, res) => {
+app.post('/api/learning-data/upload', 
+  validateField('fileName', 'filename', true), // ファイル名検証
+  async (req, res) => {
   try {
     const { fileName, fileSize, fileType, content } = req.body;
+    
+    // ファイルサイズ制限（100MB）
+    if (fileSize && fileSize > 100 * 1024 * 1024) {
+      return res.status(400).json({
+        error: 'File too large',
+        message: 'File size must be less than 100MB',
+        maxSize: '100MB'
+      });
+    }
+
+    // 許可されるファイルタイプ
+    const allowedTypes = [
+      'text/plain', 'text/csv', 'application/json', 'application/xml',
+      'application/pdf', 'application/msword', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    
+    if (fileType && !allowedTypes.includes(fileType)) {
+      return res.status(400).json({
+        error: 'Invalid file type',
+        message: 'File type not supported',
+        allowedTypes: allowedTypes
+      });
+    }
+
+    // コンテンツサイズ制限
+    if (content && content.length > 50 * 1024 * 1024) { // 50MB for content string
+      return res.status(400).json({
+        error: 'Content too large',
+        message: 'File content exceeds maximum allowed size'
+      });
+    }
     
     const fileData = {
       id: `file-${Date.now()}`,
