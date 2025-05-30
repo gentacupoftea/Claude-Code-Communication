@@ -54,23 +54,23 @@ export class BigQueryApiService {
       ? `${API_BASE_URL}/api/dashboards/${dashboardId}`
       : `${API_BASE_URL}/api/dashboards`;
 
-    const response = try {
-  await fetch(url, {
-      headers: {
-        'x-user-id': localStorage.getItem('userId') || 'demo-user'
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'x-user-id': localStorage.getItem('userId') || 'demo-user'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load dashboard');
       }
-    });
-} catch (error) {
-  console.error('Async error:', error);
-  // TODO: Handle error appropriately
-}
 
-    if (!response.ok) {
-      throw new Error('Failed to load dashboard');
+      const result = await response.json();
+      return result.dashboard;
+    } catch (error) {
+      console.error('Failed to load dashboard:', error);
+      return null;
     }
-
-    const result = await response.json();
-    return result.dashboard;
   }
 
   /**
