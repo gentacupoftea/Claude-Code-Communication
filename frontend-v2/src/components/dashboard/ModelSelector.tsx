@@ -120,8 +120,8 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
     Object.entries(modelsData.providerStatus).forEach(([provider, status]) => {
       if (status.available) {
         modelsByProvider[provider] = status.models
-          .filter(model => modelsData.models.includes(model))
-          .map(model => {
+          .filter((model: string) => modelsData.models.includes(model))
+          .map((model: string) => {
             const characteristics = getModelCharacteristics(model);
             return {
               name: model,
