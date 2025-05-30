@@ -123,6 +123,48 @@ npm run compare:results baseline.json improved.json
 npm run analyze:failures results.json
 ```
 
+## 🛍️ Shopify統合設定
+
+### 環境変数設定
+
+Shopify APIを使用するには以下の環境変数を設定してください：
+
+```bash
+# .envファイルに追加
+SHOPIFY_API_KEY=your_shopify_api_key_here
+SHOPIFY_API_SECRET=your_shopify_api_secret_here
+SHOPIFY_STORE_DOMAIN=your_store_name  # .myshopify.comは含めない
+SHOPIFY_ACCESS_TOKEN=your_shopify_access_token_here
+SHOPIFY_API_VERSION=2024-01
+SHOPIFY_SCOPES=read_products,read_orders,read_customers
+```
+
+### Shopifyアプリ設定手順
+
+1. **Shopify Partnersでアプリを作成**
+   - https://partners.shopify.com にアクセス
+   - 新しいアプリを作成し、API_KEYとAPI_SECRETを取得
+
+2. **ストア権限の設定**
+   - 必要なスコープ（read_products, read_orders, read_customers）を設定
+   - アクセストークンを生成
+
+3. **接続テスト**
+   ```bash
+   curl http://localhost:8000/api/shopify/test-connection
+   ```
+
+### トラブルシューティング
+
+- **"RedisStore is not a constructor" エラー**: Redis接続の問題。Redisサーバーが起動していることを確認
+- **API接続エラー**: 環境変数の設定を確認。ストア名に`.myshopify.com`を含めないでください
+- **権限エラー**: アプリのスコープ設定と実際の権限が一致していることを確認
+
+### 注意事項
+
+- Shopify設定がなくても他の機能は正常に動作します
+- Shopifyエラーが発生した場合、503エラーでフォールバック応答を返します
+
 ## 📈 モニタリング
 
 ### ダッシュボード
