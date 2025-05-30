@@ -5,6 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // APIステータスの型定義
 interface APIStatus {
   connected: boolean;
