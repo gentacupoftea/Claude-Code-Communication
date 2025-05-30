@@ -58,6 +58,38 @@ services:
         uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
       "
 
+  persona-analysis:
+    build:
+      context: ./persona-analysis
+      dockerfile: Dockerfile
+    container_name: conea_persona_analysis
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 8002
+      REDIS_URL: redis://redis:6379/0
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/service-account-key.json
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-here}
+    ports:
+      - "8002:8002"
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./persona-analysis/logs:/app/logs
+      - ./persona-analysis/reports:/app/reports
+      - ${GOOGLE_APPLICATION_CREDENTIALS:-./service-account-key.json}:/app/service-account-key.json:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8002/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   nginx:
     image: nginx:alpine
     container_name: conea_nginx
@@ -69,6 +101,7 @@ services:
       - "443:443"
     depends_on:
       - backend
+      - persona-analysis
 
 volumes:
   postgres_data:

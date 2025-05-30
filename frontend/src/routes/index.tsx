@@ -25,6 +25,7 @@ import { Profile } from '../pages/Profile/Profile';
 import { ProfileEdit } from '../pages/Profile/ProfileEdit';
 import { Notifications } from '../pages/Notifications/Notifications';
 import DataComponentsDemo from '../pages/Demo/DataComponentsDemo';
+import { PersonaAnalysis } from '../pages/PersonaAnalysis';
 
 // 環境設定
 const currentEnvironment = process.env.NODE_ENV || 'development';
@@ -101,6 +102,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/profile/edit" element={<ProfileEdit />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/demo/data-components" element={<DataComponentsDemo />} />
+            <Route path="/persona-analysis" element={<PersonaAnalysis />} />
           </Route>
         </Route>
         
