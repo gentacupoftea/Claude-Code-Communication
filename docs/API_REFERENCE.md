@@ -1,75 +1,282 @@
-# Conea（旧Shopify MCP Server） API リファレンス
+# Conea Platform API リファレンス v1.1.0
 
-このドキュメントは、Conea（旧Shopify MCP Server）が提供するすべてのAPI機能の詳細なリファレンスです。
+Conea Platformの統合APIエンドポイントの完全なリファレンスドキュメントです。
 
 ## 目次
 
 1. [概要](#概要)
 2. [認証](#認証)
-3. [REST API](#rest-api)
-4. [GraphQL API](#graphql-api)
-5. [Google Analytics API](#google-analytics-api)
-6. [エラーハンドリング](#エラーハンドリング)
-7. [レート制限](#レート制限)
-8. [レスポンス形式](#レスポンス形式)
+3. [統合REST API](#統合rest-api)
+4. [MultiLLM API](#multillm-api)
+5. [EC統合API](#ec統合api)
+6. [Analytics API](#analytics-api)
+7. [エラーハンドリング](#エラーハンドリング)
+8. [レート制限](#レート制限)
+9. [レスポンス形式](#レスポンス形式)
 
 ## 概要
 
-Coneaは、MCP (Model Context Protocol) を通じて複数のECプラットフォームAPI（Shopify、楽天、Amazon）とGoogle Analytics APIへの統一されたアクセスを提供します。
+Conea Platformは、EC事業者向けのAI統合プラットフォームとして、複数のLLMプロバイダー、ECプラットフォーム（Shopify、楽天、Amazon）、Analytics APIへの統一されたアクセスを提供します。
 
 ### ベースURL
 
+#### 本番環境
 ```
-REST API: https://{shop-name}.myshopify.com/admin/api/{api-version}
-GraphQL API: https://{shop-name}.myshopify.com/admin/api/{api-version}/graphql.json
+API: https://api.conea.ai/v1
+WebSocket: wss://api.conea.ai/ws
+```
+
+#### ステージング環境
+```
+API: https://api-staging.conea.ai/v1
+WebSocket: wss://api-staging.conea.ai/ws
 ```
 
 ### APIバージョン
 
 現在サポートされているバージョン:
-- `2024-01` (最新)
-- `2023-10`
-- `2023-07`
+- `v1.1.0` (現在の安定版)
+- `v1.0.0` (レガシー)
+- `beta` (開発版)
 
 ## 認証
 
-### アクセストークン
+### JWT認証
 
-すべてのAPIリクエストには、有効なShopifyアクセストークンが必要です。
+Conea Platformは JWT (JSON Web Token) とFirebase Auth の二重認証システムを採用しています。
 
-```python
+```javascript
+// リクエストヘッダー例
 headers = {
-    "X-Shopify-Access-Token": "your-access-token",
-    "Content-Type": "application/json"
+    "Authorization": "Bearer ${jwt_token}",
+    "X-Firebase-Token": "${firebase_token}",
+    "Content-Type": "application/json",
+    "X-API-Version": "v1.1.0"
 }
 ```
 
-### 設定例
+### Firebase Auth設定
 
-`.env` ファイル:
+```javascript
+// Firebase設定例
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+
+const firebaseConfig = {
+    apiKey: "your-api-key",
+    authDomain: "conea-platform.firebaseapp.com",
+    projectId: "conea-platform",
+    storageBucket: "conea-platform.appspot.com"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+// 認証
+const { user } = await signInWithEmailAndPassword(auth, email, password);
+const firebaseToken = await user.getIdToken();
 ```
-CONEA_ACCESS_TOKEN=shppa_xxxxxxxxxxxxx
-CONEA_SHOP_NAME=your-shop-name
-CONEA_API_VERSION=2024-01
+
+### API キー管理
+
+環境変数設定例:
+```bash
+# .env ファイル
+CONEA_API_URL=https://api.conea.ai/v1
+CONEA_JWT_SECRET=your-jwt-secret
+FIREBASE_PROJECT_ID=conea-platform
+ANTHROPIC_API_KEY=sk-ant-xxxxx
+OPENAI_API_KEY=sk-xxxxx
+GOOGLE_CLOUD_PROJECT_ID=your-gcp-project
 ```
 
-## REST API
+## 統合REST API
 
-### 注文 (Orders)
+### ヘルスチェック
+
+```bash
+GET /health
+```
+
+システム全体の稼働状況を確認します。
+
+**レスポンス例:**
+```json
+{
+    "status": "healthy",
+    "version": "v1.1.0",
+    "timestamp": "2025-05-31T12:00:00Z",
+    "services": {
+        "database": "healthy",
+        "redis": "healthy",
+        "llm_providers": {
+            "claude": "healthy",
+            "openai": "healthy", 
+            "gemini": "healthy"
+        },
+        "ec_apis": {
+            "shopify": "healthy",
+            "rakuten": "healthy"
+        }
+    },
+    "uptime": 3600
+}
+```
+
+### システム状態
+
+```bash
+GET /status
+```
+
+詳細なシステム状態とメトリクスを取得します。
+
+**レスポンス例:**
+```json
+{
+    "system": {
+        "cpu_usage": 0.45,
+        "memory_usage": 0.62,
+        "disk_usage": 0.23
+    },
+    "api_metrics": {
+        "requests_per_minute": 150,
+        "average_response_time": 145,
+        "error_rate": 0.002
+    },
+    "active_connections": 45
+}
+```
+
+## MultiLLM API
+
+### LLMクエリ実行
+
+```bash
+POST /llm/query
+```
+
+複数のLLMプロバイダーを活用して高度な質問に回答します。
+
+**リクエスト例:**
+```json
+{
+    "question": "過去3年間の季節性を考慮して、来月の売上を予測してください",
+    "context": {
+        "store_name": "テストストア",
+        "period": "2024年1-10月",
+        "sales_data": [100, 120, 110, 130, 140, 135, 145, 150, 160, 170]
+    },
+    "provider_preference": "auto", // "claude", "openai", "gemini", "auto"
+    "include_reasoning": true
+}
+```
+
+**レスポンス例:**
+```json
+{
+    "answer": "データ分析の結果、来月の売上は約175万円と予測されます...",
+    "reasoning": "過去3年間のデータから、季節性トレンドと成長率を分析...",
+    "provider_used": "claude",
+    "confidence_score": 0.85,
+    "execution_time": 2.3,
+    "sources": ["historical_sales", "seasonal_trends", "market_data"]
+}
+```
+
+### バッチクエリ実行
+
+```bash
+POST /llm/batch-query
+```
+
+複数の質問を並列処理で効率的に実行します。
+
+**リクエスト例:**
+```json
+{
+    "queries": [
+        {
+            "id": "inventory_optimization",
+            "question": "在庫最適化の提案をお願いします",
+            "context": {"current_stock": 1000, "avg_daily_sales": 25}
+        },
+        {
+            "id": "customer_segmentation", 
+            "question": "顧客セグメント分析を実施してください",
+            "context": {"total_customers": 50000, "repeat_rate": 0.35}
+        }
+    ],
+    "parallel_execution": true
+}
+```
+
+### LLMプロバイダー状態
+
+```bash
+GET /llm/providers/status
+```
+
+各LLMプロバイダーの稼働状況とパフォーマンスを確認します。
+
+**レスポンス例:**
+```json
+{
+    "providers": {
+        "claude": {
+            "status": "available",
+            "response_time": 1.2,
+            "rate_limit": {
+                "requests_per_minute": 60,
+                "used": 25,
+                "remaining": 35
+            }
+        },
+        "openai": {
+            "status": "available", 
+            "response_time": 0.8,
+            "rate_limit": {
+                "requests_per_minute": 3500,
+                "used": 1200,
+                "remaining": 2300
+            }
+        },
+        "gemini": {
+            "status": "available",
+            "response_time": 1.5,
+            "rate_limit": {
+                "requests_per_minute": 60,
+                "used": 10,
+                "remaining": 50
+            }
+        }
+    }
+}
+```
+
+## EC統合API
+
+### Shopify統合
+
+#### 注文 (Orders)
 
 #### 注文一覧の取得
 
-```python
-@mcp.tool()
-async def get_orders_summary(
-    status: Optional[str] = None,
-    financial_status: Optional[str] = None,
-    fulfillment_status: Optional[str] = None,
-    created_at_min: Optional[str] = None,
-    created_at_max: Optional[str] = None,
-    limit: Optional[int] = 50
-) -> OrderSummary:
-    """注文のサマリー情報を取得"""
+```bash
+GET /ec/shopify/orders
+```
+
+**クエリパラメータ:**
+- `status`: 注文ステータス (`open`, `closed`, `cancelled`, `any`)
+- `financial_status`: 支払いステータス (`paid`, `pending`, `refunded`)
+- `fulfillment_status`: 配送ステータス (`fulfilled`, `partial`, `unfulfilled`)
+- `created_at_min`: 開始日時 (ISO 8601形式)
+- `created_at_max`: 終了日時 (ISO 8601形式)
+- `limit`: 取得件数 (最大250)
+
+**リクエスト例:**
+```bash
+GET /ec/shopify/orders?status=open&limit=50&created_at_min=2025-01-01T00:00:00Z
 ```
 
 **パラメータ:**
