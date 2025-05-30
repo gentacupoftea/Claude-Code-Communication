@@ -9,79 +9,95 @@
 const rateLimit = require('express-rate-limit');
 const Redis = require('ioredis');
 
-// Rate-limit-redis v4対応のためのインポート修正
-let RedisStore;
+// より安全で保守しやすいRedisStore初期化
+let RedisStore = null;
+let redisStoreAvailable = false;
+
 try {
-  // v4では異なるインポート方法を使用
-  const { RedisStore: RLRedisStore } = require('rate-limit-redis');
-  RedisStore = RLRedisStore;
+  // rate-limit-redis v4以降の標準的なインポート方法
+  const rateLimit = require('rate-limit-redis');
+  RedisStore = rateLimit.RedisStore || rateLimit.default || rateLimit;
+  redisStoreAvailable = true;
+  console.log('Redis rate limiting enabled');
 } catch (error) {
-  try {
-    RedisStore = require('rate-limit-redis').default || require('rate-limit-redis');
-  } catch (secondError) {
-    console.warn('rate-limit-redis not available, using memory store for rate limiting');
-    RedisStore = null;
-  }
+  console.warn('Redis rate limiting unavailable, falling back to memory store:', error.message);
+  redisStoreAvailable = false;
 }
 
 // Redis client for rate limiting
 const redisClient = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 
-// Shopify API rate limiter
-const shopifyRateLimiter = rateLimit({
-  // Use Redis store if available, otherwise use memory store
-  store: (redisClient && RedisStore) ? new RedisStore({
-    sendCommand: (...args) => redisClient.call(...args),
-    prefix: 'shopify-api-rl:',
-  }) : undefined,
-  
-  // Shopify allows 2 requests per second
-  windowMs: 1000, // 1 second
-  max: 2, // 2 requests per windowMs
-  
-  // Response when rate limit is exceeded
-  message: {
-    error: 'Too many requests to Shopify API',
-    retryAfter: 1,
-    message: 'Shopify API rate limit exceeded. Please retry after 1 second.'
-  },
-  
-  // Headers to send
-  standardHeaders: true,
-  legacyHeaders: false,
-  
-  // Skip rate limiting in test environment
-  skip: (req) => process.env.NODE_ENV === 'test',
-  
-  // Custom key generator (per IP + API endpoint)
-  keyGenerator: (req) => {
-    return `${req.ip}:${req.originalUrl}`;
-  },
-  
-  // Handler for rate limit exceeded
-  handler: (req, res) => {
-    console.warn(`Rate limit exceeded for ${req.ip} on ${req.originalUrl}`);
-    res.status(429).json({
-      error: 'Too many requests',
-      message: 'Shopify API rate limit exceeded',
-      retryAfter: res.getHeader('Retry-After'),
-      limit: res.getHeader('X-RateLimit-Limit'),
-      remaining: res.getHeader('X-RateLimit-Remaining'),
-      reset: res.getHeader('X-RateLimit-Reset')
-    });
-  }
-});
+// より堅牢なShopify API rate limiter
+const createShopifyRateLimiter = () => {
+  const config = {
+    windowMs: 1000, // 1 second
+    max: 2, // 2 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => process.env.NODE_ENV === 'test',
+    
+    keyGenerator: (req) => {
+      // IPアドレスとエンドポイントを組み合わせたキー
+      return `${req.ip || 'unknown'}:${req.originalUrl}`;
+    },
+    
+    handler: (req, res) => {
+      console.warn(`Shopify rate limit exceeded for ${req.ip} on ${req.originalUrl}`);
+      res.status(429).json({
+        error: 'Too many requests',
+        message: 'Shopify API rate limit exceeded',
+        retryAfter: res.getHeader('Retry-After'),
+        limit: res.getHeader('X-RateLimit-Limit'),
+        remaining: res.getHeader('X-RateLimit-Remaining'),
+        reset: res.getHeader('X-RateLimit-Reset')
+      });
+    }
+  };
 
-// Burst limiter (40 requests per minute)
-const shopifyBurstLimiter = rateLimit({
-  store: (redisClient && RedisStore) ? new RedisStore({
-    sendCommand: (...args) => redisClient.call(...args),
-    prefix: 'shopify-burst-rl:',
-  }) : undefined,
-  windowMs: 60 * 1000, // 1 minute
-  max: 40, // 40 requests per minute
-  skip: (req) => process.env.NODE_ENV === 'test',
-});
+  // Redisが利用可能な場合のみRedisStoreを使用
+  if (redisClient && redisStoreAvailable && RedisStore) {
+    try {
+      config.store = new RedisStore({
+        sendCommand: (...args) => redisClient.call(...args),
+        prefix: 'shopify-api-rl:',
+      });
+    } catch (error) {
+      console.warn('Failed to initialize Redis store for rate limiting:', error.message);
+    }
+  }
+
+  return rateLimit(config);
+};
+
+const shopifyRateLimiter = createShopifyRateLimiter();
+
+// より堅牢なBurst limiter (40 requests per minute)
+const createShopifyBurstLimiter = () => {
+  const config = {
+    windowMs: 60 * 1000, // 1 minute
+    max: 40, // 40 requests per minute
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => process.env.NODE_ENV === 'test',
+    keyGenerator: (req) => `${req.ip || 'unknown'}:burst`,
+  };
+
+  // Redisが利用可能な場合のみRedisStoreを使用
+  if (redisClient && redisStoreAvailable && RedisStore) {
+    try {
+      config.store = new RedisStore({
+        sendCommand: (...args) => redisClient.call(...args),
+        prefix: 'shopify-burst-rl:',
+      });
+    } catch (error) {
+      console.warn('Failed to initialize Redis store for burst limiting:', error.message);
+    }
+  }
+
+  return rateLimit(config);
+};
+
+const shopifyBurstLimiter = createShopifyBurstLimiter();
 
 // Combined middleware
 const shopifyRateLimitMiddleware = (req, res, next) => {

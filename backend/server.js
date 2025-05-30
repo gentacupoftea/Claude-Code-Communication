@@ -6,6 +6,17 @@
 // 環境変数読み込み
 require('dotenv').config();
 
+// 環境変数検証
+const { validateAndLog, getEnvironmentHealth } = require('./src/config/envValidator');
+const envValidation = validateAndLog();
+
+// 本番環境で検証エラーがある場合は起動を停止
+if (process.env.NODE_ENV === 'production' && !envValidation.valid) {
+  console.error('🚨 Critical environment configuration errors detected in production!');
+  console.error('Server startup aborted for security reasons.');
+  process.exit(1);
+}
+
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
@@ -83,7 +94,50 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
   maxAge: 86400 // 24 hours
 }));
-app.use(express.json());
+
+// セキュリティヘッダーの設定
+app.use((req, res, next) => {
+  // セキュリティヘッダー
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  
+  // CSP（コンテンツセキュリティポリシー）
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: https:",
+    "connect-src 'self' wss: ws:",
+    "frame-ancestors 'none'"
+  ].join('; ');
+  
+  res.setHeader('Content-Security-Policy', csp);
+  
+  // HSTS（HTTP Strict Transport Security）- 本番環境のみ
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  }
+  
+  next();
+});
+
+// JSONボディパーサー（サイズ制限付き）
+app.use(express.json({ 
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    // JSON構文チェック
+    try {
+      JSON.parse(buf);
+    } catch (e) {
+      res.status(400).json({ error: 'Invalid JSON format' });
+      return;
+    }
+  }
+}));
 
 // セキュアなSocket.IOセットアップ
 const server = http.createServer(app);
@@ -192,14 +246,28 @@ app.get('/api/health', (req, res) => {
     socket: 'enabled'
   };
   
+  // 環境変数健全性チェック
+  const environmentHealth = getEnvironmentHealth();
+  
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
     version: '2.0.0',
     environment: process.env.NODE_ENV || 'development',
     mode: 'integrated',
-    services: services
+    services: services,
+    environmentHealth: environmentHealth
   });
+});
+
+// 環境変数詳細チェックエンドポイント（開発・ステージング専用）
+app.get('/api/health/environment', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not available in production' });
+  }
+  
+  const environmentHealth = getEnvironmentHealth();
+  res.json(environmentHealth);
 });
 
 // 利用可能なモデル一覧
