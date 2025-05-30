@@ -53,27 +53,51 @@ try {
 const slackClient = process.env.SLACK_BOT_TOKEN ? 
   new WebClient(process.env.SLACK_BOT_TOKEN) : null;
 
-// Middleware
-app.use(cors({
-  origin: [
+// セキュアなCORS設定
+const getAllowedOrigins = () => {
+  const baseOrigins = [
     'http://localhost:3000',
     'http://localhost:3001',
-    'https://staging-conea-ai.web.app',
-    'https://staging.conea.ai',
+    'http://localhost:5173', // Vite dev server
+  ];
+  
+  const prodOrigins = [
     'https://conea.ai',
-    process.env.FRONTEND_URL
-  ].filter(Boolean),
-  credentials: true
+    'https://app.conea.ai',
+    'https://staging.conea.ai',
+    'https://staging-conea-ai.web.app'
+  ];
+  
+  // 開発環境では localhost を許可、本番環境では本番ドメインのみ
+  if (process.env.NODE_ENV === 'production') {
+    return [...prodOrigins, process.env.FRONTEND_URL].filter(Boolean);
+  } else {
+    return [...baseOrigins, ...prodOrigins, process.env.FRONTEND_URL].filter(Boolean);
+  }
+};
+
+app.use(cors({
+  origin: getAllowedOrigins(),
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
+  maxAge: 86400 // 24 hours
 }));
 app.use(express.json());
 
-// Socket.IOセットアップ（conea-integrationから）
+// セキュアなSocket.IOセットアップ
 const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+    origin: getAllowedOrigins(),
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  // セキュリティ設定
+  transports: ['websocket', 'polling'],
+  allowEIO3: false
 });
 
 // ログ設定
@@ -296,12 +320,28 @@ app.get('/api/settings/apis', async (req, res) => {
     const data = await fs.readFile(API_KEYS_FILE, 'utf8');
     const apiKeys = JSON.parse(data);
     
+    // セキュアなAPIキーマスキング実装
+    const SENSITIVE_FIELDS = ['secret', 'key', 'token', 'password', 'credential', 'auth'];
     const maskedKeys = JSON.parse(JSON.stringify(apiKeys));
+    
     Object.keys(maskedKeys).forEach(service => {
       Object.keys(maskedKeys[service]).forEach(key => {
-        if (key.toLowerCase().includes('secret') || key.toLowerCase().includes('key') || key.toLowerCase().includes('token')) {
-          if (maskedKeys[service][key] && maskedKeys[service][key].length > 0) {
-            maskedKeys[service][key] = '*'.repeat(8);
+        const isSensitive = SENSITIVE_FIELDS.some(field => 
+          key.toLowerCase().includes(field)
+        );
+        
+        if (isSensitive && maskedKeys[service][key]) {
+          const originalValue = maskedKeys[service][key].toString();
+          const originalLength = originalValue.length;
+          
+          if (originalLength > 8) {
+            // 最初の2文字と最後の2文字を表示、中間をマスク
+            maskedKeys[service][key] = originalValue.substr(0, 2) + 
+              '*'.repeat(Math.min(8, originalLength - 4)) + 
+              originalValue.substr(-2);
+          } else if (originalLength > 0) {
+            // 短い値は完全にマスク
+            maskedKeys[service][key] = '*'.repeat(originalLength);
           }
         }
       });
