@@ -69,13 +69,19 @@ function validateEnvironment(environment = process.env.NODE_ENV || 'development'
     }
   });
 
-  // パターン検証
+  // パターン検証（開発環境では API キーのパターン検証をスキップ）
   Object.entries(ENV_PATTERNS).forEach(([varName, pattern]) => {
     const value = process.env[varName];
     if (value && !pattern.test(value)) {
-      results.invalid.push(varName);
-      results.errors.push(`Invalid format for ${varName}`);
-      results.valid = false;
+      // 開発環境では API キー関連のエラーを警告に格下げ
+      if (environment === 'development' && 
+          (varName.includes('API_KEY') || varName.includes('ACCESS_TOKEN'))) {
+        results.warnings.push(`Development warning: ${varName} format may be invalid`);
+      } else {
+        results.invalid.push(varName);
+        results.errors.push(`Invalid format for ${varName}`);
+        results.valid = false;
+      }
     }
   });
 
