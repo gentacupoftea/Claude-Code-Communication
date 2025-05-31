@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "staging-conea-ai",
+    "site": "stagingapp-conea-ai",
     "public": "out",
     "ignore": [
       "firebase.json",
@@ -9,18 +9,20 @@
     ],
     "rewrites": [
       {
-        "source": "/login",
-        "destination": "/login.html"
-      },
-      {
-        "source": "/dashboard",
-        "destination": "/dashboard.html"
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }
     ],
-    "cleanUrls": true
+    "headers": [
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000"
+          }
+        ]
+      }
+    ]
   }
 }

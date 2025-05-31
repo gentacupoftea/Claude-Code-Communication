@@ -7,7 +7,6 @@ export class AuthManager {
   private isAuthenticated: boolean = false;
   private listeners: Set<(authenticated: boolean) => void> = new Set();
   private isInitialized: boolean = false;
-  private storageKey = 'authToken';
 
   private constructor() {
     // プライベートコンストラクタでシングルトンを保証
@@ -30,35 +29,19 @@ export class AuthManager {
 
     try {
       if (typeof window !== 'undefined') {
-        // 同期的にトークンをチェック
-        const authToken = this.getStoredToken();
+        const authToken = localStorage.getItem('authToken');
         console.log('[AuthManager] Initializing, token found:', !!authToken);
         
         if (authToken) {
-          // トークンの有効性を検証（今回はデモなので常に有効）
           this.isAuthenticated = true;
           console.log('[AuthManager] Authentication restored from localStorage');
-        } else {
-          this.isAuthenticated = false;
         }
       }
     } catch (error) {
       console.error('[AuthManager] Initialization error:', error);
-      this.isAuthenticated = false;
     } finally {
       this.isInitialized = true;
       this.notifyListeners();
-    }
-  }
-
-  /**
-   * ストレージからトークンを取得
-   */
-  private getStoredToken(): string | null {
-    try {
-      return localStorage.getItem(this.storageKey);
-    } catch {
-      return null;
     }
   }
 
@@ -73,7 +56,7 @@ export class AuthManager {
       const token = 'demo-token-' + Date.now();
       
       if (typeof window !== 'undefined') {
-        localStorage.setItem(this.storageKey, token);
+        localStorage.setItem('authToken', token);
         console.log('[AuthManager] Token saved to localStorage');
       }
       
@@ -95,7 +78,7 @@ export class AuthManager {
     console.log('[AuthManager] Logout initiated');
     
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(this.storageKey);
+      localStorage.removeItem('authToken');
       console.log('[AuthManager] Token removed from localStorage');
     }
     
@@ -119,15 +102,20 @@ export class AuthManager {
   }
 
   /**
-   * トークンの存在確認（同期的）
+   * トークンの存在確認
    */
   public hasValidToken(): boolean {
     if (typeof window === 'undefined') {
       return false;
     }
     
-    const token = this.getStoredToken();
-    return !!token;
+    try {
+      const token = localStorage.getItem('authToken');
+      return !!token;
+    } catch (error) {
+      console.error('[AuthManager] Token check error:', error);
+      return false;
+    }
   }
 
   /**

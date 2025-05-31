@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * 接続状態Hook
  * ネットワーク接続とAPI接続状態をリアルタイムで監視
@@ -11,9 +9,6 @@ import { useState, useEffect, useCallback } from 'react';
 interface APIStatus {
   connected: boolean;
   message: string;
-  lastChecked?: string;
-  responseTime?: number;
-  errorCode?: string;
 }
 
 interface APIConnectionStatus {
@@ -31,13 +26,6 @@ interface ConnectionStatus {
   lastChecked: string | null;
   isLoading: boolean;
   error: string | null;
-}
-
-interface OverallStatus {
-  status: 'connected' | 'partial' | 'disconnected' | 'offline';
-  message: string;
-  connectedCount: number;
-  totalCount: number;
 }
 
 /**
@@ -161,39 +149,22 @@ export const useConnectionStatus = () => {
   /**
    * 全体的な接続状態を取得
    */
-  const getOverallStatus = useCallback((): OverallStatus => {
+  const getOverallStatus = useCallback(() => {
     if (!connectionStatus.isOnline) {
-      return { 
-        status: 'offline', 
-        message: 'インターネット接続がありません',
-        connectedCount: 0,
-        totalCount: Object.keys(connectionStatus.apiStatus).length
-      };
+      return { status: 'offline', message: 'インターネット接続がありません' };
     }
 
     const connectedAPIs = Object.values(connectionStatus.apiStatus).filter(api => api.connected);
     const totalAPIs = Object.keys(connectionStatus.apiStatus).length;
 
     if (connectedAPIs.length === 0) {
-      return { 
-        status: 'disconnected', 
-        message: 'すべてのAPIが接続されていません',
-        connectedCount: 0,
-        totalCount: totalAPIs
-      };
+      return { status: 'disconnected', message: 'すべてのAPIが接続されていません' };
     } else if (connectedAPIs.length === totalAPIs) {
-      return { 
-        status: 'connected', 
-        message: 'すべてのAPIが正常に接続されています',
-        connectedCount: connectedAPIs.length,
-        totalCount: totalAPIs
-      };
+      return { status: 'connected', message: 'すべてのAPIが正常に接続されています' };
     } else {
       return { 
         status: 'partial', 
-        message: `${connectedAPIs.length}/${totalAPIs} のAPIが接続されています`,
-        connectedCount: connectedAPIs.length,
-        totalCount: totalAPIs
+        message: `${connectedAPIs.length}/${totalAPIs} のAPIが接続されています` 
       };
     }
   }, [connectionStatus]);

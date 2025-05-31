@@ -127,6 +127,61 @@ class BackendAPI {
       return false;
     }
   }
+
+  /**
+   * チャットメッセージ送信（統合バックエンド）
+   */
+  async sendChatMessage(messages: any[], options?: {
+    model?: string;
+    temperature?: number;
+    max_tokens?: number;
+    system_prompt?: string;
+  }): Promise<any> {
+    return this.request('/api/chat', {
+      method: 'POST',
+      body: JSON.stringify({
+        messages,
+        model: options?.model || 'gpt-3.5-turbo',
+        temperature: options?.temperature || 0.7,
+        max_tokens: options?.max_tokens || 1000,
+        system_prompt: options?.system_prompt
+      }),
+    });
+  }
+
+  /**
+   * 利用可能なモデル一覧取得（統合バックエンド）
+   */
+  async getModels(): Promise<{ models: string[]; providers: any }> {
+    return this.request('/api/models');
+  }
+
+  /**
+   * APIキー管理（conea-integration形式）
+   */
+  async getAPIKeys(): Promise<any[]> {
+    return this.request('/api/keys');
+  }
+
+  async saveAPIKey(keyData: any): Promise<{ success: boolean; message: string }> {
+    return this.request('/api/keys', {
+      method: 'POST',
+      body: JSON.stringify(keyData),
+    });
+  }
+
+  async updateAPIKey(id: string, keyData: any): Promise<{ success: boolean; message: string }> {
+    return this.request(`/api/keys/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(keyData),
+    });
+  }
+
+  async deleteAPIKey(id: string): Promise<{ success: boolean; message: string }> {
+    return this.request(`/api/keys/${id}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 // シングルトンインスタンス

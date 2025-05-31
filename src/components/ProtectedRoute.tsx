@@ -12,40 +12,33 @@ interface ProtectedRouteProps {
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, isLoading, isInitialized } = useAuth();
   const router = useRouter();
-  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
 
   useEffect(() => {
     console.log('[ProtectedRoute] Auth state check:', { 
       isAuthenticated, 
       isLoading, 
       isInitialized,
-      hasValidToken: authManager.hasValidToken(),
-      hasCheckedAuth
+      hasValidToken: authManager.hasValidToken()
     });
     
-    // 認証チェックを一度だけ実行
-    if (isInitialized && !isLoading && !hasCheckedAuth) {
-      setHasCheckedAuth(true);
+    if (isInitialized && !isLoading) {
       const hasToken = authManager.hasValidToken();
       
       if (!isAuthenticated && !hasToken) {
         console.log('[ProtectedRoute] No authentication, redirecting to login');
-        router.replace('/login'); // pushではなくreplaceを使用
+        router.push('/login');
         return;
       }
       
       console.log('[ProtectedRoute] Authentication check passed');
     }
-  }, [isAuthenticated, isLoading, isInitialized, router, hasCheckedAuth]);
+  }, [isAuthenticated, isLoading, isInitialized, router]);
 
   // 初期化中またはロード中の場合はローディング画面を表示
-  if (!isInitialized || isLoading || !hasCheckedAuth) {
+  if (!isInitialized || isLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="w-12 h-12 border-4 border-[#1ABC9C] border-t-transparent rounded-full animate-spin"></div>
-          <div className="text-white">ログイン確認中...</div>
-        </div>
+        <div className="text-white">ログイン確認中...</div>
       </div>
     );
   }
@@ -56,6 +49,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <>{children}</>;
   }
 
-  // 認証もトークンもない場合はnullを返す（リダイレクト処理は上で実行済み）
-  return null;
+  // 認証もトークンもない場合はリダイレクト待ち
+  return (
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="text-white">認証が必要です...</div>
+    </div>
+  );
 };
