@@ -3,12 +3,12 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/src/contexts/AuthContext';
 
 export const useAuthRedirect = () => {
-  const { isAuthenticated, isInitialized } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (isInitialized) {
+    if (!isLoading) {
       // ログインページにいて認証済みの場合、ダッシュボードへリダイレクト
       if (pathname === '/login' && isAuthenticated) {
         router.replace('/dashboard');
@@ -22,5 +22,5 @@ export const useAuthRedirect = () => {
         router.replace('/login');
       }
     }
-  }, [isAuthenticated, isInitialized, router, pathname]);
+  }, [isAuthenticated, isLoading, router, pathname]);
 };
