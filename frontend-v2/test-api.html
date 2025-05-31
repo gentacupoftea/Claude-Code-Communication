@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Connection Test</title>
+</head>
+<body>
+    <h1>API Connection Test</h1>
+    <button onclick="testAPI()">Test API</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function testAPI() {
+            const resultEl = document.getElementById('result');
+            resultEl.textContent = 'Testing...';
+
+            try {
+                // Test 1: Health check
+                const healthResponse = await fetch('https://conea-backend-staging-1013155436957.asia-northeast1.run.app/api/health');
+                const healthData = await healthResponse.json();
+                
+                // Test 2: Models
+                const modelsResponse = await fetch('https://conea-backend-staging-1013155436957.asia-northeast1.run.app/api/models');
+                const modelsData = await modelsResponse.json();
+                
+                resultEl.textContent = JSON.stringify({
+                    health: healthData,
+                    models: modelsData,
+                    cors: healthResponse.headers.get('access-control-allow-origin')
+                }, null, 2);
+            } catch (error) {
+                resultEl.textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

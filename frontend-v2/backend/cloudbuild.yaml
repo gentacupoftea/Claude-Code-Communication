@@ -1,0 +1,38 @@
+steps:
+  # Dockerイメージをビルド
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/conea-backend-staging', '.']
+  
+  # イメージをContainer Registryにプッシュ
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/conea-backend-staging']
+  
+  # Cloud Runにデプロイ
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'conea-backend-staging'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/conea-backend-staging'
+      - '--region'
+      - 'asia-northeast1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '8000'
+      - '--memory'
+      - '512Mi'
+      - '--cpu'
+      - '1'
+      - '--timeout'
+      - '300'
+      - '--max-instances'
+      - '100'
+      - '--set-env-vars'
+      - 'NODE_ENV=production,MULTILLM_API_URL=https://multillm-api-service-xxxxx-an.a.run.app,MULTILLM_API_KEY=91b731acafbbc18b27bc173938b74da0644883bc02074a0c0b9723c1bb56afb4'
+
+images:
+  - 'gcr.io/$PROJECT_ID/conea-backend-staging'
