@@ -1,70 +1,88 @@
-<<<<<<< HEAD
 /**
  * API設定の中央管理
+ * 統合されたAPIクライアントとエンドポイント定義
  */
-export const API_CONFIG = {
-  // バックエンドのベースURL
-  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001',
-  
-  // APIエンドポイント
-  ENDPOINTS: {
-    // 認証関連
-    AUTH: {
-      LOGIN: '/api/auth/login',
-      LOGOUT: '/api/auth/logout',
-      REFRESH: '/api/auth/refresh',
-      PROFILE: '/api/auth/profile',
-    },
-    
-    // プロジェクト関連
-    PROJECTS: {
-      LIST: '/api/projects',
-      CREATE: '/api/projects',
-      GET: (id: string) => `/api/projects/${id}`,
-      UPDATE: (id: string) => `/api/projects/${id}`,
-      DELETE: (id: string) => `/api/projects/${id}`,
-    },
-    
-    // チャット関連
-    CHAT: {
-      SEND_MESSAGE: '/api/chat/message',
-      GET_HISTORY: '/api/chat/history',
-      CREATE_SESSION: '/api/chat/session',
-      DELETE_SESSION: (id: string) => `/api/chat/session/${id}`,
-    },
-    
-    // Multi-LLM関連
-    MULTILLM: {
-      MODELS: '/api/multillm/models',
-      GENERATE: '/api/multillm/generate',
-      STREAM: '/api/multillm/stream',
-    },
-    
-    // データ分析関連
-    ANALYTICS: {
-      CHART_DATA: '/api/analytics/chart',
-      PERSONA_GENERATE: '/api/analytics/persona',
-      EXPORT: '/api/analytics/export',
-    },
-    
-    // 設定関連
-    SETTINGS: {
-      GET: '/api/settings',
-      UPDATE: '/api/settings',
-      API_KEYS: '/api/settings/api-keys',
-    },
+
+// APIベースURL設定（環境変数を統一）
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+// APIエンドポイント定義（両バージョンの機能を統合）
+export const API_ENDPOINTS = {
+  // 認証関連
+  AUTH: {
+    LOGIN: '/api/auth/login',
+    LOGOUT: '/api/auth/logout',
+    REFRESH: '/api/auth/refresh',
+    PROFILE: '/api/auth/profile',
   },
-  
-  // リクエスト設定
+
+  // チャット関連（両バージョンのエンドポイントを統合）
+  CHAT: {
+    SESSIONS: '/api/chat/sessions',
+    MESSAGES: '/api/chat/messages',
+    SEND_MESSAGE: '/api/chat/message',
+    SEND: '/api/chat/send',
+    STREAM: '/api/chat/stream',
+    GET_HISTORY: '/api/chat/history',
+    CREATE_SESSION: '/api/chat/session',
+    DELETE_SESSION: (id: string) => `/api/chat/session/${id}`,
+  },
+
+  // Multi-LLM関連
+  MULTILLM: {
+    MODELS: '/api/multillm/models',
+    COMPARE: '/api/multillm/compare',
+    GENERATE: '/api/multillm/generate',
+    STREAM: '/api/multillm/stream',
+  },
+
+  // プロジェクト関連
+  PROJECTS: {
+    LIST: '/api/projects',
+    CREATE: '/api/projects',
+    GET: (id: string) => `/api/projects/${id}`,
+    DETAIL: '/api/projects',
+    UPDATE: (id: string) => `/api/projects/${id}`,
+    DELETE: (id: string) => `/api/projects/${id}`,
+  },
+
+  // 分析関連
+  ANALYTICS: {
+    DASHBOARD: '/api/analytics/dashboard',
+    USAGE: '/api/analytics/usage',
+    METRICS: '/api/analytics/metrics',
+    CHART_DATA: '/api/analytics/chart',
+    PERSONA_GENERATE: '/api/analytics/persona',
+    EXPORT: '/api/analytics/export',
+  },
+
+  // 設定関連
+  SETTINGS: {
+    GET: '/api/settings',
+    UPDATE: '/api/settings',
+    API_KEYS: '/api/settings/api-keys',
+  },
+} as const;
+
+// API設定オブジェクト
+export const API_CONFIG = {
+  BASE_URL: API_BASE_URL,
+  ENDPOINTS: API_ENDPOINTS,
   REQUEST_CONFIG: {
     headers: {
       'Content-Type': 'application/json',
     },
     credentials: 'include' as RequestCredentials,
+    timeout: 10000,
   },
 };
 
-// APIクライアントのベースクラス
+// 完全なURLを生成する関数
+export const createApiUrl = (endpoint: string): string => {
+  return `${API_BASE_URL}${endpoint}`;
+};
+
+// APIクライアントクラス（シングルトンパターン）
 export class APIClient {
   private static instance: APIClient;
   private authToken: string | null = null;
@@ -98,7 +116,7 @@ export class APIClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${API_CONFIG.BASE_URL}${endpoint}`;
+    const url = createApiUrl(endpoint);
     
     try {
       const response = await fetch(url, {
@@ -114,7 +132,12 @@ export class APIClient {
         throw new Error(`API Error: ${response.status} ${response.statusText}`);
       }
 
-      return await response.json();
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await response.json();
+      }
+      
+      return await response.text() as unknown as T;
     } catch (error) {
       console.error('API Request failed:', error);
       throw error;
@@ -144,66 +167,8 @@ export class APIClient {
   }
 }
 
+// APIクライアントのインスタンス
 export const apiClient = APIClient.getInstance();
-=======
-// API設定ファイル
-// 環境変数とAPIエンドポイントの設定
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
-export const API_ENDPOINTS = {
-  // 認証関連
-  AUTH: {
-    LOGIN: '/api/auth/login',
-    LOGOUT: '/api/auth/logout',
-    REFRESH: '/api/auth/refresh',
-    PROFILE: '/api/auth/profile',
-  },
-
-  // チャット関連
-  CHAT: {
-    SESSIONS: '/api/chat/sessions',
-    MESSAGES: '/api/chat/messages',
-    SEND: '/api/chat/send',
-    STREAM: '/api/chat/stream',
-  },
-
-  // Multi-LLM関連
-  MULTILLM: {
-    MODELS: '/api/multillm/models',
-    COMPARE: '/api/multillm/compare',
-    GENERATE: '/api/multillm/generate',
-  },
-
-  // プロジェクト関連
-  PROJECTS: {
-    LIST: '/api/projects',
-    CREATE: '/api/projects',
-    DETAIL: '/api/projects',
-    UPDATE: '/api/projects',
-    DELETE: '/api/projects',
-  },
-
-  // 分析関連
-  ANALYTICS: {
-    DASHBOARD: '/api/analytics/dashboard',
-    USAGE: '/api/analytics/usage',
-    METRICS: '/api/analytics/metrics',
-  },
-} as const;
-
-// 完全なURLを生成する関数
-export const createApiUrl = (endpoint: string): string => {
-  return `${API_BASE_URL}${endpoint}`;
-};
-
-// APIリクエストのデフォルト設定
-export const DEFAULT_API_CONFIG = {
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 10000, // 10秒
-} as const;
 
 // 環境設定
 export const APP_CONFIG = {
@@ -212,4 +177,6 @@ export const APP_CONFIG = {
   IS_PRODUCTION: process.env.NODE_ENV === 'production',
   ENABLE_LOGGING: process.env.NODE_ENV === 'development',
 } as const;
->>>>>>> feature/multillm-chat-integration
+
+// 後方互換性のためのエクスポート
+export const DEFAULT_API_CONFIG = API_CONFIG.REQUEST_CONFIG;

@@ -1,11 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-<<<<<<< HEAD
-  output: 'export',
-=======
-  output: 'export', // スタティックエクスポート用
->>>>>>> feature/multillm-chat-integration
+  // 注意: APIルートを使用する場合は 'export' を削除する必要があります
+  // 現在は開発環境ではAPIルートを有効にし、本番環境では静的エクスポートを使用
+  ...(process.env.NODE_ENV === 'production' && process.env.STATIC_EXPORT === 'true' 
+    ? { output: 'export' } 
+    : {}),
   images: {
     unoptimized: true
   },
