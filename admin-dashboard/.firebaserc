@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "conea-48fcf"
+  },
+  "targets": {
+    "conea-48fcf": {
+      "hosting": {
+        "stagingapp": [
+          "stagingapp-conea-ai"
+        ]
+      }
+    }
+  }
+}

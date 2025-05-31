@@ -1,0 +1,15 @@
+{
+  "botToken": "xoxb-5834401150371-8936002781413-vJxhNlZGb5bfzI7zxtkapp16",
+  "appToken": "xapp-1-A08TBFBBM54-8930272906675-3af6f5c552522b906eb6637e02554e801a481f26c827c75d0050058f2adb2d27",
+  "signingSecret": "f158ed480538eb14dd0cb9ff809d218e",
+  "workspace": "cupofteainc",
+  "features": {
+    "mentionCommands": true,
+    "slashCommands": true,
+    "directMessages": false
+  },
+  "channels": [],
+  "id": "1",
+  "status": "connected",
+  "lastConnected": "2025-05-22T16:28:03.715Z"
+}

@@ -1,0 +1,260 @@
+name: PR Triage Automation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted]
+  schedule:
+    - cron: '0 0 * * *'  # Daily at midnight UTC
+  workflow_dispatch:  # Manual trigger
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+  issues: read
+
+jobs:
+  pr-inventory:
+    name: Collect PR Inventory
+    if: github.event.pull_request.draft == false || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      pr_data: ${{ steps.collect_data.outputs.pr_data }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r scripts/requirements.txt
+      
+      - name: Collect PR data
+        id: collect_data
+        run: |
+          DATA=$(python scripts/pr_inventory.py --output json)
+          echo "pr_data=$(echo $DATA | jq -c .)" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload PR inventory as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-inventory
+          path: pr_inventory.json
+          retention-days: 7
+
+  pr-analysis:
+    name: Analyze PRs
+    needs: pr-inventory
+    runs-on: ubuntu-latest
+    outputs:
+      rename_impact: ${{ steps.rename_analysis.outputs.impact_data }}
+      conflicts: ${{ steps.conflict_analysis.outputs.conflict_data }}
+      dependencies: ${{ steps.dependency_analysis.outputs.dependency_data }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r scripts/requirements.txt
+      
+      - name: Analyze rename impact
+        id: rename_analysis
+        run: |
+          IMPACT=$(python scripts/analyze_rename_impact.py --input '${{ needs.pr-inventory.outputs.pr_data }}' --output json)
+          echo "impact_data=$(echo $IMPACT | jq -c .)" >> $GITHUB_OUTPUT
+      
+      - name: Analyze conflicts
+        id: conflict_analysis
+        run: |
+          CONFLICTS=$(python scripts/analyze_conflicts.py --input '${{ needs.pr-inventory.outputs.pr_data }}' --output json)
+          echo "conflict_data=$(echo $CONFLICTS | jq -c .)" >> $GITHUB_OUTPUT
+      
+      - name: Generate dependency graph
+        id: dependency_analysis
+        run: |
+          DEPS=$(python scripts/pr_dependency_graph.py --input '${{ needs.pr-inventory.outputs.pr_data }}' --output json)
+          echo "dependency_data=$(echo $DEPS | jq -c .)" >> $GITHUB_OUTPUT
+      
+      - name: Upload analysis results as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-analysis-results
+          path: |
+            rename_impact.json
+            conflicts.json
+            dependency_graph.json
+          retention-days: 7
+
+  pr-statistics:
+    name: Generate PR Statistics
+    needs: pr-inventory
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r scripts/requirements.txt
+      
+      - name: Generate PR statistics
+        run: |
+          python scripts/pr_stats.py --input '${{ needs.pr-inventory.outputs.pr_data }}' --output-dir ./pr_stats
+      
+      - name: Upload statistics as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-statistics
+          path: ./pr_stats
+          retention-days: 7
+
+  generate-triage-report:
+    name: Generate Triage Report
+    needs: [pr-inventory, pr-analysis, pr-statistics]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request_review' && github.event.review.state == 'approved')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r scripts/requirements.txt
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+      
+      - name: Generate triage report
+        run: |
+          python scripts/generate_triage_report.py \
+            --inventory ./pr-inventory/pr_inventory.json \
+            --rename-impact ./pr-analysis-results/rename_impact.json \
+            --conflicts ./pr-analysis-results/conflicts.json \
+            --dependencies ./pr-analysis-results/dependency_graph.json \
+            --stats-dir ./pr-statistics \
+            --output-file triage_report.md
+      
+      - name: Upload triage report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: triage-report
+          path: |
+            triage_report.md
+            triage_report.html
+          retention-days: 7
+
+  update-pr:
+    name: Update PR with Triage Info
+    needs: [pr-inventory, pr-analysis]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r scripts/requirements.txt
+      
+      - name: Generate PR comment
+        id: generate_comment
+        run: |
+          # Extract only the current PR data from inventory
+          PR_DATA=$(echo '${{ needs.pr-inventory.outputs.pr_data }}' | jq -c '.pull_requests[] | select(.number == ${{ github.event.pull_request.number }})')
+          
+          # Generate comment with triage information
+          COMMENT=$(python scripts/generate_pr_comment.py \
+            --pr-data "$PR_DATA" \
+            --rename-impact '${{ needs.pr-analysis.outputs.rename_impact }}' \
+            --conflicts '${{ needs.pr-analysis.outputs.conflicts }}' \
+            --dependencies '${{ needs.pr-analysis.outputs.dependencies }}')
+          
+          # Escape newlines for GitHub Actions
+          COMMENT="${COMMENT//'%'/'%25'}"
+          COMMENT="${COMMENT//$'\n'/'%0A'}"
+          COMMENT="${COMMENT//$'\r'/'%0D'}"
+          
+          echo "comment=$COMMENT" >> $GITHUB_OUTPUT
+      
+      - name: Add comment to PR
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const commentBody = `${{ steps.generate_comment.outputs.comment }}`;
+            
+            // Check for existing comment from this action
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            
+            const botComment = comments.find(comment => {
+              return comment.user.login === 'github-actions[bot]' && 
+                     comment.body.includes('## PR Triage Report');
+            });
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            }

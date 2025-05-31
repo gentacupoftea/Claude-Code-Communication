@@ -1,9 +1,22 @@
 {
+<<<<<<< HEAD
   "projects": {},
   "targets": {
     "conea-48fcf": {
       "hosting": {
         "stagingapp-conea-ai": [
+=======
+  "projects": {
+    "default": "conea-48fcf"
+  },
+  "targets": {
+    "conea-48fcf": {
+      "hosting": {
+        "staging-conea-ai": [
+          "staging-conea-ai"
+        ],
+        "stagingapp": [
+>>>>>>> origin/main
           "stagingapp-conea-ai"
         ]
       }

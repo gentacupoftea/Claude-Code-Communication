@@ -1,0 +1,89 @@
+# Authentication & Authorization Integration Test Plan
+
+## Overview
+This document outlines the comprehensive integration testing strategy for the authentication and authorization system of the Shopify MCP Server. The goal is to verify secure interaction between the auth module and external services such as Google Analytics, Shopify API, and the front‑end UI while supporting multi‑tenant operations.
+
+## Test Objectives
+- Validate complete user authentication flows, including successful login and failure handling.
+- Ensure role‑based access control (RBAC) enforces permissions across API endpoints and UI components.
+- Verify token lifecycle management: issuance, validation, refresh, and expiration.
+- Confirm multi‑tenant separation of data and permissions.
+- Assess integration points with Google Analytics API, Shopify API, and the front‑end UI.
+
+## Test Scenario Categories
+### 1. User Authentication Flow
+- **Valid credentials**: user receives session token and correct role assignment.
+- **Invalid password**: login rejected with proper error message and no token created.
+- **Unknown user**: attempt blocked and audit log entry created.
+- **Locked account**: login denied after exceeding retry limit.
+- **Session expiration**: access fails after token lifetime ends.
+
+### 2. Role‑Based Access Control
+- **Admin role**: full access to management APIs and UI pages.
+- **Analyst role**: read‑only access to analytics data.
+- **Viewer role**: restricted dashboards only.
+- **Role escalation attempt**: ensure lower roles cannot access admin endpoints.
+- **UI permission checks**: menu items hide or disable based on role.
+
+### 3. Token Management
+- **Token issuance**: new token created at login with correct claims.
+- **Token validation**: API rejects tampered or expired tokens.
+- **Token refresh**: refresh endpoint returns a new token with extended expiry.
+- **Logout / token revocation**: previous token invalid after logout.
+
+### 4. Multi‑Tenant Functionality
+- **Isolated data**: tenant A cannot access tenant B resources.
+- **Scoped tokens**: tokens contain tenant identifier and are validated accordingly.
+- **Cross‑tenant role mismatch**: role from tenant A does not grant access to tenant B.
+
+## Integration Points
+### Google Analytics API
+- OAuth token exchange and refresh flow.
+- Data retrieval requires valid auth token from analytics service.
+
+### Shopify API
+- Use stored access tokens to authenticate REST and GraphQL calls.
+- Handle 401/403 errors by attempting token refresh.
+
+### Front‑End UI
+- Ensure login page communicates with auth API and stores token in browser.
+- Verify protected routes require valid token and correct role.
+
+## Test Environment Requirements
+- **Datasets**: seed database with users for each role, multiple tenants, and sample orders/products for Shopify integration. Include mock Google Analytics data.
+- **Configuration**: environment variables for API keys and secrets, plus test tokens.
+- **Prerequisites**: Python 3.9, dependencies from `requirements.txt` and `requirements-test.txt`.
+
+### Setup Steps
+1. Clone repository and create virtual environment.
+2. Run `./setup_test_env.sh` to install dependencies and configure environment.
+3. Load seed datasets using provided fixtures or scripts in `tests/fixtures`.
+4. Start local services (database, analytics mocks, Shopify test shop) via `docker-compose up -d` if available.
+
+## Test Case List (CSV Format)
+```csv
+test_id,category,description,expected_result,automation
+AUTH-001,Authentication,Valid login returns token,"HTTP 200, token contains user role",Automated
+AUTH-002,Authentication,Invalid password rejected,"HTTP 401 error",Automated
+AUTH-003,RBAC,Viewer cannot access admin API,"HTTP 403 error",Automated
+AUTH-004,Token,Refresh expired token,"HTTP 200 with new token",Automated
+AUTH-005,MultiTenant,Tenant A cannot read Tenant B data,"HTTP 403 error",Automated
+AUTH-006,UI,Session expires after logout,"Redirect to login",Manual
+```
+*This CSV can be imported into spreadsheets for further tracking.*
+
+## Risks and Mitigation
+- **Token leakage**: enforce HTTPS for all endpoints and secure storage. Rotate credentials regularly.
+- **Third‑party API downtime**: implement retries and fallback modes for Google Analytics and Shopify API calls.
+- **Permission misconfiguration**: maintain automated tests for RBAC matrix and review roles periodically.
+- **Data isolation bugs**: use separate test tenants and automated checks to verify isolation.
+
+## Test Prioritization and Automation
+- High priority tests: authentication flow, RBAC enforcement, token refresh, and multi‑tenant isolation.
+- Medium priority: Google Analytics and Shopify API integration specifics.
+- Low priority: UI edge cases and visual checks.
+
+Most API‑level tests can be automated with pytest and run in CI. UI tests that require manual verification (e.g., visual appearance after logout) should be documented for manual execution.
+
+Generated by: QA Engineer
+Date: 2025‑5‑17

@@ -1,0 +1,141 @@
+name: PR Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  validate:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        
+    - name: Validate PR Title
+      uses: amannn/action-semantic-pull-request@v5
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Check Branch Name
+      run: |
+        BRANCH_NAME="${{ github.head_ref }}"
+        if ! echo "$BRANCH_NAME" | grep -E '^(feat|fix|docs|style|refactor|test|chore)\/[a-z0-9-]+$'; then
+          echo "❌ Branch name should follow pattern: {type}/{description}"
+          echo "Examples: feat/add-auth, fix/memory-leak, docs/update-readme"
+          exit 1
+        fi
+        
+    - name: Check File Size
+      run: |
+        FILES_TOO_LARGE=$(find . -type f -size +1M | grep -v -E "(vendor/|node_modules/|\.git/)" || true)
+        if [ -n "$FILES_TOO_LARGE" ]; then
+          echo "❌ Files larger than 1MB detected:"
+          echo "$FILES_TOO_LARGE"
+          exit 1
+        fi
+        
+    - name: Security Scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'config'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Security Results
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  complexity-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      run: |
+        pip install radon flake8-cognitive-complexity
+        
+    - name: Check Cyclomatic Complexity
+      run: |
+        echo "### Cyclomatic Complexity Report" >> $GITHUB_STEP_SUMMARY
+        radon cc . -a -s | tee -a $GITHUB_STEP_SUMMARY
+        
+    - name: Check Cognitive Complexity
+      run: |
+        echo "### Cognitive Complexity Report" >> $GITHUB_STEP_SUMMARY
+        flake8 --max-cognitive-complexity=10 . || true >> $GITHUB_STEP_SUMMARY
+
+  test-coverage:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt -r requirements-test.txt
+        
+    - name: Run tests with coverage
+      run: |
+        pytest --cov=src --cov-report=html --cov-report=term --cov-report=json
+        
+    - name: Check coverage threshold
+      run: |
+        COVERAGE=$(python -c "import json; print(json.load(open('coverage.json'))['totals']['percent_covered'])")
+        echo "Coverage: $COVERAGE%"
+        if (( $(echo "$COVERAGE < 70" | bc -l) )); then
+          echo "❌ Coverage below 70% threshold"
+          exit 1
+        fi
+        
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: htmlcov/
+        
+    - name: Comment coverage on PR
+      uses: py-cov-action/python-coverage-comment-action@v3
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        MINIMUM_GREEN: 85
+        MINIMUM_ORANGE: 70
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Check for security vulnerabilities
+      uses: pypa/gh-action-pypi-publish/auditwheel@v1
+      with:
+        requirements-files: |
+          requirements.txt
+          requirements-test.txt
+          
+    - name: Check for outdated dependencies
+      run: |
+        pip install pip-audit
+        pip-audit --desc --fix
+        
+    - name: License check
+      run: |
+        pip install pip-licenses
+        pip-licenses --format=markdown --with-urls --output-file=LICENSES.md

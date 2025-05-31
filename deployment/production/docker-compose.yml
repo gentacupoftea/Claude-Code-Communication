@@ -1,0 +1,134 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: conea/frontend:latest
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health.txt"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - conea-network
+
+  backend:
+    image: conea/backend:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongo
+      - redis
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - MONGO_URI=mongodb://mongo:27017/conea
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - SHOPIFY_SHOP_NAME=${SHOPIFY_SHOP_NAME}
+      - SHOPIFY_ACCESS_TOKEN=${SHOPIFY_ACCESS_TOKEN}
+      - SHOPIFY_API_VERSION=${SHOPIFY_API_VERSION}
+      - LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - backend-logs:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - conea-network
+
+  mongo:
+    image: mongo:5.0
+    command: ["--auth", "--wiredTigerCacheSizeGB", "1"]
+    volumes:
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=conea
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/conea --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - conea-network
+
+  redis:
+    image: redis:6.2-alpine
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - conea-network
+
+  # Only used for blue-green deployment, not directly accessed
+  nginx:
+    image: nginx:1.21-alpine
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/certs:/etc/nginx/certs
+      - ./nginx/logs:/var/log/nginx
+      - ./nginx/html:/usr/share/nginx/html
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - conea-network
+
+volumes:
+  mongo-data:
+  mongo-config:
+  redis-data:
+  backend-logs:
+
+networks:
+  conea-network:
+    driver: bridge

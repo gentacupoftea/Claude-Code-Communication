@@ -1,0 +1,135 @@
+name: Parallel Test Execution
+
+on:
+  workflow_call:
+    inputs:
+      test-split:
+        required: false
+        type: number
+        default: 4
+
+jobs:
+  discover-tests:
+    runs-on: ubuntu-latest
+    outputs:
+      test-chunks: ${{ steps.split.outputs.chunks }}
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install pytest
+      run: pip install pytest pytest-json-report
+      
+    - name: Collect and split tests
+      id: split
+      run: |
+        # Collect all tests
+        pytest --collect-only --json-report --json-report-file=tests.json
+        
+        # Split tests into chunks
+        python - <<EOF
+        import json
+        import sys
+        
+        with open('tests.json', 'r') as f:
+            report = json.load(f)
+        
+        tests = []
+        for item in report.get('tests', []):
+            tests.append(item['nodeid'])
+        
+        # Split into N chunks
+        chunk_size = len(tests) // ${{ inputs.test-split }}
+        chunks = []
+        
+        for i in range(${{ inputs.test-split }}):
+            start = i * chunk_size
+            end = start + chunk_size if i < ${{ inputs.test-split }} - 1 else len(tests)
+            chunks.append(tests[start:end])
+        
+        # Output as matrix
+        print(f"chunks={json.dumps(chunks)}")
+        EOF >> $GITHUB_OUTPUT
+
+  run-tests:
+    needs: discover-tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chunk: ${{ fromJson(needs.discover-tests.outputs.test-chunks) }}
+        python-version: ['3.9', '3.10', '3.11']
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pip
+          test_venv
+        key: parallel-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements*.txt') }}
+    
+    - name: Install dependencies
+      run: |
+        python -m venv test_venv
+        source test_venv/bin/activate
+        pip install -r requirements.txt -r requirements-test.txt
+    
+    - name: Run test chunk
+      run: |
+        source test_venv/bin/activate
+        pytest ${{ join(matrix.chunk, ' ') }} \
+          --junit-xml=junit-${{ strategy.job-index }}.xml \
+          --cov=src \
+          --cov-report=term \
+          --cov-report=json:coverage-${{ strategy.job-index }}.json
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ strategy.job-index }}
+        path: |
+          junit-*.xml
+          coverage-*.json
+
+  merge-results:
+    needs: run-tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download all test results
+      uses: actions/download-artifact@v4
+      with:
+        pattern: test-results-*
+        merge-multiple: true
+    
+    - name: Merge coverage reports
+      run: |
+        pip install coverage[toml]
+        coverage combine coverage-*.json
+        coverage report
+        coverage xml
+    
+    - name: Upload merged coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+    
+    - name: Generate test report
+      uses: dorny/test-reporter@v1
+      with:
+        name: Parallel Test Results
+        path: 'junit-*.xml'
+        reporter: java-junit

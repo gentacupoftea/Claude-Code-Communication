@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "amazon": {
     "accessKeyId": "",
     "secretAccessKey": "",
@@ -25,4 +26,7 @@
     "uid": "",
     "accessToken": ""
   }
+=======
+  "invalid-string": ""
+>>>>>>> origin/main
 }

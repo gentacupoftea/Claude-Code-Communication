@@ -1,0 +1,39 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: conea-backend-staging
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: '100'
+        autoscaling.knative.dev/minScale: '1'
+    spec:
+      containerConcurrency: 1000
+      timeoutSeconds: 300
+      serviceAccountName: conea-backend-staging
+      containers:
+      - image: gcr.io/conea-48fcf/conea-backend-staging
+        ports:
+        - name: http1
+          containerPort: 8000
+        resources:
+          limits:
+            cpu: '1'
+            memory: 512Mi
+        env:
+        - name: NODE_ENV
+          value: production
+        - name: PORT
+          value: '8000'
+        - name: MULTILLM_API_URL
+          value: https://api.multillm.conea.ai
+        - name: MULTILLM_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: multillm-api-key
+              key: key
+        - name: FRONTEND_URL
+          value: https://staging.conea.ai

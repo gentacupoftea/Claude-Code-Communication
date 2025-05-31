@@ -1,0 +1,151 @@
+graph TB
+    %% Client Layer
+    subgraph "Client Layer"
+        WEB[fa:fa-globe Web Application<br/>React/Next.js]
+        MOBILE[fa:fa-mobile Mobile App<br/>React Native]
+        API_CLIENT[fa:fa-code API Clients<br/>SDK/CLI]
+    end
+    
+    %% Edge Layer
+    subgraph "Edge Layer"
+        CDN[fa:fa-shield-alt CDN/CloudFlare<br/>Static Content & DDoS Protection]
+        WAF[fa:fa-fire-alt WAF<br/>Security Filtering]
+    end
+    
+    %% API Gateway Layer
+    subgraph "API Gateway Layer"
+        GATEWAY[fa:fa-server API Gateway<br/>Kong/Express Gateway]
+        AUTH[fa:fa-lock Auth Service<br/>OAuth2.0/JWT]
+        RATE[fa:fa-tachometer-alt Rate Limiter<br/>Redis-based]
+    end
+    
+    %% Microservices Layer
+    subgraph "Microservices Layer"
+        subgraph "Core Services"
+            AI[fa:fa-brain AI Service<br/>Multi-LLM Integration]
+            INTEGRATION[fa:fa-plug Integration Service<br/>External APIs]
+            DATA[fa:fa-database Data Processing<br/>ETL/Batch]
+        end
+        
+        subgraph "Support Services"
+            ANALYTICS[fa:fa-chart-line Analytics Service<br/>Metrics & Reports]
+            WEBHOOK[fa:fa-broadcast-tower Webhook Service<br/>Event Delivery]
+            NOTIFICATION[fa:fa-bell Notification Service<br/>Email/SMS/Push]
+        end
+    end
+    
+    %% Data Layer
+    subgraph "Data Layer"
+        subgraph "Primary Storage"
+            POSTGRES[(fa:fa-database PostgreSQL<br/>Transactional Data)]
+            REDIS[(fa:fa-memory Redis<br/>Cache & Sessions)]
+        end
+        
+        subgraph "Secondary Storage"
+            S3[fa:fa-hdd S3 Storage<br/>Files & Backups]
+            ELASTIC[(fa:fa-search Elasticsearch<br/>Search & Logs)]
+        end
+    end
+    
+    %% Infrastructure Layer
+    subgraph "Infrastructure Layer"
+        subgraph "Message Queue"
+            QUEUE[fa:fa-stream RabbitMQ/Bull<br/>Job Queue]
+            KAFKA[fa:fa-project-diagram Kafka<br/>Event Streaming]
+        end
+        
+        subgraph "Monitoring"
+            MONITOR[fa:fa-tv Prometheus<br/>Metrics Collection]
+            GRAFANA[fa:fa-chart-area Grafana<br/>Visualization]
+            LOG[fa:fa-file-alt ELK Stack<br/>Log Aggregation]
+        end
+    end
+    
+    %% External Services
+    subgraph "External Services"
+        OPENAI[fa:fa-robot OpenAI API]
+        ANTHROPIC[fa:fa-robot Claude API]
+        SHOPIFY[fa:fa-shopping-cart Shopify API]
+        AMAZON[fa:fa-box Amazon SP-API]
+        SLACK[fa:fa-comment Slack API]
+    end
+    
+    %% Connections - Client to Edge
+    WEB --> CDN
+    MOBILE --> CDN
+    API_CLIENT --> CDN
+    
+    %% Connections - Edge to Gateway
+    CDN --> WAF
+    WAF --> GATEWAY
+    
+    %% Connections - Gateway to Services
+    GATEWAY --> AUTH
+    GATEWAY --> RATE
+    AUTH -.->|validates| GATEWAY
+    RATE -.->|limits| GATEWAY
+    
+    %% Connections - Gateway to Microservices
+    GATEWAY --> AI
+    GATEWAY --> INTEGRATION
+    GATEWAY --> DATA
+    GATEWAY --> ANALYTICS
+    GATEWAY --> WEBHOOK
+    GATEWAY --> NOTIFICATION
+    
+    %% Connections - Services to Data
+    AI --> POSTGRES
+    AI --> REDIS
+    INTEGRATION --> POSTGRES
+    INTEGRATION --> REDIS
+    DATA --> POSTGRES
+    DATA --> S3
+    ANALYTICS --> POSTGRES
+    ANALYTICS --> ELASTIC
+    WEBHOOK --> POSTGRES
+    NOTIFICATION --> POSTGRES
+    
+    %% Connections - Services to Queue
+    AI --> QUEUE
+    INTEGRATION --> QUEUE
+    DATA --> QUEUE
+    WEBHOOK --> KAFKA
+    NOTIFICATION --> QUEUE
+    
+    %% Connections - Queue to Services
+    QUEUE --> DATA
+    QUEUE --> NOTIFICATION
+    KAFKA --> ANALYTICS
+    KAFKA --> WEBHOOK
+    
+    %% Connections - External Services
+    AI -.->|API calls| OPENAI
+    AI -.->|API calls| ANTHROPIC
+    INTEGRATION -.->|API calls| SHOPIFY
+    INTEGRATION -.->|API calls| AMAZON
+    NOTIFICATION -.->|API calls| SLACK
+    
+    %% Connections - Monitoring
+    MONITOR -.->|collects| AI
+    MONITOR -.->|collects| INTEGRATION
+    MONITOR -.->|collects| DATA
+    MONITOR -.->|collects| ANALYTICS
+    LOG -.->|aggregates| ELASTIC
+    GRAFANA -.->|queries| MONITOR
+    
+    %% Styling
+    classDef clientClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef edgeClass fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef gatewayClass fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    classDef serviceClass fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef dataClass fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    classDef infraClass fill:#f1f8e9,stroke:#33691e,stroke-width:2px
+    classDef externalClass fill:#efebe9,stroke:#3e2723,stroke-width:2px
+    
+    class WEB,MOBILE,API_CLIENT clientClass
+    class CDN,WAF edgeClass
+    class GATEWAY,AUTH,RATE gatewayClass
+    class AI,INTEGRATION,DATA,ANALYTICS,WEBHOOK,NOTIFICATION serviceClass
+    class POSTGRES,REDIS,S3,ELASTIC dataClass
+    class QUEUE,KAFKA,MONITOR,GRAFANA,LOG infraClass
+    class OPENAI,ANTHROPIC,SHOPIFY,AMAZON,SLACK externalClass

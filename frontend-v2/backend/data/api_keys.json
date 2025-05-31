@@ -1,0 +1,28 @@
+{
+  "amazon": {
+    "accessKeyId": "",
+    "secretAccessKey": "",
+    "region": "us-east-1",
+    "marketplaceId": "",
+    "sellerId": ""
+  },
+  "rakuten": {
+    "applicationId": "",
+    "secret": "",
+    "serviceSecret": "",
+    "shopUrl": ""
+  },
+  "shopify": {
+    "shopDomain": "",
+    "accessToken": "",
+    "apiKey": "",
+    "apiSecret": ""
+  },
+  "nextengine": {
+    "clientId": "",
+    "clientSecret": "",
+    "redirectUri": "",
+    "uid": "",
+    "accessToken": ""
+  }
+}

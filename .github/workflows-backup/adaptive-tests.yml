@@ -1,0 +1,117 @@
+name: Adaptive Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        dependency-level: ['minimal', 'standard', 'full']
+        
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pip
+          ~/Library/Caches/pip
+          ~/.local/share/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ matrix.dependency-level }}-${{ hashFiles('requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ matrix.dependency-level }}-
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+    
+    - name: Install minimal dependencies
+      if: matrix.dependency-level == 'minimal'
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-base.txt
+        pip install pytest
+    
+    - name: Install standard dependencies
+      if: matrix.dependency-level == 'standard'
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-extended.txt
+        pip install -r requirements-dev.txt
+    
+    - name: Install full dependencies
+      if: matrix.dependency-level == 'full'
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-extended.txt
+        pip install -r requirements-optional.txt || true
+        pip install -r requirements-dev.txt
+    
+    - name: Run environment check
+      run: python test_environment_check.py
+    
+    - name: Run adaptive tests
+      run: python run_adaptive_tests.py
+    
+    - name: Upload test report
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-report-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.dependency-level }}
+        path: |
+          test_report.json
+          environment_report.json
+    
+    - name: Upload coverage report
+      if: matrix.dependency-level == 'full'
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
+        path: htmlcov/
+
+  summary:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+    
+    - name: Generate summary report
+      run: |
+        echo "# Test Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Matrix Results" >> $GITHUB_STEP_SUMMARY
+        echo "| OS | Python | Dependencies | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------|--------|--------------|--------|" >> $GITHUB_STEP_SUMMARY
+        
+        # Process test reports and generate summary
+        for report in test-report-*/test_report.json; do
+          # Extract information from filename and report
+          dirname=$(dirname "$report")
+          parts=(${dirname//-/ })
+          os=${parts[2]}
+          python=${parts[3]}
+          deps=${parts[4]}
+          
+          if [ -f "$report" ]; then
+            success=$(jq -r '.success' "$report")
+            status="✅ Passed"
+            if [ "$success" = "false" ]; then
+              status="❌ Failed"
+            fi
+          else
+            status="⚠️ No report"
+          fi
+          
+          echo "| $os | $python | $deps | $status |" >> $GITHUB_STEP_SUMMARY
+        done

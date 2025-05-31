@@ -1,10 +1,30 @@
 /**
+<<<<<<< HEAD
  * Conea Staging Backend API Server
  * MultiLLM統合API実装
  */
 
 // 環境変数読み込み
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+=======
+ * Conea統合バックエンドサーバー
+ * conea-stagingとconea-integrationの機能を統合
+ */
+
+// 環境変数読み込み
+require('dotenv').config();
+
+// 環境変数検証
+const { validateAndLog, getEnvironmentHealth } = require('./src/config/envValidator');
+const envValidation = validateAndLog();
+
+// 本番環境で検証エラーがある場合は起動を停止
+if (process.env.NODE_ENV === 'production' && !envValidation.valid) {
+  console.error('🚨 Critical environment configuration errors detected in production!');
+  console.error('Server startup aborted for security reasons.');
+  process.exit(1);
+}
+>>>>>>> origin/main
 
 const express = require('express');
 const cors = require('cors');
@@ -13,8 +33,31 @@ const fs = require('fs').promises;
 const path = require('path');
 const axios = require('axios');
 const multer = require('multer');
+<<<<<<< HEAD
 const AIService = require('./lib/ai-service');
 
+=======
+const socketIO = require('socket.io');
+
+// conea-integrationからの機能
+const { WebClient } = require('@slack/web-api');
+const Redis = require('ioredis');
+const { BetaAnalyticsDataClient } = require('@google-analytics/data');
+
+// conea-stagingからの機能
+const AIService = require('./lib/ai-service');
+
+// セキュリティミドルウェア
+const { 
+  basicValidation, 
+  validateField, 
+  validateEmail, 
+  validateJSON, 
+  validateApiKey,
+  limitArrayLength 
+} = require('./src/middleware/validation');
+
+>>>>>>> origin/main
 // ファイルアップロード設定
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -29,6 +72,7 @@ const PORT = process.env.PORT || 8000;
 // AI Service インスタンス作成
 const aiService = new AIService();
 
+<<<<<<< HEAD
 // Middleware
 app.use(cors({
   origin: [
@@ -42,6 +86,119 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+=======
+// Redis接続（conea-integrationから）
+let redis = null;
+try {
+  redis = new Redis({
+    host: process.env.REDIS_HOST || 'localhost',
+    port: process.env.REDIS_PORT || 6379,
+    password: process.env.REDIS_PASSWORD
+  });
+} catch (error) {
+  console.warn('Redis connection failed:', error.message);
+}
+
+// Slack接続（conea-integrationから）
+const slackClient = process.env.SLACK_BOT_TOKEN ? 
+  new WebClient(process.env.SLACK_BOT_TOKEN) : null;
+
+// セキュアなCORS設定
+const getAllowedOrigins = () => {
+  const baseOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:5173', // Vite dev server
+  ];
+  
+  const prodOrigins = [
+    'https://conea.ai',
+    'https://app.conea.ai',
+    'https://staging.conea.ai',
+    'https://staging-conea-ai.web.app'
+  ];
+  
+  // 開発環境では localhost を許可、本番環境では本番ドメインのみ
+  if (process.env.NODE_ENV === 'production') {
+    return [...prodOrigins, process.env.FRONTEND_URL].filter(Boolean);
+  } else {
+    return [...baseOrigins, ...prodOrigins, process.env.FRONTEND_URL].filter(Boolean);
+  }
+};
+
+app.use(cors({
+  origin: getAllowedOrigins(),
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
+  maxAge: 86400 // 24 hours
+}));
+
+// セキュリティヘッダーの設定
+app.use((req, res, next) => {
+  // セキュリティヘッダー
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  
+  // CSP（コンテンツセキュリティポリシー）
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: https:",
+    "connect-src 'self' wss: ws:",
+    "frame-ancestors 'none'"
+  ].join('; ');
+  
+  res.setHeader('Content-Security-Policy', csp);
+  
+  // HSTS（HTTP Strict Transport Security）- 本番環境のみ
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  }
+  
+  next();
+});
+
+// JSONボディパーサー（サイズ制限付き）
+app.use(express.json({ 
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    // JSON構文チェック
+    try {
+      JSON.parse(buf);
+    } catch (e) {
+      res.status(400).json({ error: 'Invalid JSON format' });
+      return;
+    }
+  }
+}));
+
+// URL-encoded data parser
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// 基本的な入力値検証ミドルウェア（全エンドポイントに適用）
+app.use(basicValidation);
+
+// セキュアなSocket.IOセットアップ
+const server = http.createServer(app);
+const io = socketIO(server, {
+  cors: {
+    origin: getAllowedOrigins(),
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  // セキュリティ設定
+  transports: ['websocket', 'polling'],
+  allowEIO3: false
+});
+>>>>>>> origin/main
 
 // ログ設定
 const log = (message, level = 'INFO') => {
@@ -63,7 +220,11 @@ async function ensureDataDir() {
   }
 }
 
+<<<<<<< HEAD
 // デフォルトデータ
+=======
+// デフォルトデータ（conea-stagingから）
+>>>>>>> origin/main
 const defaultApiKeys = {
   amazon: {
     accessKeyId: '',
@@ -93,9 +254,12 @@ const defaultApiKeys = {
   }
 };
 
+<<<<<<< HEAD
 const defaultDashboards = [];
 const defaultLearningData = [];
 
+=======
+>>>>>>> origin/main
 // データファイル初期化
 async function initializeData() {
   await ensureDataDir();
@@ -109,12 +273,17 @@ async function initializeData() {
   try {
     await fs.access(DASHBOARDS_FILE);
   } catch {
+<<<<<<< HEAD
     await fs.writeFile(DASHBOARDS_FILE, JSON.stringify(defaultDashboards, null, 2));
+=======
+    await fs.writeFile(DASHBOARDS_FILE, JSON.stringify([], null, 2));
+>>>>>>> origin/main
   }
   
   try {
     await fs.access(LEARNING_DATA_FILE);
   } catch {
+<<<<<<< HEAD
     await fs.writeFile(LEARNING_DATA_FILE, JSON.stringify(defaultLearningData, null, 2));
   }
 }
@@ -124,21 +293,46 @@ async function initializeData() {
 // Health Check
 app.get('/api/health', (req, res) => {
   // AI プロバイダーの設定状態を確認
+=======
+    await fs.writeFile(LEARNING_DATA_FILE, JSON.stringify([], null, 2));
+  }
+}
+
+// ============= 統合版 API Routes =============
+
+// Health Check（統合版）
+app.get('/api/health', (req, res) => {
+>>>>>>> origin/main
   const aiProviders = {
     openai: !!(process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY),
     anthropic: !!(process.env.ANTHROPIC_API_KEY || process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY),
     google: !!(process.env.GOOGLE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_API_KEY)
   };
   
+<<<<<<< HEAD
   const configuredProviders = Object.entries(aiProviders)
     .filter(([_, configured]) => configured)
     .map(([provider]) => provider);
+=======
+  const services = {
+    api: 'running',
+    aiProviders: aiProviders,
+    database: 'file_based',
+    redis: redis && redis.status === 'ready' ? 'connected' : 'disconnected',
+    slack: slackClient ? 'configured' : 'not configured',
+    socket: 'enabled'
+  };
+  
+  // 環境変数健全性チェック
+  const environmentHealth = getEnvironmentHealth();
+>>>>>>> origin/main
   
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
     version: '2.0.0',
     environment: process.env.NODE_ENV || 'development',
+<<<<<<< HEAD
     mode: 'production',
     services: {
       api: 'running',
@@ -157,6 +351,34 @@ app.get('/api/models', async (req, res) => {
     
     res.json({
       models: models,
+=======
+    mode: 'integrated',
+    services: services,
+    environmentHealth: environmentHealth
+  });
+});
+
+// 環境変数詳細チェックエンドポイント（開発・ステージング専用）
+app.get('/api/health/environment', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not available in production' });
+  }
+  
+  const environmentHealth = getEnvironmentHealth();
+  res.json(environmentHealth);
+});
+
+// 利用可能なモデル一覧
+app.get('/api/models', async (req, res) => {
+  try {
+    const models = aiService.getAvailableModels();
+    const status = aiService.getProviderStatus();
+    
+    res.json({
+      models: models,
+      availableProviders: aiService.getAvailableProviders(),
+      providerStatus: status,
+>>>>>>> origin/main
       providers: {
         openai: ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo'],
         anthropic: ['claude-3-haiku-20240307', 'claude-3-sonnet-20240229', 'claude-3-opus-20240229'],
@@ -167,11 +389,18 @@ app.get('/api/models', async (req, res) => {
     log(`Error fetching models: ${error.message}`, 'ERROR');
     res.status(500).json({ 
       error: 'Failed to fetch models',
+<<<<<<< HEAD
       models: ['gpt-3.5-turbo'] // 緊急フォールバック
+=======
+      models: [],
+      availableProviders: [],
+      providerStatus: {}
+>>>>>>> origin/main
     });
   }
 });
 
+<<<<<<< HEAD
 // ファイルアップロード処理
 app.post('/api/files/upload', upload.single('file'), async (req, res) => {
   try {
@@ -214,11 +443,40 @@ app.post('/api/chat/with-files', upload.array('file_', 10), async (req, res) => 
     const temperature = parseFloat(req.body.temperature) || 0.7;
     const max_tokens = parseInt(req.body.max_tokens) || 1000;
     const system_prompt = req.body.system_prompt;
+=======
+// プロバイダー状態確認エンドポイント
+app.get('/api/providers/status', async (req, res) => {
+  try {
+    const status = aiService.getProviderStatus();
+    res.json({
+      status: status,
+      available: aiService.getAvailableProviders(),
+      models: aiService.getAvailableModels()
+    });
+  } catch (error) {
+    log(`Error getting provider status: ${error.message}`, 'ERROR');
+    res.status(500).json({ 
+      error: 'Failed to get provider status',
+      status: {},
+      available: [],
+      models: []
+    });
+  }
+});
+
+// チャットメッセージ送信
+app.post('/api/chat', 
+  limitArrayLength('messages', 50), // メッセージ数制限
+  async (req, res) => {
+  try {
+    const { messages, model = 'gpt-3.5-turbo', temperature = 0.7, max_tokens = 1000, system_prompt } = req.body;
+>>>>>>> origin/main
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Messages array is required' });
     }
 
+<<<<<<< HEAD
     // ファイル情報をメッセージに追加
     let fileContext = '';
     if (req.files && req.files.length > 0) {
@@ -247,6 +505,46 @@ app.post('/api/chat/with-files', upload.array('file_', 10), async (req, res) => 
     }
 
     // システムプロンプトがある場合はメッセージの最初に追加
+=======
+    // 各メッセージの内容長制限
+    for (const message of messages) {
+      if (message.content && message.content.length > 10000) {
+        return res.status(400).json({ 
+          error: 'Message content too long',
+          message: 'Each message content must be less than 10,000 characters'
+        });
+      }
+    }
+
+    // モデル名の検証
+    const allowedModels = [
+      'gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo',
+      'claude-3-haiku-20240307', 'claude-3-sonnet-20240229', 'claude-3-opus-20240229',
+      'gemini-1.5-flash', 'gemini-1.5-pro'
+    ];
+    if (!allowedModels.includes(model)) {
+      return res.status(400).json({ 
+        error: 'Invalid model',
+        message: 'Specified model is not supported'
+      });
+    }
+
+    // パラメータの範囲検証
+    if (temperature < 0 || temperature > 2) {
+      return res.status(400).json({ 
+        error: 'Invalid temperature',
+        message: 'Temperature must be between 0 and 2'
+      });
+    }
+
+    if (max_tokens < 1 || max_tokens > 4000) {
+      return res.status(400).json({ 
+        error: 'Invalid max_tokens',
+        message: 'max_tokens must be between 1 and 4000'
+      });
+    }
+
+>>>>>>> origin/main
     let chatMessages = [...messages];
     if (system_prompt) {
       chatMessages.unshift({
@@ -255,7 +553,10 @@ app.post('/api/chat/with-files', upload.array('file_', 10), async (req, res) => 
       });
     }
 
+<<<<<<< HEAD
     // AIServiceを使用してチャットを実行
+=======
+>>>>>>> origin/main
     try {
       const result = await aiService.chat(chatMessages, {
         model,
@@ -263,7 +564,10 @@ app.post('/api/chat/with-files', upload.array('file_', 10), async (req, res) => 
         max_tokens
       });
 
+<<<<<<< HEAD
       // レスポンス形式を統一
+=======
+>>>>>>> origin/main
       res.json({
         id: `chat-${Date.now()}`,
         model: result.model,
@@ -297,6 +601,7 @@ app.post('/api/chat/with-files', upload.array('file_', 10), async (req, res) => 
     }
 
   } catch (error) {
+<<<<<<< HEAD
     log(`Chat with files API Error: ${error.message}`, 'ERROR');
     res.status(500).json({ 
       error: 'Chat service error',
@@ -367,6 +672,8 @@ app.post('/api/chat', async (req, res) => {
     }
 
   } catch (error) {
+=======
+>>>>>>> origin/main
     log(`Chat API Error: ${error.message}`, 'ERROR');
     res.status(500).json({ 
       error: 'Chat service error',
@@ -381,6 +688,7 @@ app.get('/api/settings/apis', async (req, res) => {
     const data = await fs.readFile(API_KEYS_FILE, 'utf8');
     const apiKeys = JSON.parse(data);
     
+<<<<<<< HEAD
     // セキュリティ: 秘匿情報をマスク
     const maskedKeys = JSON.parse(JSON.stringify(apiKeys));
     Object.keys(maskedKeys).forEach(service => {
@@ -388,6 +696,30 @@ app.get('/api/settings/apis', async (req, res) => {
         if (key.toLowerCase().includes('secret') || key.toLowerCase().includes('key') || key.toLowerCase().includes('token')) {
           if (maskedKeys[service][key] && maskedKeys[service][key].length > 0) {
             maskedKeys[service][key] = '*'.repeat(8);
+=======
+    // セキュアなAPIキーマスキング実装
+    const SENSITIVE_FIELDS = ['secret', 'key', 'token', 'password', 'credential', 'auth'];
+    const maskedKeys = JSON.parse(JSON.stringify(apiKeys));
+    
+    Object.keys(maskedKeys).forEach(service => {
+      Object.keys(maskedKeys[service]).forEach(key => {
+        const isSensitive = SENSITIVE_FIELDS.some(field => 
+          key.toLowerCase().includes(field)
+        );
+        
+        if (isSensitive && maskedKeys[service][key]) {
+          const originalValue = maskedKeys[service][key].toString();
+          const originalLength = originalValue.length;
+          
+          if (originalLength > 8) {
+            // 最初の2文字と最後の2文字を表示、中間をマスク
+            maskedKeys[service][key] = originalValue.substr(0, 2) + 
+              '*'.repeat(Math.min(8, originalLength - 4)) + 
+              originalValue.substr(-2);
+          } else if (originalLength > 0) {
+            // 短い値は完全にマスク
+            maskedKeys[service][key] = '*'.repeat(originalLength);
+>>>>>>> origin/main
           }
         }
       });
@@ -400,9 +732,38 @@ app.get('/api/settings/apis', async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 app.post('/api/settings/apis', async (req, res) => {
   try {
     const apiKeys = req.body;
+=======
+app.post('/api/settings/apis', 
+  validateJSON('apiKeys', false), // オプショナルなJSON検証
+  async (req, res) => {
+  try {
+    const apiKeys = req.body;
+    
+    // APIキーオブジェクトの構造検証
+    if (!apiKeys || typeof apiKeys !== 'object') {
+      return res.status(400).json({ 
+        error: 'Invalid request body',
+        message: 'API keys must be provided as an object'
+      });
+    }
+
+    // 各サービスの設定を検証
+    const allowedServices = ['amazon', 'rakuten', 'shopify', 'nextengine'];
+    Object.keys(apiKeys).forEach(service => {
+      if (!allowedServices.includes(service)) {
+        return res.status(400).json({
+          error: 'Invalid service',
+          message: `Service '${service}' is not supported`,
+          allowedServices: allowedServices
+        });
+      }
+    });
+
+>>>>>>> origin/main
     await fs.writeFile(API_KEYS_FILE, JSON.stringify(apiKeys, null, 2));
     log('API keys updated successfully');
     res.json({ success: true, message: 'API settings saved' });
@@ -463,6 +824,7 @@ app.get('/api/learning-data', async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 app.post('/api/learning-data/upload', async (req, res) => {
   try {
     const { fileName, fileSize, fileType, content } = req.body;
@@ -475,22 +837,78 @@ app.post('/api/learning-data/upload', async (req, res) => {
       uploadedAt: new Date().toISOString(),
       records: content ? content.split('\n').length : 0,
       status: 'completed'
+=======
+app.post('/api/learning-data/upload', 
+  validateField('fileName', 'filename', true), // ファイル名検証
+  async (req, res) => {
+  try {
+    const { fileName, fileSize, fileType, content } = req.body;
+    
+    // ファイルサイズ制限（100MB）
+    if (fileSize && fileSize > 100 * 1024 * 1024) {
+      return res.status(400).json({
+        error: 'File too large',
+        message: 'File size must be less than 100MB',
+        maxSize: '100MB'
+      });
+    }
+
+    // 許可されるファイルタイプ
+    const allowedTypes = [
+      'text/plain', 'text/csv', 'application/json', 'application/xml',
+      'application/pdf', 'application/msword', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    
+    if (fileType && !allowedTypes.includes(fileType)) {
+      return res.status(400).json({
+        error: 'Invalid file type',
+        message: 'File type not supported',
+        allowedTypes: allowedTypes
+      });
+    }
+
+    // コンテンツサイズ制限
+    if (content && content.length > 50 * 1024 * 1024) { // 50MB for content string
+      return res.status(400).json({
+        error: 'Content too large',
+        message: 'File content exceeds maximum allowed size'
+      });
+    }
+    
+    const fileData = {
+      id: `file-${Date.now()}`,
+      fileName: fileName,
+      fileSize: fileSize,
+      fileType: fileType,
+      content: content,
+      uploadedAt: new Date().toISOString()
+>>>>>>> origin/main
     };
 
     const data = await fs.readFile(LEARNING_DATA_FILE, 'utf8');
     const learningData = JSON.parse(data);
+<<<<<<< HEAD
     learningData.push(learningDataEntry);
+=======
+    learningData.push(fileData);
+>>>>>>> origin/main
 
     await fs.writeFile(LEARNING_DATA_FILE, JSON.stringify(learningData, null, 2));
     
     log(`Learning data uploaded: ${fileName}`);
+<<<<<<< HEAD
     res.json({ success: true, file: learningDataEntry });
+=======
+    res.json({ success: true, file: fileData });
+>>>>>>> origin/main
   } catch (error) {
     log(`Error uploading learning data: ${error.message}`, 'ERROR');
     res.status(500).json({ error: 'Failed to upload learning data' });
   }
 });
 
+<<<<<<< HEAD
 // ============= API接続テスト =============
 
 app.get('/api/test-connection/:apiType', async (req, res) => {
@@ -1075,6 +1493,159 @@ app.post('/api/v2/multillm/execute/code', async (req, res) => {
     }
   }
 });
+=======
+// API接続テスト
+app.get('/api/test-connection/:apiType', async (req, res) => {
+  try {
+    const { apiType } = req.params;
+    log(`Testing connection for ${apiType}`);
+    
+    // 実際のテストロジックは実装されていませんが、基本的なレスポンスを返す
+    res.json({ 
+      success: true, 
+      message: `${apiType} connection test passed`,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    log(`Connection test failed for ${req.params.apiType}: ${error.message}`, 'ERROR');
+    res.status(500).json({ 
+      success: false, 
+      message: `Connection test failed: ${error.message}` 
+    });
+  }
+});
+
+// ============= conea-integration API Routes の統合 =============
+
+// 既存のAPIキー管理
+app.get('/api/keys', async (req, res) => {
+  try {
+    const data = await fs.readFile(API_KEYS_FILE, 'utf8');
+    const apiKeys = JSON.parse(data);
+    
+    // 複数のキーを配列形式で返す
+    const keyArray = Object.entries(apiKeys).map(([service, config]) => ({
+      id: service,
+      service: service,
+      ...config,
+      status: 'active'
+    }));
+    
+    res.json(keyArray);
+  } catch (error) {
+    log(`Error reading API keys: ${error.message}`, 'ERROR');
+    res.json([]);
+  }
+});
+
+// API Routes の動的読み込み（conea-integrationから）
+try {
+  const shopifyRoutes = require('./src/routes/shopify');
+  app.use('/api/shopify', shopifyRoutes);
+  log('Shopify routes loaded');
+} catch (error) {
+  console.warn('Failed to load Shopify routes:', error.message);
+  // Shopifyが利用できない場合のフォールバックエンドポイント
+  app.get('/api/shopify/*', (req, res) => {
+    res.status(503).json({
+      error: 'Shopify service unavailable',
+      message: 'Shopify integration is currently disabled due to configuration issues',
+      troubleshooting: {
+        checkDependencies: 'Ensure rate-limit-redis is properly installed',
+        checkRedis: 'Verify Redis connection settings',
+        checkConfig: 'Review Shopify API configuration'
+      }
+    });
+  });
+}
+
+try {
+  const googleAnalyticsRoutes = require('./src/routes/google-analytics.routes');
+  app.use('/api/google-analytics', googleAnalyticsRoutes);
+  log('Google Analytics routes loaded');
+} catch (error) {
+  console.warn('Failed to load Google Analytics routes:', error.message);
+}
+
+try {
+  const searchConsoleRoutes = require('./src/routes/search-console.routes');
+  app.use('/api/search-console', searchConsoleRoutes);
+  log('Search Console routes loaded');
+} catch (error) {
+  console.warn('Failed to load Search Console routes:', error.message);
+}
+
+// Slack関連エンドポイント
+if (slackClient) {
+  app.post('/api/slack/send-message', async (req, res) => {
+    try {
+      const { channel, text } = req.body;
+      const result = await slackClient.chat.postMessage({
+        channel: channel,
+        text: text,
+      });
+      res.json({ success: true, ts: result.ts });
+    } catch (error) {
+      log(`Slack message error: ${error.message}`, 'ERROR');
+      res.status(500).json({ error: 'Failed to send Slack message' });
+    }
+  });
+}
+
+// Google Analytics関連エンドポイント
+if (process.env.GA_PROPERTY_ID) {
+  const analyticsDataClient = new BetaAnalyticsDataClient();
+  
+  app.post('/api/analytics/report', async (req, res) => {
+    try {
+      const { startDate, endDate, metrics, dimensions } = req.body;
+      
+      const [response] = await analyticsDataClient.runReport({
+        property: `properties/${process.env.GA_PROPERTY_ID}`,
+        dateRanges: [{ startDate, endDate }],
+        metrics: metrics.map(m => ({ name: m })),
+        dimensions: dimensions.map(d => ({ name: d })),
+      });
+      
+      res.json(response);
+    } catch (error) {
+      log(`GA report error: ${error.message}`, 'ERROR');
+      res.status(500).json({ error: 'Failed to generate analytics report' });
+    }
+  });
+}
+
+// Socket.IO イベント
+io.on('connection', (socket) => {
+  log(`New client connected: ${socket.id}`);
+  
+  socket.on('subscribe', (channel) => {
+    socket.join(channel);
+    log(`Client ${socket.id} subscribed to ${channel}`);
+  });
+  
+  socket.on('unsubscribe', (channel) => {
+    socket.leave(channel);
+    log(`Client ${socket.id} unsubscribed from ${channel}`);
+  });
+  
+  socket.on('disconnect', () => {
+    log(`Client disconnected: ${socket.id}`);
+  });
+});
+
+// Redis Pub/Sub（conea-integrationから）
+if (redis) {
+  const subscriber = redis.duplicate();
+  
+  subscriber.on('message', (channel, message) => {
+    io.to(channel).emit('update', JSON.parse(message));
+  });
+  
+  subscriber.subscribe('dashboard-updates');
+  subscriber.subscribe('api-updates');
+}
+>>>>>>> origin/main
 
 // エラーハンドリング
 app.use((err, req, res, next) => {
@@ -1092,6 +1663,7 @@ async function startServer() {
   try {
     await initializeData();
     
+<<<<<<< HEAD
     const server = http.createServer(app);
     
     server.listen(PORT, '0.0.0.0', () => {
@@ -1099,6 +1671,13 @@ async function startServer() {
       log(`📊 Health check: http://localhost:${PORT}/api/health`);
       log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
       log(`🔗 MultiLLM API: ${process.env.MULTILLM_API_URL || 'Not configured (using mock responses)'}`);
+=======
+    server.listen(PORT, '0.0.0.0', () => {
+      log(`🚀 Conea統合バックエンドサーバー started on port ${PORT}`);
+      log(`📊 Health check: http://localhost:${PORT}/api/health`);
+      log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+      log(`🔗 Services: AI=enabled, Redis=${!!redis}, Slack=${!!slackClient}, Socket.IO=enabled`);
+>>>>>>> origin/main
     });
 
     // Graceful shutdown
@@ -1106,6 +1685,10 @@ async function startServer() {
       log('SIGTERM received, shutting down gracefully');
       server.close(() => {
         log('Server closed');
+<<<<<<< HEAD
+=======
+        redis?.disconnect();
+>>>>>>> origin/main
         process.exit(0);
       });
     });

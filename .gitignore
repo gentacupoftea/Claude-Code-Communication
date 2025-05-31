@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
@@ -39,3 +40,59 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+=======
+# Dependencies
+node_modules/
+*.pyc
+__pycache__/
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test reports
+test-results/
+coverage/
+*.lcov
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+# Next.js
+frontend-next/.next/
+frontend-next/out/
+frontend-next/.vercel/
+frontend-next/.env*.local
+frontend-next/node_modules/
+>>>>>>> origin/main

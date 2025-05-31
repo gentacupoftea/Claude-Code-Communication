@@ -1,0 +1,13 @@
+{
+  "rules": {
+    ".read": true,
+    ".write": true,
+    "chats": {
+      "$roomId": {
+        "messages": {
+          ".indexOn": ["timestamp"]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "projects": {},
+  "targets": {
+    "conea-48fcf": {
+      "hosting": {
+        "stagingapp-conea-ai": [
+          "stagingapp-conea-ai"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

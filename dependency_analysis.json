@@ -1,0 +1,470 @@
+{
+  "total_modules": 16,
+  "dependency_usage": {
+    "logging": {
+      "used_by": [
+        "src/api/shopify_api.py",
+        "shopify_mcp_server.py",
+        "src/api/errors.py",
+        "src/api/batch_executor.py",
+        "shopify_mcp_server_graphql.py",
+        "src/api/pagination.py",
+        "src/api/shopify_graphql.py",
+        "utils.py"
+      ],
+      "usage_count": 8
+    },
+    "mcp": {
+      "used_by": [
+        "shopify_mcp_server.py",
+        "shopify_mcp_server_graphql.py"
+      ],
+      "usage_count": 2
+    },
+    "matplotlib": {
+      "used_by": [
+        "generate_visuals.py",
+        "shopify_mcp_server.py",
+        "shopify_mcp_server_graphql.py"
+      ],
+      "usage_count": 3
+    },
+    "sys": {
+      "used_by": [
+        "utils.py",
+        "check_dependencies.py",
+        "shopify_mcp_server.py",
+        "shopify_mcp_server_graphql.py"
+      ],
+      "usage_count": 4
+    },
+    "requests": {
+      "used_by": [
+        "src/api/shopify_api.py",
+        "shopify_mcp_server.py",
+        "src/api/errors.py"
+      ],
+      "usage_count": 3
+    },
+    "utils": {
+      "used_by": [
+        "shopify_mcp_server.py",
+        "shopify_mcp_server_graphql.py"
+      ],
+      "usage_count": 2
+    },
+    "typing": {
+      "used_by": [
+        "src/api/shopify_api.py",
+        "shopify_mcp_server.py",
+        "src/api/errors.py",
+        "src/api/batch_executor.py",
+        "shopify_mcp_server_graphql.py",
+        "src/api/pagination.py",
+        "src/api/shopify_graphql.py",
+        "src/api/query_optimizer.py",
+        "utils.py"
+      ],
+      "usage_count": 9
+    },
+    "dotenv": {
+      "used_by": [
+        "shopify_mcp_server.py",
+        "shopify_mcp_server_graphql.py"
+      ],
+      "usage_count": 2
+    },
+    "json": {
+      "used_by": [
+        "check_dependencies.py",
+        "shopify_mcp_server.py",
+        "shopify_mcp_server_graphql.py",
+        "analyze_dependencies.py",
+        "src/api/shopify_graphql.py",
+        "src/api/query_optimizer.py",
+        "utils.py"
+      ],
+      "usage_count": 7
+    },
+    "pandas": {
+      "used_by": [
+        "shopify_mcp_server.py",
+        "shopify_mcp_server_graphql.py"
+      ],
+      "usage_count": 2
+    },
+    "io": {
+      "used_by": [
+        "shopify_mcp_server.py",
+        "shopify_mcp_server_graphql.py"
+      ],
+      "usage_count": 2
+    },
+    "datetime": {
+      "used_by": [
+        "src/api/shopify_api.py",
+        "shopify_mcp_server.py",
+        "src/api/query_optimizer.py",
+        "shopify_mcp_server_graphql.py"
+      ],
+      "usage_count": 4
+    },
+    "os": {
+      "used_by": [
+        "src/api/shopify_api.py",
+        "shopify_mcp_server.py",
+        "shopify_mcp_server_graphql.py",
+        "analyze_dependencies.py",
+        "generate_visuals.py",
+        "src/api/shopify_graphql.py",
+        "utils.py"
+      ],
+      "usage_count": 7
+    },
+    "asyncio": {
+      "used_by": [
+        "src/api/shopify_api.py",
+        "shopify_mcp_server.py",
+        "src/api/batch_executor.py",
+        "shopify_mcp_server_graphql.py",
+        "src/api/pagination.py",
+        "src/api/shopify_graphql.py",
+        "src/api/query_optimizer.py"
+      ],
+      "usage_count": 7
+    },
+    "base64": {
+      "used_by": [
+        "shopify_mcp_server.py",
+        "shopify_mcp_server_graphql.py"
+      ],
+      "usage_count": 2
+    },
+    "shopify_mcp_server": {
+      "used_by": [
+        "shopify-mcp-server.py"
+      ],
+      "usage_count": 1
+    },
+    "subprocess": {
+      "used_by": [
+        "check_dependencies.py"
+      ],
+      "usage_count": 1
+    },
+    "numpy": {
+      "used_by": [
+        "generate_visuals.py"
+      ],
+      "usage_count": 1
+    },
+    "setuptools": {
+      "used_by": [
+        "setup.py"
+      ],
+      "usage_count": 1
+    },
+    "collections": {
+      "used_by": [
+        "utils.py",
+        "analyze_dependencies.py"
+      ],
+      "usage_count": 2
+    },
+    "functools": {
+      "used_by": [
+        "utils.py",
+        "src/api/shopify_api.py",
+        "src/api/shopify_graphql.py",
+        "src/api/query_optimizer.py"
+      ],
+      "usage_count": 4
+    },
+    "hashlib": {
+      "used_by": [
+        "utils.py",
+        "src/api/query_optimizer.py"
+      ],
+      "usage_count": 2
+    },
+    "time": {
+      "used_by": [
+        "utils.py",
+        "src/api/batch_executor.py"
+      ],
+      "usage_count": 2
+    },
+    "threading": {
+      "used_by": [
+        "utils.py"
+      ],
+      "usage_count": 1
+    },
+    "pathlib": {
+      "used_by": [
+        "analyze_dependencies.py"
+      ],
+      "usage_count": 1
+    },
+    "re": {
+      "used_by": [
+        "src/api/shopify_api.py",
+        "analyze_dependencies.py"
+      ],
+      "usage_count": 2
+    },
+    "src": {
+      "used_by": [
+        "shopify_mcp_server_graphql.py"
+      ],
+      "usage_count": 1
+    },
+    "urllib": {
+      "used_by": [
+        "src/api/shopify_graphql.py"
+      ],
+      "usage_count": 1
+    },
+    "backoff": {
+      "used_by": [
+        "src/api/shopify_graphql.py"
+      ],
+      "usage_count": 1
+    },
+    "httpx": {
+      "used_by": [
+        "src/api/errors.py",
+        "src/api/shopify_graphql.py"
+      ],
+      "usage_count": 2
+    },
+    "": {
+      "used_by": [
+        "src/api/shopify_api.py",
+        "src/api/batch_executor.py",
+        "src/api/query_optimizer.py"
+      ],
+      "usage_count": 3
+    },
+    "dataclasses": {
+      "used_by": [
+        "src/api/pagination.py",
+        "src/api/batch_executor.py",
+        "src/api/query_optimizer.py"
+      ],
+      "usage_count": 3
+    }
+  },
+  "critical_dependencies": [
+    "logging",
+    "sys",
+    "typing",
+    "json",
+    "datetime",
+    "os",
+    "asyncio",
+    "functools"
+  ],
+  "module_breakdown": {
+    "shopify_mcp_server.py": {
+      "stdlib": [
+        "logging",
+        "sys",
+        "typing",
+        "json",
+        "io",
+        "datetime",
+        "os",
+        "asyncio",
+        "base64"
+      ],
+      "third_party": [
+        "mcp",
+        "matplotlib",
+        "requests",
+        "dotenv",
+        "pandas"
+      ],
+      "local": [
+        "utils"
+      ]
+    },
+    "shopify-mcp-server.py": {
+      "stdlib": [],
+      "third_party": [],
+      "local": [
+        "shopify_mcp_server"
+      ]
+    },
+    "check_dependencies.py": {
+      "stdlib": [
+        "subprocess",
+        "json",
+        "sys"
+      ],
+      "third_party": [],
+      "local": []
+    },
+    "generate_visuals.py": {
+      "stdlib": [
+        "os"
+      ],
+      "third_party": [
+        "matplotlib"
+      ],
+      "local": [
+        "numpy"
+      ]
+    },
+    "setup.py": {
+      "stdlib": [],
+      "third_party": [
+        "setuptools"
+      ],
+      "local": []
+    },
+    "utils.py": {
+      "stdlib": [
+        "collections",
+        "logging",
+        "sys",
+        "typing",
+        "functools",
+        "json",
+        "hashlib",
+        "time",
+        "os"
+      ],
+      "third_party": [],
+      "local": [
+        "threading"
+      ]
+    },
+    "analyze_dependencies.py": {
+      "stdlib": [
+        "collections",
+        "pathlib",
+        "json",
+        "re",
+        "os"
+      ],
+      "third_party": [],
+      "local": []
+    },
+    "shopify_mcp_server_graphql.py": {
+      "stdlib": [
+        "logging",
+        "sys",
+        "typing",
+        "json",
+        "io",
+        "datetime",
+        "os",
+        "asyncio",
+        "base64"
+      ],
+      "third_party": [
+        "mcp",
+        "matplotlib",
+        "dotenv",
+        "pandas"
+      ],
+      "local": [
+        "src",
+        "utils"
+      ]
+    },
+    "src/__init__.py": {
+      "stdlib": [],
+      "third_party": [],
+      "local": []
+    },
+    "src/api/shopify_graphql.py": {
+      "stdlib": [
+        "urllib",
+        "logging",
+        "typing",
+        "functools",
+        "json",
+        "os",
+        "asyncio"
+      ],
+      "third_party": [
+        "backoff",
+        "httpx"
+      ],
+      "local": []
+    },
+    "src/api/batch_executor.py": {
+      "stdlib": [
+        "logging",
+        "typing",
+        "dataclasses",
+        "time",
+        "asyncio"
+      ],
+      "third_party": [],
+      "local": [
+        ""
+      ]
+    },
+    "src/api/query_optimizer.py": {
+      "stdlib": [
+        "typing",
+        "dataclasses",
+        "functools",
+        "hashlib",
+        "json",
+        "datetime",
+        "asyncio"
+      ],
+      "third_party": [],
+      "local": [
+        ""
+      ]
+    },
+    "src/api/__init__.py": {
+      "stdlib": [],
+      "third_party": [],
+      "local": []
+    },
+    "src/api/errors.py": {
+      "stdlib": [
+        "typing",
+        "logging"
+      ],
+      "third_party": [
+        "requests",
+        "httpx"
+      ],
+      "local": []
+    },
+    "src/api/pagination.py": {
+      "stdlib": [
+        "typing",
+        "logging",
+        "asyncio",
+        "dataclasses"
+      ],
+      "third_party": [],
+      "local": []
+    },
+    "src/api/shopify_api.py": {
+      "stdlib": [
+        "logging",
+        "typing",
+        "functools",
+        "re",
+        "datetime",
+        "os",
+        "asyncio"
+      ],
+      "third_party": [
+        "requests"
+      ],
+      "local": [
+        ""
+      ]
+    }
+  }
+}

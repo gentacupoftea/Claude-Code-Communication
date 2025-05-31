@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  integration-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.integration
+    container_name: shopify-integration-api
+    ports:
+      - "8000:8000"
+    environment:
+      - SHOPIFY_API_KEY=${SHOPIFY_API_KEY}
+      - SHOPIFY_API_SECRET=${SHOPIFY_API_SECRET}
+      - SHOPIFY_STORE_URL=${SHOPIFY_STORE_URL}
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/shopify_integration
+      - REDIS_URL=redis://redis:6379/0
+      - APP_ENV=production
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - integration-network
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: shopify-integration-db
+    environment:
+      - POSTGRES_DB=shopify_integration
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - integration-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  redis:
+    image: redis:7-alpine
+    container_name: shopify-integration-cache
+    command: redis-server --appendonly yes --requirepass redis_password
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - integration-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: shopify-integration-prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    networks:
+      - integration-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: shopify-integration-grafana
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana-dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    ports:
+      - "3000:3000"
+    networks:
+      - integration-network
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: shopify-integration-nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - integration-api
+    networks:
+      - integration-network
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  integration-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
