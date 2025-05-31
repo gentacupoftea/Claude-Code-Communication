@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:analyze": "ANALYZE=true npm run build",
+    "build:cache": "next build --experimental-build-cache",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -15,8 +18,7 @@
     "lucide-react": "^0.511.0",
     "next": "15.3.2",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "zustand": "^5.0.5"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

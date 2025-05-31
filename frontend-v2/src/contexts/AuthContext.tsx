@@ -1,15 +1,15 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { authManager } from '@/src/lib/auth';
+import { useRouter, usePathname } from 'next/navigation';
+import { authService, User } from '@/src/services/auth.service';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  isInitialized: boolean;
+  user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,56 +25,77 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    console.log('[AuthContext] Setting up AuthManager integration');
-    
-    // AuthManagerからの状態変更を監視
-    const handleAuthChange = (authenticated: boolean) => {
-      console.log('[AuthContext] Auth state changed:', authenticated);
-      setIsAuthenticated(authenticated);
-    };
-
-    // リスナーを追加
-    authManager.addListener(handleAuthChange);
-
-    // AuthManagerを初期化
-    const initializeAuth = async () => {
-      console.log('[AuthContext] Initializing AuthManager');
-      await authManager.initialize();
-      
-      // 初期状態を設定
-      setIsAuthenticated(authManager.getAuthState());
-      setIsInitialized(authManager.getInitializationState());
-      setIsLoading(false);
-      
-      console.log('[AuthContext] Initialization complete, auth state:', authManager.getAuthState());
-    };
-
     initializeAuth();
-
-    // クリーンアップ
-    return () => {
-      console.log('[AuthContext] Cleaning up AuthManager listener');
-      authManager.removeListener(handleAuthChange);
-    };
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    console.log('[AuthContext] Login attempt');
-    return await authManager.login(email, password);
+  const initializeAuth = async () => {
+    try {
+      setIsLoading(true);
+      authService.initializeAuth();
+      
+      const token = authService.getStoredToken();
+      if (token) {
+        // トークンがある場合はプロフィールを取得
+        try {
+          const profile = await authService.getProfile();
+          setUser(profile);
+          setIsAuthenticated(true);
+        } catch (error) {
+          // トークンが無効な場合はクリア
+          console.error('Invalid token:', error);
+          await authService.logout();
+          setIsAuthenticated(false);
+          setUser(null);
+        }
+      }
+    } catch (error) {
+      console.error('Auth initialization error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const logout = () => {
-    console.log('[AuthContext] Logout initiated');
-    authManager.logout();
-    router.push('/login');
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      const response = await authService.login({ email, password });
+      
+      if (response.token && response.user) {
+        setUser(response.user);
+        setIsAuthenticated(true);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      setIsLoading(true);
+      await authService.logout();
+      setUser(null);
+      setIsAuthenticated(false);
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, isInitialized, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

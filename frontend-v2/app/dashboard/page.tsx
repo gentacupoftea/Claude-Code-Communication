@@ -1,35 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { CyberGrid, FloatingParticles, GlassmorphicCard } from '@/src/components/common';
-import { Bot, Plus, Home, BarChart, Settings, LogOut, Menu, X, MessageSquare, Sliders, Minimize2 } from 'lucide-react';
-import { useAuth } from '@/src/contexts/AuthContext';
+import React from 'react';
 import { ProtectedRoute } from '@/src/components/ProtectedRoute';
-import { useAppNavigation } from '@/src/hooks/useAppNavigation';
+import { DashboardLayout } from '@/src/components/layout/DashboardLayout';
 import { ChatInterface } from '@/src/components/dashboard/ChatInterface';
-import { EditPanel } from '@/src/components/dashboard/EditPanel';
-import { AgentConfig, defaultAgentConfig } from '@/src/lib/api';
-import { APISettings, defaultAPISettings } from '@/src/types/api-settings';
-import { Dashboard, Widget, DraggableItem } from '@/src/types/widgets';
-import { ResizablePanel } from '@/src/components/common/ResizablePanel';
+import { motion } from 'framer-motion';
 
 export default function DashboardPage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
-  const [agentConfig, setAgentConfig] = useState<Partial<AgentConfig>>(defaultAgentConfig);
-  const [apiSettings, setApiSettings] = useState<APISettings>(defaultAPISettings);
-  const [currentDashboard, setCurrentDashboard] = useState<Dashboard | undefined>(undefined);
-  const [generatedWidgets, setGeneratedWidgets] = useState<DraggableItem[]>([]);
-  const [isFullscreenEditor, setIsFullscreenEditor] = useState(false);
-  const { logout } = useAuth();
-  const {
-    navigateToNewProject,
-    navigateToChatbotSettings,
-    navigateToAnalyticsSettings,
-    navigateToPredictionSettings
-  } = useAppNavigation();
 
   // 設定ドロップダウンのクリック外しで閉じる処理
   useEffect(() => {

@@ -171,38 +171,6 @@ export interface CodeExecutionResult {
   memoryUsed: number;
 }
 
-export interface ProviderStatus {
-  openai: {
-    enabled: boolean;
-    configured: boolean;
-    available: boolean;
-    models: string[];
-  };
-  anthropic: {
-    enabled: boolean;
-    configured: boolean;
-    available: boolean;
-    models: string[];
-  };
-  google: {
-    enabled: boolean;
-    configured: boolean;
-    available: boolean;
-    models: string[];
-  };
-}
-
-export interface ModelsResponse {
-  models: string[];
-  availableProviders: string[];
-  providerStatus: ProviderStatus;
-  providers: {
-    openai: string[];
-    anthropic: string[];
-    google: string[];
-  };
-}
-
 class MultiLLMAPI {
   private baseURL: string;
 
@@ -312,55 +280,6 @@ class MultiLLMAPI {
     return this.request('/api/v2/multillm/execute/code', {
       method: 'POST',
       body: JSON.stringify(request),
-    });
-  }
-
-  /**
-   * 利用可能なモデル一覧とプロバイダー状態を取得
-   */
-  async getModelsAndProviders(): Promise<ModelsResponse> {
-    return this.request('/api/models');
-  }
-
-  /**
-   * プロバイダー状態のみを取得
-   */
-  async getProviderStatus(): Promise<{
-    status: ProviderStatus;
-    available: string[];
-    models: string[];
-  }> {
-    return this.request('/api/providers/status');
-  }
-
-  /**
-   * チャット（基本的なAPI）
-   */
-  async chat(messages: Array<{role: string; content: string}>, options?: {
-    model?: string;
-    temperature?: number;
-    max_tokens?: number;
-    system_prompt?: string;
-  }): Promise<{
-    id: string;
-    model: string;
-    message: string;
-    choices: Array<{
-      message: { role: string; content: string };
-      finish_reason: string;
-    }>;
-    usage?: {
-      prompt_tokens: number;
-      completion_tokens: number;
-      total_tokens: number;
-    };
-  }> {
-    return this.request('/api/chat', {
-      method: 'POST',
-      body: JSON.stringify({
-        messages,
-        ...options
-      }),
     });
   }
 }

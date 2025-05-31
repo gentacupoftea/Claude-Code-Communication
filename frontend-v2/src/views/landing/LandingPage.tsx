@@ -37,10 +37,10 @@ export default function LandingPage() {
               ログイン
             </Link>
             <Link
-              href="/dashboard"
+              href="/signup"
               className="relative z-50 bg-[#1ABC9C] px-6 py-2 rounded-full hover:bg-[#16A085] transition-colors cursor-pointer"
             >
-              ダッシュボード
+              無料で始める
             </Link>
           </motion.div>
         </nav>
@@ -77,10 +77,10 @@ export default function LandingPage() {
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
             <Link
-              href="/dashboard"
+              href="/signup"
               className="relative z-50 bg-[#1ABC9C] px-8 py-4 rounded-full text-lg font-semibold hover:bg-[#16A085] transition-all transform hover:scale-105 inline-flex items-center justify-center cursor-pointer"
             >
-              ダッシュボードへ
+              無料で始める
               <ChevronRight className="ml-2 w-5 h-5" />
             </Link>
             <Link
@@ -317,10 +317,10 @@ export default function LandingPage() {
               クレジットカード不要で、すぐに始められます
             </p>
             <Link
-              href="/dashboard"
+              href="/signup"
               className="relative z-50 bg-[#1ABC9C] px-8 py-4 rounded-full text-lg font-semibold hover:bg-[#16A085] transition-all transform hover:scale-105 inline-flex items-center cursor-pointer"
             >
-              ダッシュボードへ
+              無料トライアルを開始
               <ChevronRight className="ml-2 w-5 h-5" />
             </Link>
           </GlassmorphicCard>
