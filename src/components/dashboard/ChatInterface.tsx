@@ -3,7 +3,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Bot, User, Loader2, AlertCircle, RefreshCcw, Paperclip, Search, Settings as SettingsIcon } from 'lucide-react';
-import { multiLLMAPI, ChatMessage, AgentConfig, defaultAgentConfig } from '@/src/lib/api';
+import { MultiLLMService } from '@/src/services/multillm.service';
+import { LLMResponse, MultiLLMRequest } from '@/src/types/multillm';
+import { API_ENDPOINTS, createApiUrl } from '@/src/lib/api-config';
 
 interface Message {
   id: string;
@@ -14,6 +16,15 @@ interface Message {
   error?: boolean;
 }
 
+interface AgentConfig {
+  name?: string;
+  model?: string;
+  system_prompt?: string;
+  max_history?: number;
+  temperature?: number;
+  max_tokens?: number;
+}
+
 interface ChatInterfaceProps {
   agentConfig?: Partial<AgentConfig>;
   onConfigChange?: (config: Partial<AgentConfig>) => void;
@@ -21,6 +32,15 @@ interface ChatInterfaceProps {
   enableSearch?: boolean;
   onGenerateWidget?: (widgetData: any) => void;
 }
+
+const defaultAgentConfig: AgentConfig = {
+  name: 'Conea AI',
+  model: 'gpt-4o',
+  system_prompt: 'こんにちは！Conea AIです。何かお手伝いできることはありますか？',
+  max_history: 20,
+  temperature: 0.7,
+  max_tokens: 1000,
+};
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
   agentConfig = defaultAgentConfig, 
@@ -58,8 +78,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   useEffect(() => {
     const testConnection = async () => {
       setConnectionStatus('checking');
-      const isConnected = await multiLLMAPI.testConnection();
-      setConnectionStatus(isConnected ? 'connected' : 'disconnected');
+      try {
+        const multiLLMService = MultiLLMService.getInstance();
+        const models = multiLLMService.getAvailableModels();
+        setConnectionStatus(models.length > 0 ? 'connected' : 'disconnected');
+      } catch (error) {
+        setConnectionStatus('disconnected');
+      }
     };
     
     testConnection();
@@ -90,39 +115,34 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setIsLoading(true);
 
     try {
-      // ファイルをアップロード
-      if (currentFiles.length > 0) {
-        for (const file of currentFiles) {
-          await multiLLMAPI.uploadFile(file);
-        }
-      }
-
-      // ChatMessage形式に変換
-      const chatMessages: ChatMessage[] = [
-        ...messages.slice(-agentConfig.max_history! || 20).map(msg => ({
-          role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
-          content: msg.text,
-          timestamp: msg.timestamp
-        })),
-        {
-          role: 'user' as const,
-          content: messageText,
-          timestamp: new Date()
-        }
-      ];
-
-      // API呼び出し
-      const response = await multiLLMAPI.sendMessage(chatMessages, agentConfig, currentFiles);
+      const multiLLMService = MultiLLMService.getInstance();
       
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: response.message,
-        sender: 'ai',
-        timestamp: new Date(),
-        model: response.model
+      // MultiLLMRequest形式でリクエストを作成
+      const request: MultiLLMRequest = {
+        prompt: messageText,
+        models: [agentConfig.model || 'gpt-4o'],
+        temperature: agentConfig.temperature || 0.7,
+        maxTokens: agentConfig.max_tokens || 1000,
+        systemPrompt: agentConfig.system_prompt,
+        streamResponse: false
       };
 
-      setMessages(prev => [...prev, aiMessage]);
+      // API呼び出し
+      const responses = await multiLLMService.generateResponses(request);
+      
+      if (responses.length > 0) {
+        const response = responses[0];
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: response.response.content,
+          sender: 'ai',
+          timestamp: new Date(),
+          model: response.model
+        };
+
+        setMessages(prev => [...prev, aiMessage]);
+      }
+      
       setConnectionStatus('connected');
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -149,8 +169,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleRetryConnection = async () => {
     setConnectionStatus('checking');
-    const isConnected = await multiLLMAPI.testConnection();
-    setConnectionStatus(isConnected ? 'connected' : 'disconnected');
+    try {
+      const multiLLMService = MultiLLMService.getInstance();
+      const models = multiLLMService.getAvailableModels();
+      setConnectionStatus(models.length > 0 ? 'connected' : 'disconnected');
+    } catch (error) {
+      setConnectionStatus('disconnected');
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
