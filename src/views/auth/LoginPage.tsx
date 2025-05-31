@@ -22,7 +22,7 @@ export default function LoginPage() {
     try {
       const success = await login(email, password);
       if (success) {
-        router.push('/dashboard');
+        router.replace('/dashboard');
       } else {
         setError('メールアドレスまたはパスワードが正しくありません');
       }

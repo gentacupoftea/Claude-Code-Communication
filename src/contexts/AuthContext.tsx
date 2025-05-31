@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { authManager } from '@/src/lib/auth';
 
 interface AuthContextType {
@@ -27,6 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     console.log('[AuthContext] Setting up AuthManager integration');
@@ -35,6 +36,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const handleAuthChange = (authenticated: boolean) => {
       console.log('[AuthContext] Auth state changed:', authenticated);
       setIsAuthenticated(authenticated);
+      
+      // ログアウト時のリダイレクト処理
+      if (!authenticated && pathname !== '/login' && pathname !== '/') {
+        console.log('[AuthContext] User logged out, redirecting to login');
+        router.replace('/login');
+      }
     };
 
     // リスナーを追加
@@ -46,11 +53,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await authManager.initialize();
       
       // 初期状態を設定
-      setIsAuthenticated(authManager.getAuthState());
+      const currentAuthState = authManager.getAuthState();
+      setIsAuthenticated(currentAuthState);
       setIsInitialized(authManager.getInitializationState());
       setIsLoading(false);
       
-      console.log('[AuthContext] Initialization complete, auth state:', authManager.getAuthState());
+      console.log('[AuthContext] Initialization complete, auth state:', currentAuthState);
     };
 
     initializeAuth();
@@ -60,17 +68,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('[AuthContext] Cleaning up AuthManager listener');
       authManager.removeListener(handleAuthChange);
     };
-  }, []);
+  }, [router, pathname]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     console.log('[AuthContext] Login attempt');
-    return await authManager.login(email, password);
+    setIsLoading(true);
+    try {
+      const success = await authManager.login(email, password);
+      if (success) {
+        // ログイン成功後、少し待ってからリダイレクト
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      return success;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const logout = () => {
     console.log('[AuthContext] Logout initiated');
     authManager.logout();
-    router.push('/login');
+    // リダイレクトはhandleAuthChangeで処理される
   };
 
   return (
