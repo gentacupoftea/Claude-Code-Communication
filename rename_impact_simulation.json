@@ -1,0 +1,421 @@
+{
+  "timestamp": "2025-05-21T16:45:00.000Z",
+  "analysis_results": [
+    {
+      "pr_number": 142,
+      "title": "Fix issue with Rakuten API response handling",
+      "author": "dev-yamada",
+      "created_at": "2025-05-18T09:15:00.000Z",
+      "url": "https://github.com/conea/conea/pull/142",
+      "initial_score": 3,
+      "initial_details": ["File impacts package structure: src/api/rakuten.py"],
+      "file_impact_score": 2,
+      "keyword_score": 0,
+      "high_impacted_files": [
+        {
+          "file": "src/api/rakuten.py",
+          "pattern": "import",
+          "impact": "medium"
+        }
+      ],
+      "medium_impacted_files": [
+        {
+          "file": "tests/api/test_rakuten.py",
+          "pattern": "test",
+          "impact": "medium"
+        }
+      ],
+      "found_keywords": [],
+      "final_score": 2,
+      "impact_category": "Low"
+    },
+    {
+      "pr_number": 143,
+      "title": "Implement package rename from shopify-mcp-server to conea",
+      "author": "dev-tanaka",
+      "created_at": "2025-05-19T10:30:00.000Z",
+      "url": "https://github.com/conea/conea/pull/143",
+      "initial_score": 10,
+      "initial_details": [
+        "File impacts package structure: setup.py",
+        "File impacts package structure: shopify_mcp_server/__init__.py",
+        "Keyword 'rename' found in PR title/description",
+        "Keyword 'conea' found in PR title/description",
+        "Package name references modified in multiple files"
+      ],
+      "file_impact_score": 7,
+      "keyword_score": 3,
+      "high_impacted_files": [
+        {
+          "file": "setup.py",
+          "pattern": "setup.py",
+          "impact": "high"
+        },
+        {
+          "file": "shopify_mcp_server/__init__.py",
+          "pattern": "__init__.py",
+          "impact": "high"
+        },
+        {
+          "file": "shopify_mcp_server/core.py",
+          "pattern": "shopify_mcp_server/",
+          "impact": "high"
+        },
+        {
+          "file": "shopify_mcp_server/api/__init__.py",
+          "pattern": "__init__.py",
+          "impact": "high"
+        },
+        {
+          "file": "requirements.txt",
+          "pattern": "requirements",
+          "impact": "high"
+        }
+      ],
+      "medium_impacted_files": [
+        {
+          "file": "docker/Dockerfile",
+          "pattern": "dockerfile",
+          "impact": "medium"
+        },
+        {
+          "file": "docker-compose.yml",
+          "pattern": "docker",
+          "impact": "medium"
+        },
+        {
+          "file": ".env.example",
+          "pattern": ".env",
+          "impact": "medium"
+        },
+        {
+          "file": "tests/test_imports.py",
+          "pattern": "test",
+          "impact": "medium"
+        }
+      ],
+      "found_keywords": [
+        "Title contains 'rename'",
+        "Title contains 'package'",
+        "Title contains 'conea'",
+        "Description contains 'rename'",
+        "Description contains 'migration'",
+        "Description contains 'package'"
+      ],
+      "final_score": 10,
+      "impact_category": "High"
+    },
+    {
+      "pr_number": 144,
+      "title": "Add Amazon credential rotation mechanism",
+      "author": "dev-sato",
+      "created_at": "2025-05-19T14:20:00.000Z",
+      "url": "https://github.com/conea/conea/pull/144",
+      "initial_score": 4,
+      "initial_details": [
+        "File impacts package structure: src/api/amazon.py",
+        "File impacts configuration: .env.example"
+      ],
+      "file_impact_score": 3,
+      "keyword_score": 0,
+      "high_impacted_files": [
+        {
+          "file": "src/api/amazon.py",
+          "pattern": "import",
+          "impact": "high"
+        }
+      ],
+      "medium_impacted_files": [
+        {
+          "file": ".env.example",
+          "pattern": ".env",
+          "impact": "medium"
+        },
+        {
+          "file": "tests/api/test_amazon.py",
+          "pattern": "test",
+          "impact": "medium"
+        },
+        {
+          "file": "tests/utils/test_key_rotation.py",
+          "pattern": "test",
+          "impact": "medium"
+        }
+      ],
+      "found_keywords": [],
+      "final_score": 3,
+      "impact_category": "Low"
+    },
+    {
+      "pr_number": 145,
+      "title": "Fix critical security issue in authentication module",
+      "author": "security-team",
+      "created_at": "2025-05-20T09:05:00.000Z",
+      "url": "https://github.com/conea/conea/pull/145",
+      "initial_score": 2,
+      "initial_details": [],
+      "file_impact_score": 2,
+      "keyword_score": 0,
+      "high_impacted_files": [
+        {
+          "file": "src/api/auth.py",
+          "pattern": "import",
+          "impact": "high"
+        }
+      ],
+      "medium_impacted_files": [
+        {
+          "file": "tests/api/test_auth.py",
+          "pattern": "test",
+          "impact": "medium"
+        }
+      ],
+      "found_keywords": [],
+      "final_score": 2,
+      "impact_category": "Low"
+    },
+    {
+      "pr_number": 146,
+      "title": "Implement improved caching mechanism",
+      "author": "dev-takahashi",
+      "created_at": "2025-05-18T16:45:00.000Z",
+      "url": "https://github.com/conea/conea/pull/146",
+      "initial_score": 6,
+      "initial_details": [
+        "File impacts package structure: src/utils/cache.py",
+        "Keyword 'package' found in PR description",
+        "Package name references modified in src/utils/cache.py"
+      ],
+      "file_impact_score": 5,
+      "keyword_score": 1,
+      "high_impacted_files": [
+        {
+          "file": "src/utils/cache.py",
+          "pattern": "import",
+          "impact": "high"
+        },
+        {
+          "file": "src/config.py",
+          "pattern": "import",
+          "impact": "high"
+        }
+      ],
+      "medium_impacted_files": [
+        {
+          "file": "tests/utils/test_cache.py",
+          "pattern": "test",
+          "impact": "medium"
+        },
+        {
+          "file": "tests/utils/test_redis_client.py",
+          "pattern": "test",
+          "impact": "medium"
+        },
+        {
+          "file": "tests/utils/test_memcached_client.py",
+          "pattern": "test",
+          "impact": "medium"
+        }
+      ],
+      "found_keywords": [
+        "Description contains 'package'"
+      ],
+      "final_score": 6,
+      "impact_category": "Medium"
+    },
+    {
+      "pr_number": 147,
+      "title": "Update documentation for v0.3.0 release",
+      "author": "doc-team",
+      "created_at": "2025-05-20T15:30:00.000Z",
+      "url": "https://github.com/conea/conea/pull/147",
+      "initial_score": 8,
+      "initial_details": [
+        "Keyword 'rename' found in PR description",
+        "Keyword 'conea' found in PR description",
+        "Package name references modified in multiple documentation files"
+      ],
+      "file_impact_score": 5,
+      "keyword_score": 3,
+      "high_impacted_files": [
+        {
+          "file": "README.md",
+          "pattern": "package",
+          "impact": "high"
+        },
+        {
+          "file": "README_ja.md",
+          "pattern": "package",
+          "impact": "high"
+        }
+      ],
+      "medium_impacted_files": [
+        {
+          "file": "docs/README_CACHE.md",
+          "pattern": "config",
+          "impact": "medium"
+        },
+        {
+          "file": "docs/TEST-PLAN-v0.3.0.md",
+          "pattern": "test",
+          "impact": "medium"
+        },
+        {
+          "file": "docs/INTEGRATION_TEST_PLAN.md",
+          "pattern": "test",
+          "impact": "medium"
+        }
+      ],
+      "found_keywords": [
+        "Description contains 'rename'",
+        "Description contains 'conea'",
+        "Description contains 'package'",
+        "Description contains 'restructure'"
+      ],
+      "final_score": 8,
+      "impact_category": "High"
+    },
+    {
+      "pr_number": 148,
+      "title": "Optimize GraphQL query performance",
+      "author": "dev-suzuki",
+      "created_at": "2025-05-17T11:25:00.000Z",
+      "url": "https://github.com/conea/conea/pull/148",
+      "initial_score": 3,
+      "initial_details": ["File impacts package structure: src/graphql/resolvers.py"],
+      "file_impact_score": 3,
+      "keyword_score": 0,
+      "high_impacted_files": [
+        {
+          "file": "src/graphql/resolvers.py",
+          "pattern": "import",
+          "impact": "high"
+        }
+      ],
+      "medium_impacted_files": [
+        {
+          "file": "tests/graphql/test_resolvers.py",
+          "pattern": "test",
+          "impact": "medium"
+        },
+        {
+          "file": "tests/graphql/test_query_performance.py",
+          "pattern": "test",
+          "impact": "medium"
+        }
+      ],
+      "found_keywords": [],
+      "final_score": 3,
+      "impact_category": "Low"
+    },
+    {
+      "pr_number": 149,
+      "title": "Add support for new Amazon Marketplace countries",
+      "author": "dev-kobayashi",
+      "created_at": "2025-05-21T08:30:00.000Z",
+      "url": "https://github.com/conea/conea/pull/149",
+      "initial_score": 3,
+      "initial_details": ["File impacts package structure: src/api/amazon.py"],
+      "file_impact_score": 3,
+      "keyword_score": 0,
+      "high_impacted_files": [
+        {
+          "file": "src/api/amazon.py",
+          "pattern": "import",
+          "impact": "high"
+        }
+      ],
+      "medium_impacted_files": [
+        {
+          "file": "tests/api/test_amazon.py",
+          "pattern": "test",
+          "impact": "medium"
+        },
+        {
+          "file": "tests/utils/test_country_codes.py",
+          "pattern": "test",
+          "impact": "medium"
+        }
+      ],
+      "found_keywords": [],
+      "final_score": 3,
+      "impact_category": "Low"
+    },
+    {
+      "pr_number": 150,
+      "title": "Fix CI workflow issues for Phase 2 rename",
+      "author": "dev-yamamoto",
+      "created_at": "2025-05-21T09:10:00.000Z",
+      "url": "https://github.com/conea/conea/pull/150",
+      "initial_score": 9,
+      "initial_details": [
+        "Keyword 'rename' found in PR title/description",
+        "Keyword 'Phase 2' found in PR title/description",
+        "File impacts CI configuration: .github/workflows/ci.yml",
+        "Package name references modified in CI workflow files"
+      ],
+      "file_impact_score": 6,
+      "keyword_score": 3,
+      "high_impacted_files": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "pattern": "package",
+          "impact": "high"
+        },
+        {
+          "file": ".github/workflows/test.yml",
+          "pattern": "package",
+          "impact": "high"
+        },
+        {
+          "file": ".github/workflows/e2e.yml",
+          "pattern": "package",
+          "impact": "high"
+        }
+      ],
+      "medium_impacted_files": [
+        {
+          "file": ".github/workflows/pr-validation.yml",
+          "pattern": "test",
+          "impact": "medium"
+        }
+      ],
+      "found_keywords": [
+        "Title contains 'rename'",
+        "Description contains 'rename'",
+        "Description contains 'Phase 2'",
+        "Description contains 'package'",
+        "Description contains 'conea'"
+      ],
+      "final_score": 9,
+      "impact_category": "High"
+    },
+    {
+      "pr_number": 151,
+      "title": "Implement PR triage CI/CD pipeline integration",
+      "author": "dev-mouri",
+      "created_at": "2025-05-21T16:00:00.000Z",
+      "url": "https://github.com/conea/conea/pull/151",
+      "initial_score": 2,
+      "initial_details": [],
+      "file_impact_score": 2,
+      "keyword_score": 0,
+      "high_impacted_files": [],
+      "medium_impacted_files": [
+        {
+          "file": ".github/workflows/pr-triage.yml",
+          "pattern": "test",
+          "impact": "medium"
+        },
+        {
+          "file": "scripts/tests/test_pr_triage_ci.py",
+          "pattern": "test",
+          "impact": "medium"
+        }
+      ],
+      "found_keywords": [],
+      "final_score": 2,
+      "impact_category": "Low"
+    }
+  ]
+}

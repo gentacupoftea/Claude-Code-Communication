@@ -1,0 +1,40 @@
+# Development dependencies
+# Include all test dependencies
+-r requirements-test.txt
+
+# Development tools
+ruff>=0.0.292
+black>=23.9.1
+mypy>=1.5.1
+pre-commit>=3.4.0
+ipython>=8.16.1
+ipdb>=0.13.13
+
+# Documentation
+sphinx>=7.2.6
+sphinx-rtd-theme>=1.3.0
+myst-parser>=2.0.0
+
+# Testing tools
+tox>=4.11.3
+nox>=2023.4.22
+
+# Debugging
+debugpy>=1.8.0
+
+# Code analysis
+pylint>=3.0.0
+flake8>=6.1.0
+flake8-docstrings>=1.7.0
+flake8-isort>=6.1.0
+flake8-bugbear>=23.9.16
+bandit[toml]>=1.7.5
+
+# Performance profiling
+memory-profiler>=0.61.0
+line-profiler>=4.1.1
+py-spy>=0.3.14
+
+# Release tools
+bump2version>=1.0.1
+twine>=4.0.2

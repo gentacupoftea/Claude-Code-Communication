@@ -1,0 +1,237 @@
+{
+  "timestamp": "2025-05-21T17:00:00.000Z",
+  "overall_statistics": {
+    "total_open_prs": 10,
+    "age_statistics": {
+      "average_age_days": 1.6,
+      "oldest_pr_days": 4,
+      "newest_pr_days": 0,
+      "age_distribution": {
+        "0-1 days": 5,
+        "2-3 days": 3,
+        "4-7 days": 2,
+        "8+ days": 0
+      }
+    },
+    "review_statistics": {
+      "prs_with_reviews": 7,
+      "prs_without_reviews": 3,
+      "approved_prs": 3,
+      "prs_with_changes_requested": 1,
+      "average_reviewers_per_pr": 1.2
+    },
+    "size_statistics": {
+      "average_additions": 404.3,
+      "average_deletions": 146.0,
+      "average_changed_files": 8.4,
+      "size_distribution": {
+        "small": 2,
+        "medium": 5,
+        "large": 3
+      }
+    },
+    "ci_statistics": {
+      "passing_ci": 7,
+      "failing_ci": 1,
+      "pending_ci": 2
+    },
+    "rename_impact_statistics": {
+      "high_impact": 3,
+      "medium_impact": 1,
+      "low_impact": 6,
+      "average_impact_score": 4.8
+    }
+  },
+  "pr_priority_scores": [
+    {
+      "pr_number": 143,
+      "title": "Implement package rename from shopify-mcp-server to conea",
+      "priority_score": 9.5,
+      "factors": {
+        "rename_impact": 5.0,
+        "dependencies": 2.0,
+        "conflicts": 1.5,
+        "security": 0.0,
+        "age": 0.5,
+        "reviews": 0.5
+      }
+    },
+    {
+      "pr_number": 145,
+      "title": "Fix critical security issue in authentication module",
+      "priority_score": 8.0,
+      "factors": {
+        "rename_impact": 1.0,
+        "dependencies": 0.0,
+        "conflicts": 0.5,
+        "security": 5.0,
+        "age": 0.5,
+        "reviews": 1.0
+      }
+    },
+    {
+      "pr_number": 150,
+      "title": "Fix CI workflow issues for Phase 2 rename",
+      "priority_score": 7.5,
+      "factors": {
+        "rename_impact": 4.5,
+        "dependencies": 1.0,
+        "conflicts": 1.5,
+        "security": 0.0,
+        "age": 0.0,
+        "reviews": 0.5
+      }
+    },
+    {
+      "pr_number": 146,
+      "title": "Implement improved caching mechanism",
+      "priority_score": 6.5,
+      "factors": {
+        "rename_impact": 3.0,
+        "dependencies": 2.0,
+        "conflicts": 0.5,
+        "security": 0.0,
+        "age": 0.5,
+        "reviews": 0.5
+      }
+    },
+    {
+      "pr_number": 147,
+      "title": "Update documentation for v0.3.0 release",
+      "priority_score": 6.0,
+      "factors": {
+        "rename_impact": 4.0,
+        "dependencies": 1.0,
+        "conflicts": 0.5,
+        "security": 0.0,
+        "age": 0.5,
+        "reviews": 0.0
+      }
+    },
+    {
+      "pr_number": 144,
+      "title": "Add Amazon credential rotation mechanism",
+      "priority_score": 5.0,
+      "factors": {
+        "rename_impact": 1.5,
+        "dependencies": 1.5,
+        "conflicts": 1.0,
+        "security": 0.0,
+        "age": 0.0,
+        "reviews": 1.0
+      }
+    },
+    {
+      "pr_number": 149,
+      "title": "Add support for new Amazon Marketplace countries",
+      "priority_score": 4.0,
+      "factors": {
+        "rename_impact": 1.5,
+        "dependencies": 1.0,
+        "conflicts": 1.0,
+        "security": 0.0,
+        "age": 0.0,
+        "reviews": 0.5
+      }
+    },
+    {
+      "pr_number": 142,
+      "title": "Fix issue with Rakuten API response handling",
+      "priority_score": 3.5,
+      "factors": {
+        "rename_impact": 1.0,
+        "dependencies": 0.0,
+        "conflicts": 0.5,
+        "security": 0.0,
+        "age": 1.0,
+        "reviews": 1.0
+      }
+    },
+    {
+      "pr_number": 148,
+      "title": "Optimize GraphQL query performance",
+      "priority_score": 3.0,
+      "factors": {
+        "rename_impact": 1.5,
+        "dependencies": 0.0,
+        "conflicts": 0.0,
+        "security": 0.0,
+        "age": 1.0,
+        "reviews": 0.5
+      }
+    },
+    {
+      "pr_number": 151,
+      "title": "Implement PR triage CI/CD pipeline integration",
+      "priority_score": 2.5,
+      "factors": {
+        "rename_impact": 1.0,
+        "dependencies": 0.0,
+        "conflicts": 0.0,
+        "security": 0.0,
+        "age": 0.0,
+        "reviews": 1.5
+      }
+    }
+  ],
+  "triage_category_recommendations": {
+    "category_a": [
+      {
+        "pr_number": 143,
+        "title": "Implement package rename from shopify-mcp-server to conea",
+        "reason": "High rename impact; blocking multiple PRs; critical for Phase 2 deadline"
+      },
+      {
+        "pr_number": 145,
+        "title": "Fix critical security issue in authentication module",
+        "reason": "Security issue that affects production; fully approved by security team"
+      },
+      {
+        "pr_number": 150,
+        "title": "Fix CI workflow issues for Phase 2 rename",
+        "reason": "High rename impact; essential for CI pipeline after rename"
+      }
+    ],
+    "category_b": [
+      {
+        "pr_number": 146,
+        "title": "Implement improved caching mechanism",
+        "reason": "Medium rename impact; blocking PR #144 and indirectly #149"
+      },
+      {
+        "pr_number": 147,
+        "title": "Update documentation for v0.3.0 release",
+        "reason": "High rename impact; documentation needed for v0.3.1 release"
+      },
+      {
+        "pr_number": 144,
+        "title": "Add Amazon credential rotation mechanism",
+        "reason": "Moderate priority feature; already approved"
+      }
+    ],
+    "category_c": [
+      {
+        "pr_number": 149,
+        "title": "Add support for new Amazon Marketplace countries",
+        "reason": "Feature enhancement; conflicts with PR #144; can wait for v0.3.2"
+      },
+      {
+        "pr_number": 142,
+        "title": "Fix issue with Rakuten API response handling",
+        "reason": "Bug fix for non-critical issue; can be included in v0.3.2"
+      },
+      {
+        "pr_number": 148,
+        "title": "Optimize GraphQL query performance",
+        "reason": "Performance enhancement; not critical for v0.3.1"
+      }
+    ],
+    "category_d": [
+      {
+        "pr_number": 151,
+        "title": "Implement PR triage CI/CD pipeline integration",
+        "reason": "Internal tooling; can be addressed after Phase 2 rename"
+      }
+    ]
+  }
+}

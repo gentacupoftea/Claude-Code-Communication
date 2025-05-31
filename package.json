@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:analyze": "ANALYZE=true npm run build",
+    "build:cache": "next build --experimental-build-cache",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

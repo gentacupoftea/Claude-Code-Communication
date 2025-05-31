@@ -1,0 +1,11 @@
+{
+  "shopify-mcp": {
+    "command": "python",
+    "args": [
+      "/Users/mourigenta/auto-scraper/shopify-mcp-server.py"
+    ],
+    "env": {
+      "SHOPIFY_API_VERSION": "2023-10"
+    }
+  }
+}

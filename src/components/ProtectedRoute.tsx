@@ -1,58 +1,42 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/src/contexts/AuthContext';
-import { authManager } from '@/src/lib/auth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isLoading, isInitialized } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    console.log('[ProtectedRoute] Auth state check:', { 
-      isAuthenticated, 
-      isLoading, 
-      isInitialized,
-      hasValidToken: authManager.hasValidToken()
-    });
-    
-    if (isInitialized && !isLoading) {
-      const hasToken = authManager.hasValidToken();
-      
-      if (!isAuthenticated && !hasToken) {
-        console.log('[ProtectedRoute] No authentication, redirecting to login');
-        router.push('/login');
-        return;
-      }
-      
-      console.log('[ProtectedRoute] Authentication check passed');
+    // ローディング完了後に認証チェック
+    if (!isLoading && !isAuthenticated) {
+      console.log('[ProtectedRoute] No authentication, redirecting to login');
+      router.replace('/login');
     }
-  }, [isAuthenticated, isLoading, isInitialized, router]);
+  }, [isAuthenticated, isLoading, router]);
 
-  // 初期化中またはロード中の場合はローディング画面を表示
-  if (!isInitialized || isLoading) {
+  // ローディング中の場合はローディング画面を表示
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white">ログイン確認中...</div>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-12 h-12 border-4 border-[#1ABC9C] border-t-transparent rounded-full animate-spin"></div>
+          <div className="text-white">ログイン確認中...</div>
+        </div>
       </div>
     );
   }
 
-  // 認証状態またはトークンがある場合はコンテンツを表示
-  if (isAuthenticated || authManager.hasValidToken()) {
-    console.log('[ProtectedRoute] Rendering protected content');
+  // 認証済みの場合はコンテンツを表示
+  if (isAuthenticated) {
     return <>{children}</>;
   }
 
-  // 認証もトークンもない場合はリダイレクト待ち
-  return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-      <div className="text-white">認証が必要です...</div>
-    </div>
-  );
+  // 未認証の場合はnullを返す（リダイレクト処理は上で実行済み）
+  return null;
 };

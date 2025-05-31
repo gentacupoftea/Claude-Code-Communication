@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="3.153" timestamp="2025-05-19T18:58:47.231902+09:00" hostname="mourigentanoAir"><testcase classname="" name="tests.integration.test_export_integration" time="0.000"><error message="collection failure">ImportError while importing test module '/Users/mourigenta/shopify-mcp-server/tests/integration/test_export_integration.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/importlib/__init__.py:127: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/integration/test_export_integration.py:14: in &lt;module&gt;
+    from src.main import app
+src/main.py:10: in &lt;module&gt;
+    from .auth.routes import router as auth_router
+src/auth/routes.py:10: in &lt;module&gt;
+    from sqlalchemy.orm import Session
+E   ModuleNotFoundError: No module named 'sqlalchemy'</error></testcase></testsuite></testsuites>

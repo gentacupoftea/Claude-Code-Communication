@@ -1,0 +1,121 @@
+name: 🚀 Auto Deploy to Firebase Hosting
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '20'
+  CACHE_NAME: 'node-modules-v1'
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend-v2/package-lock.json
+
+      - name: 📦 Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            frontend-v2/node_modules
+            ~/.npm
+          key: ${{ env.CACHE_NAME }}-${{ runner.os }}-node-${{ hashFiles('frontend-v2/package-lock.json') }}
+          restore-keys: |
+            ${{ env.CACHE_NAME }}-${{ runner.os }}-node-
+
+      - name: 📦 Install dependencies
+        working-directory: frontend-v2
+        run: |
+          # 高速インストールオプションを使用
+          npm ci --prefer-offline --no-audit --no-fund
+          echo "✅ Dependencies installed successfully"
+
+      - name: 🔍 Security audit
+        working-directory: frontend-v2
+        run: |
+          npm audit --omit=dev --audit-level=high
+          echo "✅ Security audit completed"
+
+      - name: 🎨 Lint code
+        working-directory: frontend-v2
+        run: |
+          npm run lint
+          echo "✅ Linting completed"
+
+      - name: 🔎 Type check
+        working-directory: frontend-v2
+        run: |
+          npx tsc --noEmit --incremental
+          echo "✅ Type checking completed"
+
+      - name: 🏗️ Build project
+        working-directory: frontend-v2
+        run: |
+          echo "🔨 Starting build process..."
+          npm run build
+          echo "✅ Build completed successfully"
+          echo "📊 Build output size:"
+          du -sh out
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL || 'https://api.staging.conea.ai' }}
+          # 最適化設定
+          NEXT_TELEMETRY_DISABLED: 1
+          CI: true
+
+      - name: 📋 Build artifacts summary
+        working-directory: frontend-v2
+        run: |
+          echo "📊 Build Summary:"
+          echo "==================="
+          if [ -d "out" ]; then
+            echo "📁 Total files: $(find out -type f | wc -l)"
+            echo "📦 Total size: $(du -sh out | cut -f1)"
+            echo "🗂️ File breakdown:"
+            find out -name "*.js" -o -name "*.css" -o -name "*.html" | head -10
+          else
+            echo "❌ Build output directory not found"
+            exit 1
+          fi
+
+      - name: 🚀 Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CONEA_48FCF }}
+          projectId: conea-48fcf
+          channelId: live
+          entryPoint: frontend-v2
+        env:
+          FIREBASE_CLI_EXPERIMENTS: webframeworks
+
+      - name: 🎉 Deployment success
+        if: success()
+        run: |
+          echo "🎉 Deployment completed successfully!"
+          echo "🌐 Site URL: https://stagingapp.conea.ai"
+          echo "📊 Deployment time: $(date)"
+
+      - name: ❌ Deployment failed
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "🔍 Check the logs above for details"
+          echo "📋 Common issues:"
+          echo "  - Firebase service account configuration"
+          echo "  - Build artifacts missing"
+          echo "  - Environment variables not set"

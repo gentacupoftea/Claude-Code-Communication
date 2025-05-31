@@ -1,0 +1,8 @@
+# Slack Integration Requirements
+slack-bolt==1.18.1
+slack-sdk==3.27.1
+python-dotenv==1.0.0
+
+# 既存のMultiLLMシステム依存関係
+asyncio-throttle==1.0.2
+httpx==0.27.0

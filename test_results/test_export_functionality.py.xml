@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="1.920" timestamp="2025-05-19T18:58:44.230053+09:00" hostname="mourigentanoAir"><testcase classname="" name="tests.analytics.test_export_functionality" time="0.000"><error message="collection failure">ImportError while importing test module '/Users/mourigenta/shopify-mcp-server/tests/analytics/test_export_functionality.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/importlib/__init__.py:127: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/analytics/test_export_functionality.py:13: in &lt;module&gt;
+    from src.analytics.dashboard.analytics_processor import AnalyticsProcessor
+src/analytics/__init__.py:3: in &lt;module&gt;
+    from .dashboard.analytics_processor import AnalyticsProcessor
+src/analytics/dashboard/__init__.py:3: in &lt;module&gt;
+    from .analytics_processor import AnalyticsProcessor
+src/analytics/dashboard/analytics_processor.py:9: in &lt;module&gt;
+    from ...api.shopify_api import ShopifyAPI
+src/api/shopify_api.py:16: in &lt;module&gt;
+    from .shopify_graphql import ShopifyGraphQLAPI
+src/api/shopify_graphql.py:11: in &lt;module&gt;
+    import backoff
+E   ModuleNotFoundError: No module named 'backoff'</error></testcase></testsuite></testsuites>

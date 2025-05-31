@@ -1,0 +1,265 @@
+{
+  "sales_optimization": {
+    "quick_wins": [
+      {
+        "practice": "カート放棄メールの自動化",
+        "implementation_time": "1週間",
+        "expected_impact": "売上+5-10%",
+        "difficulty": "低",
+        "description": "カート放棄後1時間、24時間、72時間でリマインダーメールを送信"
+      },
+      {
+        "practice": "商品レコメンデーションの実装",
+        "implementation_time": "2週間",
+        "expected_impact": "AOV+15-20%",
+        "difficulty": "中",
+        "description": "購買履歴と閲覧履歴に基づくパーソナライズドレコメンド"
+      },
+      {
+        "practice": "送料無料閾値の最適化",
+        "implementation_time": "1日",
+        "expected_impact": "AOV+10-15%",
+        "difficulty": "低",
+        "description": "平均注文金額の1.3-1.5倍に送料無料閾値を設定"
+      }
+    ],
+    "advanced_strategies": [
+      {
+        "practice": "ダイナミックプライシング",
+        "implementation_time": "1-2ヶ月",
+        "expected_impact": "利益率+10-15%",
+        "difficulty": "高",
+        "description": "需要、在庫、競合価格に基づく自動価格調整"
+      },
+      {
+        "practice": "予測分析による在庫最適化",
+        "implementation_time": "2-3ヶ月",
+        "expected_impact": "在庫コスト-20%",
+        "difficulty": "高",
+        "description": "機械学習を活用した需要予測と自動発注"
+      }
+    ]
+  },
+  "customer_experience": {
+    "checkout_optimization": [
+      {
+        "practice": "ゲストチェックアウトの提供",
+        "impact": "コンバージョン率+35%",
+        "implementation": "アカウント作成を任意にし、購入後に作成を促す"
+      },
+      {
+        "practice": "進捗インジケーターの表示",
+        "impact": "完了率+28%",
+        "implementation": "チェックアウトプロセスの各ステップを視覚化"
+      },
+      {
+        "practice": "自動入力とバリデーション",
+        "impact": "エラー率-50%",
+        "implementation": "住所自動補完、カード番号自動フォーマット"
+      }
+    ],
+    "mobile_optimization": [
+      {
+        "practice": "タッチフレンドリーなUI",
+        "guidelines": [
+          "最小タップエリア: 44x44px",
+          "ボタン間隔: 8px以上",
+          "フォントサイズ: 16px以上"
+        ]
+      },
+      {
+        "practice": "モバイル決済の統合",
+        "options": ["Apple Pay", "Google Pay", "PayPal", "Amazon Pay"],
+        "impact": "モバイルCVR+20%"
+      }
+    ]
+  },
+  "marketing_automation": {
+    "email_campaigns": [
+      {
+        "type": "ウェルカムシリーズ",
+        "sequence": [
+          {"timing": "即時", "content": "歓迎メッセージ+初回購入クーポン"},
+          {"timing": "3日後", "content": "ブランドストーリー+人気商品紹介"},
+          {"timing": "7日後", "content": "カスタマーレビュー+期間限定オファー"}
+        ],
+        "average_performance": {
+          "open_rate": "50-60%",
+          "click_rate": "25-30%",
+          "conversion_rate": "8-10%"
+        }
+      },
+      {
+        "type": "リピート促進",
+        "triggers": [
+          "前回購入から30日経過",
+          "商品の推定使用期限接近",
+          "関連新商品の入荷"
+        ],
+        "personalization": [
+          "購買履歴に基づく商品提案",
+          "過去の購入タイミング分析",
+          "顧客セグメント別オファー"
+        ]
+      }
+    ],
+    "segmentation_strategies": [
+      {
+        "segment": "VIP顧客",
+        "criteria": "年間購入額上位10% or LTV上位20%",
+        "tactics": [
+          "専用カスタマーサポート",
+          "早期アクセス・限定商品",
+          "誕生日特典の充実"
+        ]
+      },
+      {
+        "segment": "離脱リスク顧客",
+        "criteria": "通常購買サイクルの2倍期間未購入",
+        "tactics": [
+          "ウィンバックキャンペーン",
+          "アンケートによる理由調査",
+          "特別割引オファー"
+        ]
+      }
+    ]
+  },
+  "inventory_management": {
+    "abc_analysis": {
+      "A_items": {
+        "definition": "売上の70-80%を占める商品",
+        "management": [
+          "日次在庫チェック",
+          "複数サプライヤーの確保",
+          "安全在庫を高めに設定"
+        ]
+      },
+      "B_items": {
+        "definition": "売上の15-25%を占める商品",
+        "management": [
+          "週次在庫チェック",
+          "標準的な安全在庫",
+          "定期的な需要見直し"
+        ]
+      },
+      "C_items": {
+        "definition": "売上の5-10%を占める商品",
+        "management": [
+          "月次在庫チェック",
+          "最小限の安全在庫",
+          "廃番検討の定期実施"
+        ]
+      }
+    },
+    "seasonal_planning": {
+      "preparation_timeline": [
+        {"timing": "3ヶ月前", "action": "需要予測と仕入れ計画"},
+        {"timing": "2ヶ月前", "action": "マーケティング戦略策定"},
+        {"timing": "1ヶ月前", "action": "在庫配置と物流準備"},
+        {"timing": "2週間前", "action": "プロモーション開始"},
+        {"timing": "シーズン後", "action": "在庫処分計画"}
+      ]
+    }
+  },
+  "customer_service": {
+    "response_standards": {
+      "email": {
+        "first_response": "24時間以内",
+        "resolution": "48時間以内",
+        "templates": "パーソナライズされた定型文"
+      },
+      "chat": {
+        "wait_time": "30秒以内",
+        "first_response": "1分以内",
+        "chatbot_handoff": "複雑な問題は人間へエスカレーション"
+      },
+      "social_media": {
+        "monitoring": "15分間隔",
+        "response": "2時間以内",
+        "tone": "ブランドボイスに一貫性"
+      }
+    },
+    "proactive_support": [
+      {
+        "trigger": "配送遅延の可能性",
+        "action": "事前通知とお詫びクーポン"
+      },
+      {
+        "trigger": "在庫切れ商品の閲覧",
+        "action": "再入荷通知の提案と代替商品の提示"
+      },
+      {
+        "trigger": "複雑な商品の購入",
+        "action": "セットアップガイドの自動送信"
+      }
+    ]
+  },
+  "data_analytics": {
+    "essential_dashboards": [
+      {
+        "name": "経営ダッシュボード",
+        "metrics": [
+          "売上高（日次/週次/月次）",
+          "利益率",
+          "顧客獲得コスト",
+          "LTV/CAC比率",
+          "在庫回転率"
+        ],
+        "update_frequency": "リアルタイム"
+      },
+      {
+        "name": "マーケティングダッシュボード",
+        "metrics": [
+          "チャネル別ROAS",
+          "キャンペーン別CVR",
+          "顧客獲得数",
+          "エンゲージメント率",
+          "アトリビューション分析"
+        ],
+        "update_frequency": "日次"
+      },
+      {
+        "name": "オペレーションダッシュボード",
+        "metrics": [
+          "注文処理時間",
+          "配送パフォーマンス",
+          "返品率",
+          "カスタマーサポートKPI",
+          "システム稼働率"
+        ],
+        "update_frequency": "時間毎"
+      }
+    ],
+    "analysis_cadence": {
+      "daily": ["売上レポート", "在庫アラート", "広告パフォーマンス"],
+      "weekly": ["顧客コホート分析", "商品パフォーマンス", "競合価格チェック"],
+      "monthly": ["LTV分析", "チャーン分析", "市場トレンド分析"],
+      "quarterly": ["戦略レビュー", "予測モデル更新", "ベンチマーク比較"]
+    }
+  },
+  "technology_stack": {
+    "essential_tools": [
+      {
+        "category": "ECプラットフォーム",
+        "options": ["Shopify", "WooCommerce", "Magento", "BigCommerce"],
+        "selection_criteria": ["規模", "カスタマイズ性", "コスト", "エコシステム"]
+      },
+      {
+        "category": "分析ツール",
+        "options": ["Google Analytics", "Mixpanel", "Amplitude", "Heap"],
+        "selection_criteria": ["データ粒度", "統合性", "リアルタイム性", "コスト"]
+      },
+      {
+        "category": "マーケティング自動化",
+        "options": ["Klaviyo", "Mailchimp", "HubSpot", "Braze"],
+        "selection_criteria": ["機能性", "使いやすさ", "拡張性", "ROI"]
+      }
+    ],
+    "integration_priorities": [
+      "ECプラットフォーム ↔ 在庫管理",
+      "マーケティングツール ↔ CRM",
+      "分析ツール ↔ 全システム",
+      "カスタマーサポート ↔ 注文管理"
+    ]
+  }
+}

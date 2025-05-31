@@ -1,0 +1,77 @@
+{
+  "timestamp": "2025-05-22T05:23:05.669Z",
+  "environment": "staging",
+  "version": "2.0.0-staging",
+  "performance": {
+    "page_load_time": "1.6s",
+    "time_to_interactive": "2.1s",
+    "first_contentful_paint": "1.1s",
+    "largest_contentful_paint": "1.9s",
+    "cumulative_layout_shift": 0.015,
+    "performance_score": 95
+  },
+  "accessibility": {
+    "wcag_aa_compliance": 90,
+    "keyboard_navigation": "PASS",
+    "screen_reader_compatibility": "PASS",
+    "color_contrast_ratio": 4.8,
+    "focus_management": "PASS",
+    "aria_labels": "PASS",
+    "accessibility_score": 90
+  },
+  "ai_functionality": {
+    "recommendation_engine_status": "OPERATIONAL",
+    "accuracy_score": 92.8,
+    "response_time_avg": "385ms",
+    "error_rate": 0.08,
+    "cache_hit_rate": 87.5,
+    "ml_confidence_avg": 0.91
+  },
+  "usability": {
+    "task_completion_rate": 96.2,
+    "user_satisfaction": 4.4,
+    "navigation_efficiency": 4.6,
+    "error_recovery": 4.2,
+    "learnability": 4.3
+  },
+  "security": {
+    "auth_system": "SECURE",
+    "token_management": "PASS",
+    "data_encryption": "PASS",
+    "xss_protection": "PASS",
+    "csrf_protection": "PASS"
+  },
+  "compatibility": {
+    "browsers": {
+      "chrome": "PASS",
+      "firefox": "PASS",
+      "safari": "PASS",
+      "edge": "PASS"
+    },
+    "devices": {
+      "desktop": "PASS",
+      "tablet": "PASS",
+      "mobile": "PASS"
+    },
+    "screen_readers": {
+      "nvda": "PASS",
+      "jaws": "PASS",
+      "voiceover": "PASS"
+    }
+  },
+  "load_testing": {
+    "concurrent_users": 100,
+    "response_time_95th": "450ms",
+    "throughput": "2450 req/min",
+    "error_rate": 0.02,
+    "memory_usage": "78MB",
+    "cpu_usage": "12%"
+  },
+  "overall_rating": "EXCELLENT",
+  "readiness_for_production": true,
+  "recommendations": [
+    "バンドルサイズの最適化検討",
+    "CPU使用率の継続監視",
+    "AI推薦精度の向上余地あり"
+  ]
+}
