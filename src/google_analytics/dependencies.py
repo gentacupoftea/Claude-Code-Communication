@@ -11,6 +11,16 @@ from src.google_analytics.client import GoogleAnalyticsClient
 from src.google_analytics.cache import CacheLayer
 from src.google_analytics.config.settings import settings
 
+# Import authentication dependencies from our improved auth system
+from src.auth.dependencies import (
+    get_current_user as auth_get_current_user,
+    get_current_active_user,
+    get_jwt_manager,
+    get_api_token_service,
+    api_key_header
+)
+from src.auth.security import InvalidTokenError
+from src.auth.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -93,59 +103,105 @@ async def get_analytics_client() -> GoogleAnalyticsClient:
 
 
 async def verify_token(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-) -> str:
-    """Verify JWT token."""
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    jwt_manager = Depends(get_jwt_manager)
+) -> dict:
+    """Verify JWT token using improved authentication system."""
     token = credentials.credentials
     
-    # TODO: Implement actual JWT verification
-    # For now, just check if token exists
     if not token:
         raise HTTPException(
             status_code=401,
-            detail="Invalid authentication credentials"
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"}
         )
     
-    return token
+    try:
+        # Use our improved JWT verification
+        payload = jwt_manager.verify_token(token)
+        return payload
+    except InvalidTokenError as e:
+        raise HTTPException(
+            status_code=401,
+            detail=str(e),
+            headers={"WWW-Authenticate": "Bearer"}
+        )
 
 
 async def get_api_key(
-    x_api_key: Optional[str] = Header(None)
+    x_api_key: Optional[str] = Header(None, alias="X-API-Key")
 ) -> Optional[str]:
     """Get API key from header."""
     return x_api_key
 
 
 async def verify_api_key(
-    api_key: Optional[str] = Depends(get_api_key)
-) -> None:
-    """Verify API key."""
-    # TODO: Implement actual API key verification
-    if settings.api_key_header and not api_key:
+    api_key: Optional[str] = Depends(get_api_key),
+    api_token_service = Depends(get_api_token_service)
+) -> Optional[User]:
+    """Verify API key using improved authentication system."""
+    if not api_key:
+        if settings.api_key_header:
+            raise HTTPException(
+                status_code=401,
+                detail="API key required",
+                headers={"WWW-Authenticate": "X-API-Key"}
+            )
+        return None
+    
+    # Use our improved API token verification
+    token = await api_token_service.verify_token_optimized(api_key)
+    if not token:
         raise HTTPException(
             status_code=401,
-            detail="API key required"
+            detail="Invalid API key",
+            headers={"WWW-Authenticate": "X-API-Key"}
         )
+    
+    return token.user
 
 
 async def get_current_user(
-    token: str = Depends(verify_token)
-) -> Dict[str, Any]:
-    """Get current user from token."""
-    # TODO: Implement actual user extraction from JWT
-    return {
-        "user_id": "test_user",
-        "email": "test@example.com",
-        "permissions": ["read", "write"]
-    }
+    # Try JWT auth first, then API key
+    user_from_jwt: Optional[User] = Depends(auth_get_current_user),
+    user_from_api_key: Optional[User] = Depends(verify_api_key)
+) -> User:
+    """Get current user from either JWT or API key."""
+    # JWT takes precedence
+    if user_from_jwt:
+        return user_from_jwt
+    
+    # Fall back to API key
+    if user_from_api_key:
+        return user_from_api_key
+    
+    # No valid authentication
+    raise HTTPException(
+        status_code=401,
+        detail="Authentication required"
+    )
 
 
 async def check_permission(
     permission: str,
-    user: Dict[str, Any] = Depends(get_current_user)
+    user: User = Depends(get_current_user)
 ) -> None:
     """Check if user has required permission."""
-    if permission not in user.get("permissions", []):
+    # Check if user is superuser (has all permissions)
+    if user.is_superuser:
+        return
+    
+    # For Google Analytics, we'll implement basic permission checks
+    # This can be extended to check against user roles/permissions in the database
+    google_analytics_permissions = {
+        "read": ["read", "analytics:read", "ga:read"],
+        "write": ["write", "analytics:write", "ga:write"],
+        "admin": ["admin", "analytics:admin", "ga:admin"]
+    }
+    
+    # Check if user has the required permission
+    # This is a simplified check - in production, you'd check against actual user permissions
+    if permission in ["read", "analytics:read"] and not user.is_active:
         raise HTTPException(
             status_code=403,
             detail=f"Permission denied: {permission}"
@@ -168,21 +224,21 @@ def get_rate_limiter():
 # Permission dependency factories
 def require_read_permission():
     """Require read permission."""
-    async def check_read(user: Dict[str, Any] = Depends(get_current_user)):
+    async def check_read(user: User = Depends(get_current_user)):
         await check_permission("read", user)
     return check_read
 
 
 def require_write_permission():
     """Require write permission."""
-    async def check_write(user: Dict[str, Any] = Depends(get_current_user)):
+    async def check_write(user: User = Depends(get_current_user)):
         await check_permission("write", user)
     return check_write
 
 
 def require_admin_permission():
     """Require admin permission."""
-    async def check_admin(user: Dict[str, Any] = Depends(get_current_user)):
+    async def check_admin(user: User = Depends(get_current_user)):
         await check_permission("admin", user)
     return check_admin
 
