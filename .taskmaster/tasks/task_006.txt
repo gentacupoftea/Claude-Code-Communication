@@ -1,0 +1,11 @@
+# Task ID: 6
+# Title: MVPリリース候補 UATと最終検証
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: 主要機能がマージされた後、ステージング環境でユーザーアクセプタンステストと包括的なE2E動作検証を実施する。
+# Details:
+
+
+# Test Strategy:
+

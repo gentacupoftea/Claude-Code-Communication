@@ -1,0 +1,92 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "真のMCP Phase 3成果物 (ページネーション、OAuth、データモデル等) のPR作成とマージ",
+      "description": "feature/multillm-persistence-enhancements-final ブランチと関連stashに含まれるMCP Phase 3の核心的機能を新しいPRとして統合する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "highest",
+      "subtasks": []
+    },
+    {
+      "id": 2,
+      "title": "PR #47 (MCP Provider実装 - Shopify以外の主要プロバイダ) の更新とマージ",
+      "description": "PR #42からMCPプロバイダー関連機能を抽出し、Phase 3成果物PRマージ後に最新のmainにリベースしてマージする。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 3,
+      "title": "PR #48 (インフラ整備・フロントエンド改善中心) の再評価と対応",
+      "description": "Phase 3成果物PRマージ後、このPRの残りの価値を評価し、必要であればスコープを絞って再利用またはクローズする。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "medium",
+      "subtasks": []
+    },
+    {
+      "id": 4,
+      "title": "Task Master復旧作業",
+      "description": "Task Masterの再初期化、タスクファイルの再作成、Gitへの登録。",
+      "details": "",
+      "testStrategy": "",
+      "status": "in-progress",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 5,
+      "title": "GitHubブランチ戦略の見直しと不要ブランチ整理",
+      "description": "Phase 3成果物PRマージ後、多数存在するローカル・リモートブランチを整理し、新しいブランチ戦略を策定・文書化する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "medium",
+      "subtasks": []
+    },
+    {
+      "id": 6,
+      "title": "MVPリリース候補 UATと最終検証",
+      "description": "主要機能がマージされた後、ステージング環境でユーザーアクセプタンステストと包括的なE2E動作検証を実施する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 7,
+      "title": "(完了済み) MVP達成後の優先機能開発ロードマップ策定",
+      "description": "MVP達成を受け、その後の優先機能開発アイテムを洗い出し、ティア別に整理した。",
+      "details": "",
+      "testStrategy": "",
+      "status": "done",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 8,
+      "title": "(完了済み) ローカルリポジトリ完全クリーンアップとGitHubリセット",
+      "description": "ローカルディレクトリの汚染を除去し、クリーンな状態をリモートのmainブランチに強制プッシュしてベースラインをリセットした。",
+      "details": "",
+      "testStrategy": "",
+      "status": "done",
+      "dependencies": [],
+      "priority": "highest",
+      "subtasks": []
+    }
+  ]
+}

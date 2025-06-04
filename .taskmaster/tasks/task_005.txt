@@ -1,0 +1,11 @@
+# Task ID: 5
+# Title: GitHubブランチ戦略の見直しと不要ブランチ整理
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Phase 3成果物PRマージ後、多数存在するローカル・リモートブランチを整理し、新しいブランチ戦略を策定・文書化する。
+# Details:
+
+
+# Test Strategy:
+

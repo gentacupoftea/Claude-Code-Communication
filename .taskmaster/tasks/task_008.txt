@@ -1,0 +1,11 @@
+# Task ID: 8
+# Title: (完了済み) ローカルリポジトリ完全クリーンアップとGitHubリセット
+# Status: done
+# Dependencies: None
+# Priority: highest
+# Description: ローカルディレクトリの汚染を除去し、クリーンな状態をリモートのmainブランチに強制プッシュしてベースラインをリセットした。
+# Details:
+
+
+# Test Strategy:
+

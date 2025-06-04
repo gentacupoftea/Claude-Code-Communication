@@ -1,0 +1,453 @@
+"""
+MCP Phase 3 統一データモデル - プロバイダー間データ交換
+
+Shopify、Amazon、Facebook等の主要ECプラットフォームで
+統一されたデータモデルによるシームレスなデータ交換を実現
+"""
+
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Dict, List, Optional, Union, Any
+from enum import Enum
+import uuid
+
+# ========== 基本型 ==========
+
+@dataclass
+class Money:
+    """通貨金額型"""
+    amount: float
+    currency: str = 'JPY'
+    
+    def __str__(self):
+        return f"{self.amount:,.2f} {self.currency}"
+
+@dataclass
+class Address:
+    """住所型"""
+    line1: str
+    city: str
+    province: str
+    country: str
+    zip: str
+    line2: Optional[str] = None
+    phone: Optional[str] = None
+
+# ========== ステータス ==========
+
+class ProductStatus(Enum):
+    """商品ステータス"""
+    ACTIVE = "active"
+    DRAFT = "draft"
+    ARCHIVED = "archived"
+
+class OrderStatus(Enum):
+    """注文ステータス"""
+    PENDING = "pending"
+    PAID = "paid"
+    SHIPPED = "shipped"
+    DELIVERED = "delivered"
+    CANCELLED = "cancelled"
+    REFUNDED = "refunded"
+
+class PaymentStatus(Enum):
+    """支払いステータス"""
+    PENDING = "pending"
+    PAID = "paid"
+    PARTIALLY_PAID = "partially_paid"
+    REFUNDED = "refunded"
+    VOIDED = "voided"
+
+class CampaignStatus(Enum):
+    """キャンペーンステータス"""
+    ACTIVE = "active"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+# ========== 商品モデル ==========
+
+@dataclass
+class ProductImage:
+    """商品画像"""
+    url: str
+    position: int = 0
+    alt_text: Optional[str] = None
+    width: Optional[int] = None
+    height: Optional[int] = None
+
+@dataclass
+class ProductVariant:
+    """商品バリエーション"""
+    id: str
+    title: str
+    price: Money
+    inventory_quantity: int = 0
+    sku: Optional[str] = None
+    barcode: Optional[str] = None
+    weight: Optional[float] = None
+    weight_unit: str = "kg"
+    position: int = 1
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
+
+@dataclass
+class Product:
+    """統一商品データモデル"""
+    id: str
+    title: str
+    description: Optional[str] = None
+    vendor: Optional[str] = None
+    product_type: Optional[str] = None
+    status: ProductStatus = ProductStatus.ACTIVE
+    tags: List[str] = field(default_factory=list)
+    variants: List[ProductVariant] = field(default_factory=list)
+    images: List[ProductImage] = field(default_factory=list)
+    price: Money = field(default_factory=lambda: Money(0.0))
+    provider: str = ""
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def main_variant(self) -> Optional[ProductVariant]:
+        """メインバリエーション"""
+        return self.variants[0] if self.variants else None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """辞書形式に変換"""
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'vendor': self.vendor,
+            'product_type': self.product_type,
+            'status': self.status.value,
+            'tags': self.tags,
+            'variants': [variant.__dict__ for variant in self.variants],
+            'images': [image.__dict__ for image in self.images],
+            'price': self.price.__dict__,
+            'provider': self.provider,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
+            'metadata': self.metadata
+        }
+
+# ========== 注文モデル ==========
+
+@dataclass
+class LineItem:
+    """注文商品"""
+    product_id: str
+    title: str
+    quantity: int
+    price: Money
+    total_price: Money
+    variant_id: Optional[str] = None
+    sku: Optional[str] = None
+
+@dataclass
+class Order:
+    """統一注文データモデル"""
+    id: str
+    order_number: str
+    status: OrderStatus
+    payment_status: PaymentStatus
+    line_items: List[LineItem]
+    total_amount: Money
+    subtotal_amount: Money
+    customer_id: Optional[str] = None
+    tax_amount: Money = field(default_factory=lambda: Money(0.0))
+    shipping_amount: Money = field(default_factory=lambda: Money(0.0))
+    discount_amount: Money = field(default_factory=lambda: Money(0.0))
+    billing_address: Optional[Address] = None
+    shipping_address: Optional[Address] = None
+    provider: str = ""
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
+    fulfilled_at: Optional[datetime] = None
+    cancelled_at: Optional[datetime] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """辞書形式に変換"""
+        return {
+            'id': self.id,
+            'order_number': self.order_number,
+            'customer_id': self.customer_id,
+            'status': self.status.value,
+            'payment_status': self.payment_status.value,
+            'line_items': [item.__dict__ for item in self.line_items],
+            'total_amount': self.total_amount.__dict__,
+            'subtotal_amount': self.subtotal_amount.__dict__,
+            'tax_amount': self.tax_amount.__dict__,
+            'shipping_amount': self.shipping_amount.__dict__,
+            'discount_amount': self.discount_amount.__dict__,
+            'billing_address': self.billing_address.__dict__ if self.billing_address else None,
+            'shipping_address': self.shipping_address.__dict__ if self.shipping_address else None,
+            'provider': self.provider,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
+            'fulfilled_at': self.fulfilled_at.isoformat() if self.fulfilled_at else None,
+            'cancelled_at': self.cancelled_at.isoformat() if self.cancelled_at else None,
+            'metadata': self.metadata
+        }
+
+# ========== 顧客モデル ==========
+
+@dataclass
+class Customer:
+    """統一顧客データモデル"""
+    id: str
+    email: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone: Optional[str] = None
+    accepts_marketing: bool = False
+    orders_count: int = 0
+    total_spent: Money = field(default_factory=lambda: Money(0.0))
+    default_address: Optional[Address] = None
+    provider: str = ""
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def full_name(self) -> str:
+        """フルネーム"""
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        return self.first_name or self.last_name or ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        """辞書形式に変換"""
+        return {
+            'id': self.id,
+            'email': self.email,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'phone': self.phone,
+            'accepts_marketing': self.accepts_marketing,
+            'orders_count': self.orders_count,
+            'total_spent': self.total_spent.__dict__,
+            'default_address': self.default_address.__dict__ if self.default_address else None,
+            'provider': self.provider,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
+            'metadata': self.metadata
+        }
+
+# ========== キャンペーンモデル ==========
+
+@dataclass
+class CampaignInsights:
+    """キャンペーン成果指標"""
+    impressions: int = 0
+    clicks: int = 0
+    ctr: float = 0.0  # Click Through Rate
+    cpc: Money = field(default_factory=lambda: Money(0.0))  # Cost Per Click
+    conversions: int = 0
+    conversion_rate: float = 0.0
+    cost_per_conversion: Money = field(default_factory=lambda: Money(0.0))
+
+@dataclass
+class Campaign:
+    """統一キャンペーンデータモデル"""
+    id: str
+    name: str
+    status: CampaignStatus
+    objective: Optional[str] = None
+    budget: Money = field(default_factory=lambda: Money(0.0))
+    budget_remaining: Money = field(default_factory=lambda: Money(0.0))
+    insights: Optional[CampaignInsights] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    provider: str = ""
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """辞書形式に変換"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'status': self.status.value,
+            'objective': self.objective,
+            'budget': self.budget.__dict__,
+            'budget_remaining': self.budget_remaining.__dict__,
+            'insights': self.insights.__dict__ if self.insights else None,
+            'start_time': self.start_time.isoformat() if self.start_time else None,
+            'end_time': self.end_time.isoformat() if self.end_time else None,
+            'provider': self.provider,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
+            'metadata': self.metadata
+        }
+
+# ========== データ変換ユーティリティ ==========
+
+class DataModelConverter:
+    """プロバイダー固有データを統一モデルに変換"""
+    
+    @staticmethod
+    def shopify_product_to_standard(shopify_data: Dict[str, Any]) -> Product:
+        """Shopify商品データを統一Product型に変換"""
+        variants = []
+        if 'variants' in shopify_data:
+            for v in shopify_data['variants']:
+                variant = ProductVariant(
+                    id=str(v.get('id', '')),
+                    title=v.get('title', ''),
+                    price=Money(
+                        amount=float(v.get('price', 0)),
+                        currency='JPY'  # Shopifyから取得した通貨情報で置き換え
+                    ),
+                    inventory_quantity=v.get('inventory_quantity', 0),
+                    sku=v.get('sku'),
+                    barcode=v.get('barcode'),
+                    weight=v.get('grams', 0) / 1000 if v.get('grams') else None,
+                    position=v.get('position', 1)
+                )
+                variants.append(variant)
+        
+        images = []
+        if 'images' in shopify_data:
+            for i in shopify_data['images']:
+                image = ProductImage(
+                    url=i.get('src', ''),
+                    position=i.get('position', 0),
+                    alt_text=i.get('alt'),
+                    width=i.get('width'),
+                    height=i.get('height')
+                )
+                images.append(image)
+        
+        # メイン価格の計算
+        main_price = Money(0.0)
+        if variants:
+            main_price = variants[0].price
+        
+        return Product(
+            id=str(shopify_data.get('id', '')),
+            title=shopify_data.get('title', ''),
+            description=shopify_data.get('body_html'),
+            vendor=shopify_data.get('vendor'),
+            product_type=shopify_data.get('product_type'),
+            status=ProductStatus.ACTIVE if shopify_data.get('status') == 'active' else ProductStatus.DRAFT,
+            tags=shopify_data.get('tags', '').split(',') if shopify_data.get('tags') else [],
+            variants=variants,
+            images=images,
+            price=main_price,
+            provider='shopify',
+            created_at=datetime.fromisoformat(shopify_data['created_at'].replace('Z', '+00:00')) if shopify_data.get('created_at') else datetime.now(),
+            updated_at=datetime.fromisoformat(shopify_data['updated_at'].replace('Z', '+00:00')) if shopify_data.get('updated_at') else datetime.now(),
+            metadata={'original_shopify_data': shopify_data}
+        )
+    
+    @staticmethod
+    def amazon_product_to_standard(amazon_data: Dict[str, Any]) -> Product:
+        """Amazon商品データを統一Product型に変換"""
+        # Amazon SP-API形式から変換
+        return Product(
+            id=amazon_data.get('asin', ''),
+            title=amazon_data.get('title', ''),
+            description=amazon_data.get('description'),
+            vendor=amazon_data.get('brand'),
+            product_type=amazon_data.get('product_category'),
+            status=ProductStatus.ACTIVE,
+            price=Money(
+                amount=float(amazon_data.get('price', {}).get('amount', 0)),
+                currency=amazon_data.get('price', {}).get('currency', 'USD')
+            ),
+            provider='amazon',
+            metadata={'original_amazon_data': amazon_data, 'asin': amazon_data.get('asin')}
+        )
+    
+    @staticmethod
+    def facebook_campaign_to_standard(facebook_data: Dict[str, Any]) -> Campaign:
+        """Facebook Adsキャンペーンデータを統一Campaign型に変換"""
+        insights = None
+        if 'insights' in facebook_data:
+            insights_data = facebook_data['insights']
+            insights = CampaignInsights(
+                impressions=int(insights_data.get('impressions', 0)),
+                clicks=int(insights_data.get('clicks', 0)),
+                ctr=float(insights_data.get('ctr', 0)),
+                cpc=Money(
+                    amount=float(insights_data.get('cpc', 0)),
+                    currency='USD'
+                ),
+                conversions=int(insights_data.get('conversions', 0)),
+                conversion_rate=float(insights_data.get('conversion_rate', 0))
+            )
+        
+        return Campaign(
+            id=str(facebook_data.get('id', '')),
+            name=facebook_data.get('name', ''),
+            status=CampaignStatus.ACTIVE if facebook_data.get('status') == 'ACTIVE' else CampaignStatus.PAUSED,
+            objective=facebook_data.get('objective'),
+            budget=Money(
+                amount=float(facebook_data.get('daily_budget', 0)),
+                currency='USD'
+            ),
+            insights=insights,
+            provider='facebook',
+            metadata={'original_facebook_data': facebook_data}
+        )
+
+# ========== バリデーション ==========
+
+def validate_product(product: Product) -> List[str]:
+    """商品データのバリデーション"""
+    errors = []
+    
+    if not product.id:
+        errors.append("商品IDが必要です")
+    
+    if not product.title:
+        errors.append("商品タイトルが必要です")
+    
+    if product.price.amount < 0:
+        errors.append("価格は0以上である必要があります")
+    
+    for variant in product.variants:
+        if variant.inventory_quantity < 0:
+            errors.append(f"バリエーション '{variant.title}' の在庫数が負の値です")
+    
+    return errors
+
+def validate_order(order: Order) -> List[str]:
+    """注文データのバリデーション"""
+    errors = []
+    
+    if not order.id:
+        errors.append("注文IDが必要です")
+    
+    if not order.order_number:
+        errors.append("注文番号が必要です")
+    
+    if not order.line_items:
+        errors.append("注文商品が必要です")
+    
+    if order.total_amount.amount <= 0:
+        errors.append("注文総額は0より大きい必要があります")
+    
+    return errors
+
+# ========== エクスポート ==========
+
+__all__ = [
+    # 基本型
+    'Money', 'Address',
+    # ステータス
+    'ProductStatus', 'OrderStatus', 'PaymentStatus', 'CampaignStatus',
+    # データモデル
+    'Product', 'ProductVariant', 'ProductImage',
+    'Order', 'LineItem',
+    'Customer',
+    'Campaign', 'CampaignInsights',
+    # ユーティリティ
+    'DataModelConverter',
+    'validate_product', 'validate_order'
+]
