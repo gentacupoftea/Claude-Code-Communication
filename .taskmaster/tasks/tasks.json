@@ -6,7 +6,7 @@
       "description": "feature/multillm-persistence-enhancements-final ブランチと関連stashに含まれるMCP Phase 3の核心的機能を新しいPRとして統合する。",
       "details": "",
       "testStrategy": "",
-      "status": "pending",
+      "status": "done",
       "dependencies": [],
       "priority": "highest",
       "subtasks": []
@@ -17,7 +17,7 @@
       "description": "PR #42からMCPプロバイダー関連機能を抽出し、Phase 3成果物PRマージ後に最新のmainにリベースしてマージする。",
       "details": "",
       "testStrategy": "",
-      "status": "pending",
+      "status": "done",
       "dependencies": [],
       "priority": "high",
       "subtasks": []
@@ -28,7 +28,7 @@
       "description": "Phase 3成果物PRマージ後、このPRの残りの価値を評価し、必要であればスコープを絞って再利用またはクローズする。",
       "details": "",
       "testStrategy": "",
-      "status": "pending",
+      "status": "done",
       "dependencies": [],
       "priority": "medium",
       "subtasks": []
@@ -39,7 +39,7 @@
       "description": "Task Masterの再初期化、タスクファイルの再作成、Gitへの登録。",
       "details": "",
       "testStrategy": "",
-      "status": "in-progress",
+      "status": "done",
       "dependencies": [],
       "priority": "high",
       "subtasks": []
@@ -50,7 +50,7 @@
       "description": "Phase 3成果物PRマージ後、多数存在するローカル・リモートブランチを整理し、新しいブランチ戦略を策定・文書化する。",
       "details": "",
       "testStrategy": "",
-      "status": "pending",
+      "status": "done",
       "dependencies": [],
       "priority": "medium",
       "subtasks": []
@@ -61,7 +61,7 @@
       "description": "主要機能がマージされた後、ステージング環境でユーザーアクセプタンステストと包括的なE2E動作検証を実施する。",
       "details": "",
       "testStrategy": "",
-      "status": "pending",
+      "status": "done",
       "dependencies": [],
       "priority": "high",
       "subtasks": []
@@ -86,6 +86,1134 @@
       "status": "done",
       "dependencies": [],
       "priority": "highest",
+      "subtasks": []
+    },
+    {
+      "id": 9,
+      "title": "[MVP達成済] 基盤技術とコア機能の実装完了",
+      "description": "MCP Phase 3（ページネーション、OAuth、標準データモデル）、MultiLLM永続化、主要なバックエンドサービスなど、MVPの根幹をなす技術要素とコア機能群の開発が完了しました。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 10,
+      "title": "[MVP達成済] 開発・運用基盤の整備完了",
+      "description": "CI/CDパイプラインの構築、開発・ステージング・本番環境の整備、Task Masterによるプロジェクト管理体制の確立、ローカル開発環境のクリーンアップなどが完了しました。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 11,
+      "title": "[MVP達成済] MVP後の機能開発ロードマップ策定完了",
+      "description": "MVPリリース達成後を見据えた、優先的な機能開発アイテムの洗い出しとティア分けによる開発計画の策定が完了しました。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 12,
+      "title": "[MVPリリースまで] MCPプロバイダー拡張 (主要ECプラットフォーム)",
+      "description": "Shopify以外の主要ECプラットフォーム（Amazon SP-API、楽天RMS、NextEngineなど）とのMCP連携機能の実装。(既存タスクID 2の情報を統合)",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Amazon SP-API MCPプロバイダー設計と認証基盤実装",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 12
+        },
+        {
+          "id": 2,
+          "title": "Amazon SP-API 商品情報取得機能実装とテスト",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 12
+        },
+        {
+          "id": 3,
+          "title": "Amazon SP-API 注文情報取得機能実装とテスト",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 12
+        },
+        {
+          "id": 4,
+          "title": "楽天RMS WebAPI MCPプロバイダー設計と認証基盤実装",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 12
+        },
+        {
+          "id": 5,
+          "title": "楽天RMS 商品情報取得機能実装とテスト",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 12
+        },
+        {
+          "id": 6,
+          "title": "楽天RMS 注文情報取得機能実装とテスト",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 12
+        },
+        {
+          "id": 7,
+          "title": "NextEngine API MCPプロバイダー設計と認証基盤実装（API仕様調査含む）",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 12
+        },
+        {
+          "id": 8,
+          "title": "NextEngine API 商品情報取得機能実装とテスト",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 12
+        },
+        {
+          "id": 9,
+          "title": "NextEngine API 注文情報取得機能実装とテスト",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 12
+        },
+        {
+          "id": 10,
+          "title": "CSV/Excelファイルアップロードインターフェース設計と実装",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 12
+        },
+        {
+          "id": 11,
+          "title": "Googleスプレッドシート連携とデータ取得機能の設計と実装",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 12
+        },
+        {
+          "id": 12,
+          "title": "アップロードデータに対するAI自動クレンジング処理フロー設計",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 12
+        },
+        {
+          "id": 13,
+          "title": "AIクレンジングモジュール実装（欠損値処理、型変換、外れ値検出等）",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 12
+        },
+        {
+          "id": 14,
+          "title": "クレンジング済みデータのDWHへのスキーママッピングと保存機能実装",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 12
+        },
+        {
+          "id": 15,
+          "title": "ファイルインポート機能のE2Eテストとバリデーション",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 12
+        },
+        {
+          "id": 16,
+          "title": "各プロバイダーおよびファイルインポート機能に関するドキュメント作成と更新",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 12
+        },
+        {
+          "id": 17,
+          "title": "MCPプロバイダー拡張およびファイルインポート機能に関する統合テスト実施",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 12
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "title": "[MVPリリースまで] インフラ基盤の最終調整と安定化",
+      "description": "本番リリースに向けたインフラ構成の最終確認、セキュリティ設定強化、パフォーマンスチューニングなど。(既存タスクID 3の一部を統合・再評価)",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "本番環境インフラ構成レビューとドキュメント更新",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 13
+        },
+        {
+          "id": 2,
+          "title": "セキュリティグループ、ファイアウォール設定の最終確認と強化",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 13
+        },
+        {
+          "id": 3,
+          "title": "データベース、キャッシュサーバー等のパラメータチューニング検討と実施",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 13
+        },
+        {
+          "id": 4,
+          "title": "負荷テスト計画と準備（シナリオ、ツール選定）",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 13
+        },
+        {
+          "id": 5,
+          "title": "ステージング環境での負荷テスト実施と結果分析",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 13
+        },
+        {
+          "id": 6,
+          "title": "パフォーマンスボトルネックの特定と改善対応",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 13
+        },
+        {
+          "id": 7,
+          "title": "バックアップ・リストア戦略の最終確認とテスト",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 13
+        },
+        {
+          "id": 8,
+          "title": "ロギング・監視設定の最終確認とアラート閾値調整",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 13
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "[MVPリリースまで] フロントエンドUI/UXの最終改善",
+      "description": "MVPリリースに向けたユーザーインターフェースの微調整、ユーザビリティ向上のための改善作業。(既存タスクID 3の一部を統合・再評価)",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "主要画面（ダッシュボード、分析画面等）のデザインレビューとフィードバック収集",
+          "description": "",
+          "details": "",
+          "status": "in-progress",
+          "dependencies": [],
+          "parentTaskId": 14
+        },
+        {
+          "id": 2,
+          "title": "UIコンポーネントの一貫性チェックと修正",
+          "description": "",
+          "details": "",
+          "status": "in-progress",
+          "dependencies": [],
+          "parentTaskId": 14
+        },
+        {
+          "id": 3,
+          "title": "レスポンシブデザインの最終確認と調整（主要デバイス・ブラウザ）",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 14
+        },
+        {
+          "id": 4,
+          "title": "ユーザビリティテスト計画とテスター募集",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 14
+        },
+        {
+          "id": 5,
+          "title": "ユーザビリティテスト実施と課題点の洗い出し",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 14
+        },
+        {
+          "id": 6,
+          "title": "特定されたUI/UX課題に対する改善策の検討と実装",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 14
+        },
+        {
+          "id": 7,
+          "title": "アクセシビリティ（WCAG基準など）の簡易チェックと改善",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 14
+        },
+        {
+          "id": 8,
+          "title": "ヘルプドキュメント・チュートリアルの作成または更新",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 14
+        },
+        {
+          "id": 9,
+          "title": "UI/UX改善に関する最終的な動作確認テスト",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 14
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "title": "[MVPリリースまで] CI/CDパイプラインの安定化と信頼性向上",
+      "description": "CI環境の依存関係問題解決、ビルド・デプロイプロセスの高速化と安定化。(既存タスクID 9の一部を統合)",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "現行CI/CDパイプライン構成のレビューとドキュメント化",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 15
+        },
+        {
+          "id": 2,
+          "title": "ユニットテスト、インテグレーションテストの自動実行カバレッジ向上",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 15
+        },
+        {
+          "id": 3,
+          "title": "静的コード解析、セキュリティスキャンのパイプラインへの統合",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 15
+        },
+        {
+          "id": 4,
+          "title": "ビルド・デプロイ時間の計測とボトルネック分析",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 15
+        },
+        {
+          "id": 5,
+          "title": "デプロイ戦略（ブルー/グリーン、カナリア等）の検討と選択",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 15
+        },
+        {
+          "id": 6,
+          "title": "選択したデプロイ戦略に基づいたパイプライン改修",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 15
+        },
+        {
+          "id": 7,
+          "title": "ステージング環境への自動デプロイパイプライン構築",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 15
+        },
+        {
+          "id": 8,
+          "title": "本番環境へのデプロイ承認フローの確立とツール連携",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 15
+        },
+        {
+          "id": 9,
+          "title": "CI/CDパイプラインの監視と通知設定（失敗時、成功時）",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 15
+        },
+        {
+          "id": 10,
+          "title": "開発者向けCI/CD利用ガイドライン作成",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 15
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "title": "[MVPリリースまで] 包括的テスト環境の整備と自動テスト拡充",
+      "description": "フロントエンド(ESLint等)、E2Eテスト(Playwright等)、Windows環境互換性確保を含めたテスト環境の全面的な見直しと自動テストカバレッジの向上。(既存タスクID 9の一部を統合)",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "テスト戦略ドキュメント（ユニット、結合、E2E、UAT）の作成",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 16
+        },
+        {
+          "id": 2,
+          "title": "主要機能に対するテストケース洗い出しと優先度付け",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 16
+        },
+        {
+          "id": 3,
+          "title": "テストデータ作成方針と準備",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 16
+        },
+        {
+          "id": 4,
+          "title": "テスト環境（開発、ステージング）の整備と確認",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 16
+        },
+        {
+          "id": 5,
+          "title": "ユニットテストカバレッジ目標設定と現状把握",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 16
+        },
+        {
+          "id": 6,
+          "title": "重要機能パスのE2Eテストシナリオ作成と自動化検討",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 16
+        },
+        {
+          "id": 7,
+          "title": "初期UAT（ユーザー受け入れテスト）計画と参加者調整",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 16
+        },
+        {
+          "id": 8,
+          "title": "テスト結果の記録・報告フォーマット準備",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 16
+        },
+        {
+          "id": 9,
+          "title": "バグトラッキングシステム連携と運用フロー確認",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 16
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "title": "[MVPリリースまで] UAT計画策定と実施準備",
+      "description": "ユーザーアクセプタンステスト（UAT）のシナリオ作成、テストデータ準備、テスターへの説明など、UAT実施に向けた準備作業。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "開発者向けドキュメント（アーキテクチャ、API仕様、セットアップ手順）更新",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 17
+        },
+        {
+          "id": 2,
+          "title": "ユーザー向けドキュメント（操作マニュアル、FAQ）の作成・更新",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 17
+        },
+        {
+          "id": 3,
+          "title": "APIリファレンスドキュメントの自動生成と公開準備",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 17
+        },
+        {
+          "id": 4,
+          "title": "READMEファイルの全体的な見直しと最新化",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 17
+        },
+        {
+          "id": 5,
+          "title": "コントリビューションガイドラインの作成・更新",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 17
+        },
+        {
+          "id": 6,
+          "title": "リリースノート作成プロセスの確立とテンプレート準備",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 17
+        },
+        {
+          "id": 7,
+          "title": "ドキュメント翻訳（日本語）の計画と体制準備",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 17
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "title": "[MVPリリースまで] UAT実施とフィードバック対応",
+      "description": "ステージング環境でのUAT実施、発見された不具合や改善要望への対応、最終的な品質検証。(既存タスクID 6の情報を統合)",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "依存ライブラリの脆弱性スキャンとアップデート対応",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 18
+        },
+        {
+          "id": 2,
+          "title": "OWASP Top10 等の主要な脆弱性観点でのセルフチェック",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 18
+        },
+        {
+          "id": 3,
+          "title": "認証・認可フローの再レビューと潜在リスク洗い出し",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 18
+        },
+        {
+          "id": 4,
+          "title": "データ入力バリデーション、出力エンコーディングの網羅的確認",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 18
+        },
+        {
+          "id": 5,
+          "title": "機密情報（APIキー、パスワード等）管理方法の最終確認",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 18
+        },
+        {
+          "id": 6,
+          "title": "セキュリティ診断ツール（SAST/DAST）の実行と結果分析（可能な範囲で）",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 18
+        },
+        {
+          "id": 7,
+          "title": "発見された脆弱性への対応と再テスト",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 18
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "title": "[MVPリリースまで] Task Master運用体制の確立",
+      "description": "Task Masterの復旧、設定最適化、チームメンバーへの利用方法共有など、プロジェクト管理ツールの安定運用体制構築。(既存タスクID 4の一部を統合)",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "開発チーム内外の役割分担と責任範囲の明確化",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 19
+        },
+        {
+          "id": 2,
+          "title": "定例会議（進捗報告、課題共有等）の頻度とアジェンダ設定",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 19
+        },
+        {
+          "id": 3,
+          "title": "コミュニケーションツール（Slack、Teams等）のチャネル設計と運用ルール",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 19
+        },
+        {
+          "id": 4,
+          "title": "インシデント発生時のエスカレーションフローと連絡体制構築",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 19
+        },
+        {
+          "id": 5,
+          "title": "ドキュメント共有・管理ルールの策定（Confluence、Google Drive等）",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 19
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "title": "[MVPリリースまで] 既存プロジェクトタスクの棚卸しと移行",
+      "description": "過去のタスク管理情報（他ツールやドキュメントにあれば）をTask Masterへ集約し、現状に合わせて整理・更新。(既存タスクID 4の一部を統合)",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "利用規約・プライバシーポリシーの最終レビューと弁護士確認",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 20
+        },
+        {
+          "id": 2,
+          "title": "特定商取引法に基づく表記の確認と準備",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 20
+        },
+        {
+          "id": 3,
+          "title": "外部連携API等の利用規約再確認と遵守状況チェック",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 20
+        },
+        {
+          "id": 4,
+          "title": "その他関連法規（個人情報保護法等）の遵守状況最終確認",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 20
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "title": "[MVPリリースまで] GitHubブランチ戦略の策定と文書化",
+      "description": "開発規模やチーム体制に合わせた最適なブランチ戦略（例：Gitflow、GitHub Flowなど）を定義し、運用ルールをドキュメント化。(既存タスクID 5の一部を統合)",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "MVPリリース判断基準の再確認と合意",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 21
+        },
+        {
+          "id": 2,
+          "title": "リリース前最終チェックリストの作成（技術、ビジネス、法務等）",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 21
+        },
+        {
+          "id": 3,
+          "title": "チェックリストに基づいた各項目の最終確認と担当者割り当て",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 21
+        },
+        {
+          "id": 4,
+          "title": "リリース手順書（ロールバック手順含む）の作成とレビュー",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 21
+        },
+        {
+          "id": 5,
+          "title": "関係者（マーケティング、営業、サポート等）へのリリースタイミング共有",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 21
+        },
+        {
+          "id": 6,
+          "title": "リリース当日の体制と役割分担確認",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 21
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "title": "[MVPリリースまで] 不要なローカル・リモートブランチのクリーンアップ",
+      "description": "マージ済み、陳腐化、実験的で不要になったブランチを特定し、整理・削除することでリポジトリを健全な状態に保つ。(既存タスクID 5の一部を統合)",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "経営層へのMVPリリース計画と見込み効果に関する最終報告",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 22
+        },
+        {
+          "id": 2,
+          "title": "事業部門へのMVP機能とリリース影響に関する最終説明会実施",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 22
+        },
+        {
+          "id": 3,
+          "title": "MVPリリース実行に関する最終承認の取得",
+          "description": "",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 22
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "title": "[正式リリース後/T1] 追加主要ECプラットフォームMCPインテグレーション",
+      "description": "MVPで未対応だった残りの主要ECプラットフォームとのMCP連携を完了させる。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 24,
+      "title": "[正式リリース後/T1] DWH/ETLパイプラインの全ECプラットフォーム対応",
+      "description": "全ての連携ECプラットフォームからのデータを統合的に処理・蓄積できるDWHおよびETLパイプラインを構築・拡張する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 25,
+      "title": "[正式リリース後/T1] AI分析アシスタントV2 - 高度クエリ解釈と自動インサイト抽出",
+      "description": "自然言語による複雑な分析リクエストの解釈精度を向上させ、データから自動的にインサイトを抽出・提示する機能を開発する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 26,
+      "title": "[正式リリース後/T1] ユーザー認証・認可機能の完全化",
+      "description": "メールアドレス検証、パスワードリセット、二要素認証、管理者権限によるユーザー管理機能など、セキュアで包括的な認証・認可システムを構築する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 27,
+      "title": "[正式リリース後/T1] ファイルベースデータインポートとAIクレンジング機能",
+      "description": "CSV、Excel、スプレッドシート等のファイル形式でのデータアップロード機能を追加し、AIを活用してデータクレンジング（欠損値補完、外れ値除去、フォーマット統一等）を行う機能を開発する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "cancelled",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 28,
+      "title": "[正式リリース後/T2] コア顧客分析機能の実装 (RFM分析等)",
+      "description": "RFM分析（Recency, Frequency, Monetary）などの手法を用いたコア顧客セグメンテーションと分析機能を実装する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "medium",
+      "subtasks": []
+    },
+    {
+      "id": 29,
+      "title": "[正式リリース後/T2] 商品分析機能の実装 (ABC分析等)",
+      "description": "ABC分析などの手法を用いて、売れ筋商品や死に筋商品を特定・可視化する機能を実装する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "medium",
+      "subtasks": []
+    },
+    {
+      "id": 30,
+      "title": "[正式リリース後/T2] ダッシュボードのインタラクティブ機能強化",
+      "description": "ドリルダウン、フィルター、ソート、期間比較など、ユーザーが能動的にデータを探索できるインタラクティブなダッシュボード機能を強化する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "medium",
+      "subtasks": []
+    },
+    {
+      "id": 31,
+      "title": "[正式リリース後/T2] 基本的な予測分析機能の実装 (売上予測 v1)",
+      "description": "過去の売上データに基づき、短期的な売上トレンドを予測する基本的な時系列予測モデルを実装し、ダッシュボードに表示する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "medium",
+      "subtasks": []
+    },
+    {
+      "id": 32,
+      "title": "[正式リリース後/T2] Supabase活用機能の拡張",
+      "description": "Web Push通知の高度化（セグメント配信、パーソナライズ通知）、ファイルストレージ機能の拡張（大容量ファイル対応、バージョン管理等）など、Supabase連携機能を強化する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "medium",
+      "subtasks": []
+    },
+    {
+      "id": 33,
+      "title": "[正式リリース後/T3] 高度分析機能群の開発 (LTV, バスケット分析, キャンペーン効果測定)",
+      "description": "顧客生涯価値（LTV）分析、バスケット分析（同時購買商品の分析）、マーケティングキャンペーン効果測定といった、より高度な分析モジュールを開発・実装する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "low",
+      "subtasks": []
+    },
+    {
+      "id": 34,
+      "title": "[正式リリース後/T3] 高度予測モデルの構築 (需要予測v2, 解約予測, 推薦エンジン)",
+      "description": "より精度の高い需要予測モデル（v2）、顧客解約予測モデル、商品推薦エンジンなどの機械学習モデルを構築し、サービスに統合する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "low",
+      "subtasks": []
+    },
+    {
+      "id": 35,
+      "title": "[正式リリース後/T3] AI分析アシスタントV2 - MultiLLM最適化と高度コンテキスト保持",
+      "description": "複数のLLMを適切に使い分けるMultiLLMアーキテクチャを最適化し、長期間の対話でも文脈を正確に理解・保持できる能力を強化する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "low",
+      "subtasks": []
+    },
+    {
+      "id": 36,
+      "title": "[正式リリース後/T3] ダッシュボードおよびレポーティング機能の本格強化",
+      "description": "カスタムレポート作成機能、定期レポート自動生成・配信機能、多様なデータソースとの連携など、ダッシュボードとレポーティング機能を大幅に強化する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "low",
+      "subtasks": []
+    },
+    {
+      "id": 37,
+      "title": "[正式リリース後/T3] 本番環境の最適化とSREプラクティス導入",
+      "description": "本番環境のパフォーマンス監視、スケーラビリティ向上、冗長化構成の実現、障害復旧プロセスの自動化など、SRE (Site Reliability Engineering) の考え方に基づいた運用体制を構築する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "low",
+      "subtasks": []
+    },
+    {
+      "id": 38,
+      "title": "[正式リリース後/T3] 統合ロギング・監視・アラートシステムの構築",
+      "description": "システム全体のログを一元的に収集・分析し、異常検知や障害予兆をリアルタイムに監視・通知する包括的なシステムを構築する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "low",
+      "subtasks": []
+    },
+    {
+      "id": 39,
+      "title": "[正式リリース後/T3] 外部BIツール連携機能の開発",
+      "description": "Tableau, Looker (Google Data Studio), Power BIなどの主要な外部BIツールとの連携インターフェースを提供し、ユーザーが使い慣れたツールでデータ分析を行えるようにする。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "low",
+      "subtasks": []
+    },
+    {
+      "id": 40,
+      "title": "[正式リリース後/T3] AI分析アシスタントV2 - MultiLLM最適化と高度コンテキスト保持",
+      "description": "複数のLLMを適切に使い分けるMultiLLMアーキテクチャを最適化し、長期間の対話でも文脈を正確に理解・保持できる能力を強化する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "low",
       "subtasks": []
     }
   ]
