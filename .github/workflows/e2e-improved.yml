@@ -1,4 +1,6 @@
-name: E2E Tests (Improved)
+name: E2E Tests (Backend Python App)
+# このワークフローはPythonベースのバックエンドアプリケーションのE2Eテストを実行します
+# フロントエンド(frontend-v2)のE2Eテストはfrontend-main-ci.ymlで実行されます
 
 on:
   push:
