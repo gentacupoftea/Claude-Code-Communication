@@ -1,0 +1,11 @@
+# Task ID: 4
+# Title: Task Master復旧作業
+# Status: in-progress
+# Dependencies: None
+# Priority: high
+# Description: Task Masterの再初期化、タスクファイルの再作成、Gitへの登録。
+# Details:
+
+
+# Test Strategy:
+
