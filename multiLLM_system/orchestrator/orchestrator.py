@@ -12,9 +12,12 @@ from enum import Enum
 import json
 import uuid
 import random
-from .llm_client import ClaudeClient, TaskAnalysis, LLMMessage
+# from .llm_client import ClaudeClient, TaskAnalysis, LLMMessage
+from .enhanced_llm_client import EnhancedClaudeClient as ClaudeClient, TaskAnalysis, LLMMessage
 from .response_formatter import ResponseFormatter, MessageProcessor
+from .persistence import PersistenceManager
 import time
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +125,9 @@ class MultiLLMOrchestrator:
         self.base_delay = config.get('baseDelay', 1.0)  # 基本遅延時間（秒）
         self.max_delay = config.get('maxDelay', 60.0)  # 最大遅延時間（秒）
         
+        # 永続化マネージャー
+        self.persistence_manager = None  # initializeで初期化
+        
         # タスク振り分けルール
         self.task_routing = {
             TaskType.CODE_IMPLEMENTATION: "backend_worker",
@@ -176,6 +182,19 @@ class MultiLLMOrchestrator:
         """Orchestratorの初期化"""
         logger.info("🎯 MultiLLM Orchestrator initializing...")
         
+        # 永続化マネージャーの初期化
+        try:
+            self.persistence_manager = PersistenceManager(self.config)
+            await self.persistence_manager.initialize()
+            logger.info("✅ Persistence manager initialized")
+            
+            # 以前の状態を復元
+            await self._restore_state()
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize persistence manager: {e}")
+            # 永続化が失敗してもシステムは動作を続ける
+            self.persistence_manager = None
+        
         # Claude-4クライアントの初期化
         await self.claude_client.initialize()
         
@@ -193,8 +212,110 @@ class MultiLLMOrchestrator:
     async def shutdown(self):
         """Orchestratorの終了処理"""
         logger.info("🛑 Shutting down MultiLLM Orchestrator...")
+        
+        # アクティブなタスクの状態を保存
+        if self.persistence_manager and self.active_tasks:
+            logger.info(f"💾 Saving {len(self.active_tasks)} active tasks before shutdown...")
+            for task_id, task in self.active_tasks.items():
+                try:
+                    # 実行中のタスクは中断されたことを記録
+                    if task.status == 'running':
+                        task.status = 'interrupted'
+                        task.metadata = task.metadata or {}
+                        task.metadata['interrupted_at'] = datetime.now().isoformat()
+                        task.metadata['reason'] = 'system_shutdown'
+                    
+                    await self.persistence_manager.update_task_status(
+                        task_id, 
+                        task.status, 
+                        task.result,
+                        task.metadata
+                    )
+                    logger.debug(f"Saved task state: {task_id} (status: {task.status})")
+                except Exception as e:
+                    logger.error(f"Failed to save task {task_id} state: {e}")
+        
+        # 永続化マネージャーのシャットダウン
+        if self.persistence_manager:
+            try:
+                await self.persistence_manager.shutdown()
+            except Exception as e:
+                logger.error(f"Error shutting down persistence manager: {e}")
+        
         await self.claude_client.shutdown()
         logger.info("✅ Orchestrator shutdown complete")
+    
+    async def _restore_state(self):
+        """以前の状態を復元"""
+        if not self.persistence_manager:
+            return
+            
+        try:
+            # 未完了タスクの復元（pending と running の両方）
+            pending_tasks = await self.persistence_manager.get_pending_tasks()
+            running_tasks = await self.persistence_manager.get_tasks_by_status('running')
+            all_tasks = pending_tasks + running_tasks
+            
+            for task_data in all_tasks:
+                # Taskオブジェクトを再構築
+                task = Task(
+                    id=task_data['id'],
+                    type=TaskType(task_data['type']),
+                    description=task_data['description'],
+                    priority=TaskPriority(task_data['priority']),
+                    user_id=task_data['user_id'],
+                    created_at=task_data['created_at'],
+                    status=task_data['status'],
+                    assigned_worker=task_data.get('assigned_worker'),
+                    result=task_data.get('result'),
+                    metadata=task_data.get('metadata')
+                )
+                self.active_tasks[task.id] = task
+                
+                # running タスクは pending に戻してキューに入れる
+                if task.status == 'running':
+                    task.status = 'pending'
+                    logger.info(f"Reset running task to pending: {task.id}")
+                
+                await self.task_queue.put(task)
+                logger.info(f"Restored task: {task.id} (status: {task.status})")
+            
+            logger.info(f"✅ Restored {len(all_tasks)} tasks ({len(pending_tasks)} pending, {len(running_tasks)} running)")
+        except Exception as e:
+            logger.error(f"Failed to restore state: {e}")
+    
+    async def _load_conversation_from_persistence(self, conversation_id: str) -> Optional[ConversationLog]:
+        """永続化ストアから会話をロード"""
+        if not self.persistence_manager:
+            return None
+            
+        try:
+            conversation_data = await self.persistence_manager.get_conversation(conversation_id)
+            if not conversation_data:
+                return None
+                
+            # ConversationLogオブジェクトを再構築
+            conversation = ConversationLog(
+                conversation_id=conversation_data['conversation_id'],
+                messages=conversation_data.get('messages', []),
+                llm_responses=[
+                    LLMResponse(**resp) for resp in conversation_data.get('llm_responses', [])
+                ],
+                mcp_connections=[
+                    MCPConnection(**conn) for conn in conversation_data.get('mcp_connections', [])
+                ],
+                total_tokens=conversation_data.get('total_tokens', 0),
+                start_time=conversation_data.get('start_time', datetime.now()),
+                end_time=conversation_data.get('end_time')
+            )
+            
+            # TODO: 将来的にLRUキャッシュなどのエビクション戦略を実装
+            # 現在は単純にメモリに保持
+            
+            return conversation
+        except Exception as e:
+            logger.error(f"Failed to load conversation {conversation_id}: {e}")
+            return None
     
     async def _initialize_workers(self):
         """Worker LLMsの初期化"""
@@ -233,16 +354,23 @@ class MultiLLMOrchestrator:
         if not conversation_id:
             conversation_id = f"conv_{uuid.uuid4()}"
         
-        # 会話ログの初期化または取得
+        # 会話ログの初期化または取得（永続化ストアからのロード含む）
         if conversation_id not in self.conversations:
-            self.conversations[conversation_id] = ConversationLog(
-                conversation_id=conversation_id,
-                messages=[],
-                llm_responses=[],
-                mcp_connections=[],
-                total_tokens=0,
-                start_time=datetime.now()
-            )
+            # まず永続化ストアから取得を試みる
+            loaded_conversation = await self._load_conversation_from_persistence(conversation_id)
+            if loaded_conversation:
+                self.conversations[conversation_id] = loaded_conversation
+                logger.info(f"📥 Loaded conversation from persistence: {conversation_id}")
+            else:
+                # 新規作成
+                self.conversations[conversation_id] = ConversationLog(
+                    conversation_id=conversation_id,
+                    messages=[],
+                    llm_responses=[],
+                    mcp_connections=[],
+                    total_tokens=0,
+                    start_time=datetime.now()
+                )
         
         conversation = self.conversations[conversation_id]
         
@@ -340,6 +468,14 @@ class MultiLLMOrchestrator:
             metadata=context or {}
         )
         
+        # タスクを永続化
+        if self.persistence_manager:
+            try:
+                await self.persistence_manager.save_task(task)
+                logger.debug(f"Task {task.id} saved to persistence")
+            except Exception as e:
+                logger.error(f"Failed to save task {task.id}: {e}")
+        
         # 複雑度に応じた処理分岐
         if task_analysis.complexity == "complex":
             # 複数のサブタスクに分解して並列処理
@@ -355,6 +491,13 @@ class MultiLLMOrchestrator:
                     metadata={"parent_task": task.id, "worker": task_analysis.assigned_workers[i] if i < len(task_analysis.assigned_workers) else "backend_worker"}
                 )
                 subtasks.append(subtask)
+                
+                # サブタスクも永続化
+                if self.persistence_manager:
+                    try:
+                        await self.persistence_manager.save_task(subtask)
+                    except Exception as e:
+                        logger.error(f"Failed to save subtask {subtask.id}: {e}")
             
             results = await self._process_parallel_tasks(subtasks, conversation)
             final_result = await self._integrate_results(results)
@@ -378,6 +521,14 @@ class MultiLLMOrchestrator:
         # ストリームハンドラーのクリーンアップ
         if conversation_id in self.stream_handlers:
             del self.stream_handlers[conversation_id]
+        
+        # 会話ログを永続化
+        if self.persistence_manager:
+            try:
+                await self.persistence_manager.save_conversation(conversation)
+                logger.debug(f"Conversation {conversation_id} saved to persistence")
+            except Exception as e:
+                logger.error(f"Failed to save conversation {conversation_id}: {e}")
         
         return {
             'response': final_result.get('result', final_result.get('summary', 'Task completed')),
@@ -495,6 +646,15 @@ class MultiLLMOrchestrator:
         # 結果を更新
         task.result = result
         task.status = "completed"
+        
+        # タスクステータスを永続化
+        if self.persistence_manager:
+            try:
+                await self.persistence_manager.update_task_status(task.id, task.status, task.result)
+                logger.debug(f"Task {task.id} status updated to {task.status}")
+            except Exception as e:
+                logger.error(f"Failed to update task status {task.id}: {e}")
+        
         del self.active_tasks[task.id]
         
         return result
@@ -839,10 +999,19 @@ class MultiLLMOrchestrator:
         else:
             return 'unknown'
     
-    def get_conversation_log(self, conversation_id: str) -> Optional[Dict]:
-        """会話ログを取得"""
+    async def get_conversation_log(self, conversation_id: str) -> Optional[Dict]:
+        """会話ログを取得（メモリ優先、なければ永続化ストアから）"""
+        # まずメモリから取得を試みる
         if conversation_id in self.conversations:
             return asdict(self.conversations[conversation_id])
+        
+        # メモリになければ永続化ストアから取得
+        conversation = await self._load_conversation_from_persistence(conversation_id)
+        if conversation:
+            # メモリにキャッシュして返す
+            self.conversations[conversation_id] = conversation
+            return asdict(conversation)
+        
         return None
     
     def get_all_conversations(self) -> List[Dict]:
