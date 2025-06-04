@@ -1,6 +1,6 @@
 # Task ID: 1
 # Title: 真のMCP Phase 3成果物 (ページネーション、OAuth、データモデル等) のPR作成とマージ
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: highest
 # Description: feature/multillm-persistence-enhancements-final ブランチと関連stashに含まれるMCP Phase 3の核心的機能を新しいPRとして統合する。

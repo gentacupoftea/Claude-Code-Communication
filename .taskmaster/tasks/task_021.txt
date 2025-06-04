@@ -1,0 +1,69 @@
+# Task ID: 21
+# Title: [MVPリリースまで] GitHubブランチ戦略の策定と文書化
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: 開発規模やチーム体制に合わせた最適なブランチ戦略（例：Gitflow、GitHub Flowなど）を定義し、運用ルールをドキュメント化。(既存タスクID 5の一部を統合)
+# Details:
+
+
+# Test Strategy:
+
+
+# Subtasks:
+## 1. MVPリリース判断基準の再確認と合意 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. リリース前最終チェックリストの作成（技術、ビジネス、法務等） [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3. チェックリストに基づいた各項目の最終確認と担当者割り当て [pending]
+### Dependencies: None
+### Description: 
+### Details:
+<info added on 2025-06-04T16:15:57.694Z>
+リリース前のコードベース品質確認として、以下の作業を実施する：
+
+1. コードベース全体から「TODO」および「FIXME」コメントを洗い出す
+   - grep/検索ツールを使用して全ファイルから抽出
+   - 各コメントの重要度と対応必要性を評価
+
+2. 抽出したTODO/FIXMEコメントをタスク管理システムに登録
+   - 優先度に基づいてタスク化
+   - 担当者とデッドラインを設定
+
+3. 対応進捗の追跡
+   - 週次レビューで未対応項目の確認
+   - ブロッカーがある場合は早期に対処
+
+4. RELEASE-CHECKLIST-v0.3.0.mdの「All TODO comments addressed」項目の完了確認
+   - リリース前に全項目が対応済みまたは対応不要と判断されたことを確認
+   - 未対応項目がある場合はリスク評価を行い、リリース判断に含める
+
+5. 最終確認結果をドキュメント化し、リリース承認プロセスに提出
+</info added on 2025-06-04T16:15:57.694Z>
+
+## 4. リリース手順書（ロールバック手順含む）の作成とレビュー [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 5. 関係者（マーケティング、営業、サポート等）へのリリースタイミング共有 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 6. リリース当日の体制と役割分担確認 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+

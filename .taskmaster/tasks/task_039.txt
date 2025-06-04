@@ -1,0 +1,11 @@
+# Task ID: 39
+# Title: [正式リリース後/T3] 外部BIツール連携機能の開発
+# Status: pending
+# Dependencies: None
+# Priority: low
+# Description: Tableau, Looker (Google Data Studio), Power BIなどの主要な外部BIツールとの連携インターフェースを提供し、ユーザーが使い慣れたツールでデータ分析を行えるようにする。
+# Details:
+
+
+# Test Strategy:
+

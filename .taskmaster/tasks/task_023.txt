@@ -1,0 +1,11 @@
+# Task ID: 23
+# Title: [正式リリース後/T1] 追加主要ECプラットフォームMCPインテグレーション
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: MVPで未対応だった残りの主要ECプラットフォームとのMCP連携を完了させる。
+# Details:
+
+
+# Test Strategy:
+

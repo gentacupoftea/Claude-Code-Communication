@@ -1,0 +1,11 @@
+# Task ID: 29
+# Title: [正式リリース後/T2] 商品分析機能の実装 (ABC分析等)
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: ABC分析などの手法を用いて、売れ筋商品や死に筋商品を特定・可視化する機能を実装する。
+# Details:
+
+
+# Test Strategy:
+

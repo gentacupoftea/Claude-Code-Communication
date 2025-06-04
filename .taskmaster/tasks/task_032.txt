@@ -1,0 +1,11 @@
+# Task ID: 32
+# Title: [正式リリース後/T2] Supabase活用機能の拡張
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Web Push通知の高度化（セグメント配信、パーソナライズ通知）、ファイルストレージ機能の拡張（大容量ファイル対応、バージョン管理等）など、Supabase連携機能を強化する。
+# Details:
+
+
+# Test Strategy:
+

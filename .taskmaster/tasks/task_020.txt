@@ -1,0 +1,37 @@
+# Task ID: 20
+# Title: [MVPリリースまで] 既存プロジェクトタスクの棚卸しと移行
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: 過去のタスク管理情報（他ツールやドキュメントにあれば）をTask Masterへ集約し、現状に合わせて整理・更新。(既存タスクID 4の一部を統合)
+# Details:
+
+
+# Test Strategy:
+
+
+# Subtasks:
+## 1. 利用規約・プライバシーポリシーの最終レビューと弁護士確認 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. 特定商取引法に基づく表記の確認と準備 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3. 外部連携API等の利用規約再確認と遵守状況チェック [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 4. その他関連法規（個人情報保護法等）の遵守状況最終確認 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+

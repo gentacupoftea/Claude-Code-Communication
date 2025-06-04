@@ -1,0 +1,11 @@
+# Task ID: 26
+# Title: [正式リリース後/T1] ユーザー認証・認可機能の完全化
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: メールアドレス検証、パスワードリセット、二要素認証、管理者権限によるユーザー管理機能など、セキュアで包括的な認証・認可システムを構築する。
+# Details:
+
+
+# Test Strategy:
+

@@ -1,0 +1,19 @@
+# Task ID: 24
+# Title: [正式リリース後/T1] DWH/ETLパイプラインの全ECプラットフォーム対応
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: 全ての連携ECプラットフォームからのデータを統合的に処理・蓄積できるDWHおよびETLパイプラインを構築・拡張する。
+# Details:
+
+
+# Test Strategy:
+
+
+# Subtasks:
+## 1. src/data_integration/services/integration_service.py: データソースごとの重み付け実装 (TODO解消) [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+

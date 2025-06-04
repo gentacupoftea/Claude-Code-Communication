@@ -1,0 +1,188 @@
+# Task ID: 18
+# Title: [MVPリリースまで] UAT実施とフィードバック対応
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: ステージング環境でのUAT実施、発見された不具合や改善要望への対応、最終的な品質検証。(既存タスクID 6の情報を統合)
+# Details:
+
+
+# Test Strategy:
+
+
+# Subtasks:
+## 1. 依存ライブラリの脆弱性スキャンとアップデート対応 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. OWASP Top10 等の主要な脆弱性観点でのセルフチェック [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3. 認証・認可フローの再レビューと潜在リスク洗い出し [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 4. データ入力バリデーション、出力エンコーディングの網羅的確認 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 5. 機密情報（APIキー、パスワード等）管理方法の最終確認 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 6. セキュリティ診断ツール（SAST/DAST）の実行と結果分析（可能な範囲で） [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 7. 発見された脆弱性への対応と再テスト [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 8. src/google_analytics/dependencies.py: JWT検証、APIキー検証、レート制限の実装 (TODO解消) [pending]
+### Dependencies: None
+### Description: 
+### Details:
+<info added on 2025-06-04T16:40:27.578Z>
+# セキュリティ脆弱性対応: JWT/APIキー検証およびレート制限の実装
+
+## 現状
+- JWT/APIキー検証、レート制限ともにTODOコメントのみのダミー実装
+- 影響度: 高 (リリースブロッカー)
+
+## 実装要件
+1. **JWT検証**
+   - PyJWTライブラリを使用
+   - トークンの発行・検証ロジックを実装
+   - 認証ミドルウェアでの利用を想定
+
+2. **APIキー検証**
+   - APIキーをデータベースで安全に管理（ハッシュ化推奨）
+   - リクエストヘッダー等から受け取ったキーを検証するロジック実装
+
+3. **レート制限**
+   - FastAPI-Limiterなどのライブラリを導入
+   - IPアドレスやAPIキー単位でのレート制限実装
+
+## 優先度
+- MVPリリースまでの必須対応項目
+- 最優先（1-2週）で完了させること
+</info added on 2025-06-04T16:40:27.578Z>
+
+## 9. src/auth/security_service.py: メールサービス連携実装 (TODO解消) [pending]
+### Dependencies: None
+### Description: 
+### Details:
+<info added on 2025-06-04T16:40:42.116Z>
+## 調査レポート概要
+
+**現状:**
+- security_service.pyの主要機能(パスワードハッシュ化等)は実装済み
+- メール送信機能はコンソール出力のダミー実装のまま
+
+**影響度:** 中 (パスワードリセット等の重要機能に影響)
+
+**推奨アクション:**
+- SendGrid等の実メールサービスAPIと連携
+- メール送信機能を正式に実装する
+  - アカウント確認メール
+  - パスワードリセットメール
+  - その他通知メール
+
+**優先度:** MVPリリースまでの必須対応項目 - 中優先（3-4週）
+
+**実装ステップ:**
+1. メールサービスプロバイダー選定（SendGrid推奨）
+2. APIキー取得と環境設定
+3. メールテンプレート作成
+4. security_service.pyのダミー実装を実APIに置き換え
+5. 単体テスト実施
+</info added on 2025-06-04T16:40:42.116Z>
+
+## 10. backend/src/agents/AutoFixer.js: 暗号化アルゴリズムをSHA-256以上に修正 (TODO URGENT解消) [pending]
+### Dependencies: None
+### Description: 
+### Details:
+<info added on 2025-06-04T16:42:33.126Z>
+## セキュリティ脆弱性対応: MD5ハッシュアルゴリズム置換
+
+### 現状
+- `backend/src/agents/AutoFixer.js` 内でセキュリティ強度の低いMD5ハッシュアルゴリズムが使用されている
+- コード内にTODO URGENTコメントあり
+
+### 影響度
+- 高 (リリースブロッカー)
+- MVPリリースまでの必須対応項目（最優先：1-2週）
+
+### 対応内容
+1. MD5が使用されている箇所を特定
+2. SHA-256以上の強力なハッシュアルゴリズムに置き換え
+3. 関連するテストケースの修正・追加
+
+### 完了条件
+- コード内のMD5使用箇所がすべてSHA-256以上に置換されている
+- テストが追加・修正され、正常に通過している
+- コードレビューでセキュリティチームの承認を得ている
+</info added on 2025-06-04T16:42:33.126Z>
+
+## 11. backend/src/agents/AutoFixer.js: パストラバーサル脆弱性対応 (パス検証とサニタイズ) (TODO URGENT解消) [pending]
+### Dependencies: None
+### Description: 
+### Details:
+<info added on 2025-06-04T16:42:51.548Z>
+## 脆弱性概要
+`backend/src/agents/AutoFixer.js` で外部から受け取ったファイルパスを検証・サニタイズせずに使用している箇所があり、パストラバーサル脆弱性が存在する可能性があります。この問題は現在コード内に TODO URGENT コメントとして記録されています。
+
+## 影響度
+高（リリースブロッカー）
+
+## 対応内容
+1. ファイルパス検証機能の実装
+   - 外部から受け取ったファイルパスが、期待されるベースディレクトリ内に解決されることを厳格に検証する
+   - path.resolve()と組み合わせて、最終的な絶対パスが許可されたディレクトリ内にあることを確認
+
+2. パスのサニタイズ処理
+   - パス文字列から `../` などの不正なシーケンスを除去する処理を実装
+   - または不審なパスパターンを検出した場合はリクエストを拒否する
+
+3. 許可リストベースの制御
+   - 可能であれば、アクセスを許可するファイル/ディレクトリの許可リストを実装
+
+## 優先度
+MVPリリースまでの必須対応項目（最優先：1-2週）
+</info added on 2025-06-04T16:42:51.548Z>
+
+## 12. backend/src/agents/AutoFixer.js: コマンドインジェクション脆弱性対応 (spawnの安全な使用) (TODO URGENT解消) [pending]
+### Dependencies: None
+### Description: 
+### Details:
+<info added on 2025-06-04T16:43:06.956Z>
+## 脆弱性概要
+`backend/src/agents/AutoFixer.js` で外部コマンド実行（`child_process.spawn`等）を行う際、外部からの入力を適切にエスケープ・検証せずにコマンド文字列に含めている箇所があり、コマンドインジェクションの脆弱性が存在する可能性があります。
+
+## 影響度
+高 (リリースブロッカー)
+
+## 対応内容
+1. `spawn` の安全な使用: `child_process.spawn` を使用する際は、コマンドと引数を明確に分離して配列で渡し、`shell: true` オプションの使用を避ける。
+2. 入力検証・サニタイズ: 外部からの入力をコマンド引数として使用する場合は、厳格な検証（許可文字、フォーマット等）とサニタイズを行う。
+3. 代替手段の検討: 可能であれば、外部コマンド実行を避けられる安全な代替手段を検討する。
+
+## 優先度
+MVPリリースまでの必須対応項目 - 最優先（1-2週）
+</info added on 2025-06-04T16:43:06.956Z>
+

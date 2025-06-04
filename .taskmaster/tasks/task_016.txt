@@ -1,0 +1,67 @@
+# Task ID: 16
+# Title: [MVPリリースまで] 包括的テスト環境の整備と自動テスト拡充
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: フロントエンド(ESLint等)、E2Eテスト(Playwright等)、Windows環境互換性確保を含めたテスト環境の全面的な見直しと自動テストカバレッジの向上。(既存タスクID 9の一部を統合)
+# Details:
+
+
+# Test Strategy:
+
+
+# Subtasks:
+## 1. テスト戦略ドキュメント（ユニット、結合、E2E、UAT）の作成 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. 主要機能に対するテストケース洗い出しと優先度付け [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3. テストデータ作成方針と準備 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 4. テスト環境（開発、ステージング）の整備と確認 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 5. ユニットテストカバレッジ目標設定と現状把握 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 6. 重要機能パスのE2Eテストシナリオ作成と自動化検討 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 7. 初期UAT（ユーザー受け入れテスト）計画と参加者調整 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 8. テスト結果の記録・報告フォーマット準備 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9. バグトラッキングシステム連携と運用フロー確認 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+

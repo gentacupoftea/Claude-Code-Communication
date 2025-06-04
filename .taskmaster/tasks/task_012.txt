@@ -1,0 +1,188 @@
+# Task ID: 12
+# Title: [MVPリリースまで] MCPプロバイダー拡張 (主要ECプラットフォーム)
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Shopify以外の主要ECプラットフォーム（Amazon SP-API、楽天RMS、NextEngineなど）とのMCP連携機能の実装。(既存タスクID 2の情報を統合)
+# Details:
+
+
+# Test Strategy:
+
+
+# Subtasks:
+## 1. Amazon SP-API MCPプロバイダー設計と認証基盤実装 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. Amazon SP-API 商品情報取得機能実装とテスト [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3. Amazon SP-API 注文情報取得機能実装とテスト [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 4. 楽天RMS WebAPI MCPプロバイダー設計と認証基盤実装 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 5. 楽天RMS 商品情報取得機能実装とテスト [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 6. 楽天RMS 注文情報取得機能実装とテスト [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 7. NextEngine API MCPプロバイダー設計と認証基盤実装（API仕様調査含む） [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 8. NextEngine API 商品情報取得機能実装とテスト [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9. NextEngine API 注文情報取得機能実装とテスト [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 10. CSV/Excelファイルアップロードインターフェース設計と実装 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 11. Googleスプレッドシート連携とデータ取得機能の設計と実装 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 12. アップロードデータに対するAI自動クレンジング処理フロー設計 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 13. AIクレンジングモジュール実装（欠損値処理、型変換、外れ値検出等） [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 14. クレンジング済みデータのDWHへのスキーママッピングと保存機能実装 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 15. ファイルインポート機能のE2Eテストとバリデーション [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 16. 各プロバイダーおよびファイルインポート機能に関するドキュメント作成と更新 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 17. MCPプロバイダー拡張およびファイルインポート機能に関する統合テスト実施 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 18. src/api/shopify/batch_processor.py: クエリ最適化ロジック実装 (TODO解消) [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 19. src/api/shopify/batch_processor.py: パターン検出ロジック実装 (TODO解消) [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 20. src/shopify/client.py: キャッシュマネージャー実装 (TODO解消) [pending]
+### Dependencies: None
+### Description: 
+### Details:
+<info added on 2025-06-04T16:42:06.984Z>
+## 現状と課題
+Shopify APIクライアントの基本機能は実装済みだが、以下の重要機能が不足または未実装:
+- キャッシュ管理機能
+- 堅牢なエラーハンドリング（レート制限、タイムアウト等）
+- リトライロジック
+
+## 実装要件
+1. **キャッシュ機構**
+   - APIコール結果を効率的にキャッシュする機構（Redis連携推奨）
+   - キャッシュ戦略（有効期限、更新タイミング）の定義
+   - 頻繁に呼び出されるエンドポイントの最適化
+
+2. **エラーハンドリング**
+   - Shopify APIのレート制限への対応
+   - タイムアウト処理
+   - 一般的なAPIエラーへの適切な対応
+   - エラーログ記録と監視機能
+
+3. **リトライロジック**
+   - 一時的なエラー発生時の自動リトライ機能
+   - エクスポネンシャルバックオフ実装
+   - 最大リトライ回数の設定
+
+## 優先度と影響
+- 影響度: 中（ただし、サブタスク12.21の実データ連携の前提条件）
+- 実質的な優先度: 高
+- MVPリリースまでの必須対応項目
+- サブタスク12.21のブロッカーであるため早期着手が必要
+</info added on 2025-06-04T16:42:06.984Z>
+
+## 21. shopify_mcp_server/intelligent_processing.py: 実データソースとの連携実装 (TODO解消) [pending]
+### Dependencies: 12.20
+### Description: 
+### Details:
+<info added on 2025-06-04T16:42:16.661Z>
+## 現状
+- ダミーデータまたはモックデータを使用しており、実Shopify APIとの連携が未実装
+- TODOコメントが残っている状態
+
+## 影響度
+- 高 (リリースブロッカー)
+
+## 実装要件
+1. サブタスク12.20で改善される`src/shopify/client.py`を活用し、実Shopify APIとの連携を実装
+2. 以下のデータを実際に取得・処理する機能を実装:
+   - 商品情報
+   - 注文情報
+   - その他必要なデータ
+3. 取得したデータの標準化処理の実装
+4. 必要に応じたDBへの永続化ロジックの実装
+
+## 注意事項
+- MVPリリースまでの必須対応項目（最優先：1-2週）
+- サブタスク12.20の完了が前提条件
+</info added on 2025-06-04T16:42:16.661Z>
+

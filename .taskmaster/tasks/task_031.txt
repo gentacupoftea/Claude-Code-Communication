@@ -1,0 +1,11 @@
+# Task ID: 31
+# Title: [正式リリース後/T2] 基本的な予測分析機能の実装 (売上予測 v1)
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: 過去の売上データに基づき、短期的な売上トレンドを予測する基本的な時系列予測モデルを実装し、ダッシュボードに表示する。
+# Details:
+
+
+# Test Strategy:
+

@@ -1,0 +1,11 @@
+# Task ID: 27
+# Title: [正式リリース後/T1] ファイルベースデータインポートとAIクレンジング機能
+# Status: cancelled
+# Dependencies: None
+# Priority: high
+# Description: CSV、Excel、スプレッドシート等のファイル形式でのデータアップロード機能を追加し、AIを活用してデータクレンジング（欠損値補完、外れ値除去、フォーマット統一等）を行う機能を開発する。
+# Details:
+
+
+# Test Strategy:
+

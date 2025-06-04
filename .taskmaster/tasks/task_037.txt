@@ -1,0 +1,19 @@
+# Task ID: 37
+# Title: [正式リリース後/T3] 本番環境の最適化とSREプラクティス導入
+# Status: pending
+# Dependencies: None
+# Priority: low
+# Description: 本番環境のパフォーマンス監視、スケーラビリティ向上、冗長化構成の実現、障害復旧プロセスの自動化など、SRE (Site Reliability Engineering) の考え方に基づいた運用体制を構築する。
+# Details:
+
+
+# Test Strategy:
+
+
+# Subtasks:
+## 1. backend/src/agents/BugFixingController.js: ロールバック戦略の改善・実装 (TODO解消) [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+

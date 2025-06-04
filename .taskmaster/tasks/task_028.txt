@@ -1,0 +1,11 @@
+# Task ID: 28
+# Title: [正式リリース後/T2] コア顧客分析機能の実装 (RFM分析等)
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: RFM分析（Recency, Frequency, Monetary）などの手法を用いたコア顧客セグメンテーションと分析機能を実装する。
+# Details:
+
+
+# Test Strategy:
+

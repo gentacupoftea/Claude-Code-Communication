@@ -1,0 +1,144 @@
+# Task ID: 13
+# Title: [MVPリリースまで] インフラ基盤の最終調整と安定化
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: 本番リリースに向けたインフラ構成の最終確認、セキュリティ設定強化、パフォーマンスチューニングなど。(既存タスクID 3の一部を統合・再評価)
+# Details:
+
+
+# Test Strategy:
+
+
+# Subtasks:
+## 1. 本番環境インフラ構成レビューとドキュメント更新 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 2. セキュリティグループ、ファイアウォール設定の最終確認と強化 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 3. データベース、キャッシュサーバー等のパラメータチューニング検討と実施 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 4. 負荷テスト計画と準備（シナリオ、ツール選定） [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 5. ステージング環境での負荷テスト実施と結果分析 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 6. パフォーマンスボトルネックの特定と改善対応 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 7. バックアップ・リストア戦略の最終確認とテスト [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 8. ロギング・監視設定の最終確認とアラート閾値調整 [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
+## 9. src/analytics/api/analytics_routes_improved.py: 適切な認証情報設定の実装 (TODO解消) [pending]
+### Dependencies: 18.8
+### Description: 
+### Details:
+<info added on 2025-06-04T16:40:59.138Z>
+## 現状
+- dashboard_routes.py内の認証・認可メカニズムが未実装
+- APIエンドポイントがパブリックアクセス可能な状態
+- 実装予定箇所にはTODOコメントのみ存在
+
+## 影響度
+- 高（リリースブロッカー）
+
+## 対応内容
+1. 親タスク18（特にサブタスク18.8）で実装される認証サービスと連携
+   - JWT検証機能の統合
+   - APIキー検証の実装
+   - 認証ミドルウェアの適用
+2. ダッシュボードAPIエンドポイント群への適切なアクセス制御実装
+   - エンドポイント単位での認証要件定義
+   - 権限レベルに応じたアクセス制御
+
+## 注意事項
+- MVPリリースまでの必須対応項目（最優先：1-2週）
+- サブタスク18.8の実装完了が前提条件
+</info added on 2025-06-04T16:40:59.138Z>
+
+## 10. src/api/dashboard_routes.py: DB接続設定と認証連携の実装 (TODO解消) [pending]
+### Dependencies: 18.8
+### Description: 
+### Details:
+<info added on 2025-06-04T16:41:21.719Z>
+## 現状
+- analytics_routes_improved.py内でDB接続設定がハードコードまたはダミーデータが使用されている
+- 認証連携が未実装の状態
+- コード内にTODOコメントが残っている
+
+## 対応内容
+1. DB接続設定の改善
+   - 環境変数や設定ファイルから安全にDB接続情報を読み込む実装に変更
+   - 機密情報のハードコーディングを排除
+
+2. 認証連携の実装
+   - 親タスク18（特にサブタスク18.8）で実装される認証サービスと連携
+   - APIエンドポイントへの適切なアクセス制御を実装
+   - 認証トークン検証ロジックの追加
+
+3. データ永続化の確認と実装
+   - ダッシュボード設定などの永続化が必要なデータの特定
+   - 適切なDBスキーマ設計と永続化ロジックの実装
+
+## 優先度
+- MVPリリースまでの必須対応項目（最優先：1-2週）
+- サブタスク18.8の実装完了が前提条件
+</info added on 2025-06-04T16:41:21.719Z>
+
+## 11. src/google_analytics/api/routes.py: GAコネクション情報のDB永続化とレポート保存機能実装 (TODO解消) [pending]
+### Dependencies: None
+### Description: 
+### Details:
+<info added on 2025-06-04T16:41:39.274Z>
+## 現状の問題
+- Google Analyticsコネクション情報（アクセストークン、リフレッシュトークン等）がDB永続化されていない
+- 生成されたレポートデータも保存されていない
+- 現在はインメモリ処理または一時ファイル処理で実装されている可能性が高い
+- コード内にTODOコメントが残されている
+
+## 対応内容
+1. GAコネクション情報の永続化
+   - OAuthアクセストークン、リフレッシュトークン、プロファイルIDをユーザーアカウントに関連付け
+   - 機密情報は適切に暗号化してDBに保存
+   - 必要なスキーマ設計と実装
+
+2. レポート保存機能の実装
+   - 生成されたGAレポートデータをDBまたは適切なストレージ（GCS等）に保存
+   - 保存形式とメタデータの設計
+   - レポート取得・表示機能との連携
+
+## 優先度
+- MVPリリースまでの必須対応項目（リリースブロッカー）
+- 最優先（1-2週間での対応必須）
+</info added on 2025-06-04T16:41:39.274Z>
+

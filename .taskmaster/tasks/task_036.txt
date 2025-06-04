@@ -1,0 +1,11 @@
+# Task ID: 36
+# Title: [正式リリース後/T3] ダッシュボードおよびレポーティング機能の本格強化
+# Status: pending
+# Dependencies: None
+# Priority: low
+# Description: カスタムレポート作成機能、定期レポート自動生成・配信機能、多様なデータソースとの連携など、ダッシュボードとレポーティング機能を大幅に強化する。
+# Details:
+
+
+# Test Strategy:
+

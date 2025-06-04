@@ -1,6 +1,6 @@
 # Task ID: 2
 # Title: PR #47 (MCP Provider実装 - Shopify以外の主要プロバイダ) の更新とマージ
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: high
 # Description: PR #42からMCPプロバイダー関連機能を抽出し、Phase 3成果物PRマージ後に最新のmainにリベースしてマージする。

@@ -1,0 +1,11 @@
+# Task ID: 30
+# Title: [正式リリース後/T2] ダッシュボードのインタラクティブ機能強化
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: ドリルダウン、フィルター、ソート、期間比較など、ユーザーが能動的にデータを探索できるインタラクティブなダッシュボード機能を強化する。
+# Details:
+
+
+# Test Strategy:
+

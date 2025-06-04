@@ -1,0 +1,19 @@
+# Task ID: 25
+# Title: [正式リリース後/T1] AI分析アシスタントV2 - 高度クエリ解釈と自動インサイト抽出
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: 自然言語による複雑な分析リクエストの解釈精度を向上させ、データから自動的にインサイトを抽出・提示する機能を開発する。
+# Details:
+
+
+# Test Strategy:
+
+
+# Subtasks:
+## 1. src/data_integration/tasks/analytics_tasks.py: Slack/Email通知機能の実装 (TODO解消) [pending]
+### Dependencies: None
+### Description: 
+### Details:
+
+
