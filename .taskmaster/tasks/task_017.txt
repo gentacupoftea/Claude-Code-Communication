@@ -3,59 +3,87 @@
 # Status: pending
 # Dependencies: None
 # Priority: high
-# Description: ユーザーアクセプタンステスト（UAT）のシナリオ作成、テストデータ準備、テスターへの説明など、UAT実施に向けた準備作業。
+# Description: ユーザーアクセプタンステスト（UAT）の準備作業およびドキュメント整備全般（特にAPIドキュメント）を行い、MVPリリースに向けた準備を完了させる。
 # Details:
-
+本タスクでは、UATの実施に必要なシナリオ作成、テストデータ準備、テスターへの説明などの準備作業と、開発者およびユーザー向けの各種ドキュメント（特にAPIドキュメント）の整備を行います。これにより、MVPリリース時に必要な技術文書とUAT環境が整った状態を実現します。
 
 # Test Strategy:
-
+各ドキュメントは複数のレビュアーによる確認を経て完成させます。APIドキュメントについては、実際のAPIエンドポイントとの整合性を検証します。UATについては、テストシナリオの網羅性と実行可能性を事前に確認します。
 
 # Subtasks:
 ## 1. 開発者向けドキュメント（アーキテクチャ、API仕様、セットアップ手順）更新 [pending]
 ### Dependencies: None
-### Description: 
+### Description: 開発者が理解しやすいアーキテクチャ図、詳細なAPI仕様、環境構築手順を含むドキュメントの作成と更新
 ### Details:
-
+特にAPI仕様については、各エンドポイントの詳細な説明、パラメータ、レスポンス例を含める
 
 ## 2. ユーザー向けドキュメント（操作マニュアル、FAQ）の作成・更新 [pending]
 ### Dependencies: None
-### Description: 
+### Description: エンドユーザーが利用する際の操作手順と一般的な質問への回答を含むドキュメントの整備
 ### Details:
-
+スクリーンショットを多用し、初めてのユーザーでも理解しやすい内容にする
 
 ## 3. APIリファレンスドキュメントの自動生成と公開準備 [pending]
 ### Dependencies: None
-### Description: 
+### Description: Swagger/OpenAPIを活用したAPIドキュメントの自動生成と、開発者ポータルでの公開準備
 ### Details:
-
+コード内のアノテーションを整備し、自動生成されるドキュメントの品質を向上させる
 
 ## 4. READMEファイルの全体的な見直しと最新化 [pending]
 ### Dependencies: None
-### Description: 
+### Description: プロジェクトのREADMEファイルを最新の情報に更新し、新規参加者が理解しやすい内容に整備
 ### Details:
-
+プロジェクト概要、セットアップ手順、主要機能の説明を含める
 
 ## 5. コントリビューションガイドラインの作成・更新 [pending]
 ### Dependencies: None
-### Description: 
+### Description: 外部開発者の貢献を促進するためのガイドラインドキュメントの整備
 ### Details:
-
+コーディング規約、PR手順、レビュープロセスなどを明確に記載
 
 ## 6. リリースノート作成プロセスの確立とテンプレート準備 [pending]
 ### Dependencies: None
-### Description: 
+### Description: リリースごとの変更点を記録するためのプロセスとテンプレートの整備
 ### Details:
-
+新機能、バグ修正、破壊的変更などを明確に分類できる形式にする
 
 ## 7. ドキュメント翻訳（日本語）の計画と体制準備 [pending]
 ### Dependencies: None
-### Description: 
+### Description: 英語ドキュメントの日本語翻訳に関する計画立案と翻訳体制の構築
 ### Details:
-
+翻訳優先度の設定、用語集の作成、レビュープロセスの確立を含む
 
 ## 8. 重複APIドキュメント(API_DOCUMENTATION.mdとfrontend-v2/API_DOCUMENTATION.md)の精査と統合 [pending]
 ### Dependencies: None
-### Description: 
+### Description: 複数箇所に存在するAPIドキュメントの内容を精査し、一元化された正確なドキュメントに統合
 ### Details:
+矛盾点の解消、最新APIとの整合性確認、参照先の一本化を行う
+<info added on 2025-06-04T16:44:45.653Z>
+APIドキュメントの整理と統合作業：
+1. 散在するAPIドキュメント（`API_DOCUMENTATION.md`、`frontend-v2/API_DOCUMENTATION.md`など）を特定し、不整合箇所をリストアップする
+2. 単一の信頼できる情報源（SoT）を決定し、最新かつ正確な情報に基づいてドキュメントを統合する
+3. 全ての公開APIエンドポイントについてSwagger/OpenAPI定義を最新化する
+4. Swagger UIやRedocを活用したAPIリファレンスドキュメント自動生成・公開パイプラインを設計・構築する
+5. 矛盾点の解消、最新APIとの整合性確認、参照先の一本化を完了させる
 
+※MVPリリースまでの必須対応項目（中優先度：3-4週）として実施
+</info added on 2025-06-04T16:44:45.653Z>
+
+## 9. UATテストシナリオの作成と優先順位付け [pending]
+### Dependencies: None
+### Description: ユーザーの視点に立ったテストシナリオを作成し、重要度に応じた優先順位を設定
+### Details:
+主要ユースケースを網羅し、エッジケースも考慮したシナリオ構成にする
+
+## 10. UATテスト環境の準備とテストデータ整備 [pending]
+### Dependencies: None
+### Description: UATを実施するための専用環境を構築し、必要なテストデータを準備
+### Details:
+本番に近い環境で、かつリセット可能な状態を維持できるようにする
+
+## 11. UATテスター向け説明資料とトレーニングの準備 [pending]
+### Dependencies: None
+### Description: テスターがUATを効果的に実施できるよう、説明資料の作成とトレーニング計画の立案
+### Details:
+テスト目的、手順、報告方法を明確に伝える内容にする
 

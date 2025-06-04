@@ -1,36 +1,8 @@
 {
-<<<<<<< HEAD
-  "hosting": {
-    "site": "stagingapp-conea-ai",
-    "public": "out",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ],
-    "headers": [
-      {
-        "source": "**/*.@(js|css)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=31536000"
-          }
-        ]
-      }
-    ]
-  }
-=======
   "hosting": [
     {
       "site": "staging-conea-ai",
-      "public": "deployment/staging/static/public",
+      "public": "dist",
       "ignore": [
         "firebase.json",
         "**/.*",
@@ -65,11 +37,7 @@
           "headers": [
             {
               "key": "Cache-Control",
-              "value": "no-cache, no-store, must-revalidate"
-            },
-            {
-              "key": "Pragma",
-              "value": "no-cache"
+              "value": "max-age=31536000"
             }
           ]
         },
@@ -83,54 +51,6 @@
           ]
         }
       ]
-    },
-    {
-      "site": "conea-fixed",
-      "public": "deployment/staging/static/public",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
-      ],
-      "headers": [
-        {
-          "source": "/index.html",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache, no-store, must-revalidate"
-            },
-            {
-              "key": "Pragma",
-              "value": "no-cache"
-            },
-            {
-              "key": "Expires",
-              "value": "0"
-            }
-          ]
-        },
-        {
-          "source": "**/*.@(js|css)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache, no-store, must-revalidate"
-            },
-            {
-              "key": "Pragma",
-              "value": "no-cache"
-            }
-          ]
-        }
-      ]
     }
   ]
->>>>>>> origin/main
 }
