@@ -1,0 +1,97 @@
+{
+  "security": {
+    "allowedCommands": [
+      "node",
+      "npm",
+      "npx",
+      "yarn",
+      "pnpm",
+      "git",
+      "tsc",
+      "eslint",
+      "jest",
+      "prettier",
+      "webpack",
+      "babel",
+      "mocha",
+      "vitest",
+      "rollup",
+      "esbuild"
+    ],
+    "baseDirs": {
+      "useProjectRoot": true,
+      "additional": []
+    },
+    "pathValidation": {
+      "allowedPrefixes": {
+        "unix": ["/tmp", "/var/tmp"],
+        "windows": ["C:\\Temp", "C:\\Windows\\Temp"]
+      },
+      "maxPathLength": 4096,
+      "maxPathDepth": 20,
+      "urlDecodeAttempts": 3
+    },
+    "commandExecution": {
+      "defaultTimeout": 30000,
+      "maxTimeout": 600000,
+      "maxOutputSize": 10485760
+    },
+    "environmentVariables": {
+      "allowed": [
+        "PATH",
+        "NODE_ENV",
+        "HOME",
+        "USER",
+        "TMPDIR",
+        "TEMP",
+        "TMP",
+        "LANG",
+        "LC_ALL"
+      ],
+      "blocked": [
+        "LD_PRELOAD",
+        "LD_LIBRARY_PATH",
+        "DYLD_INSERT_LIBRARIES",
+        "NODE_OPTIONS"
+      ]
+    }
+  },
+  "autoFix": {
+    "enabledStrategies": {
+      "memory_leak": true,
+      "sql_injection": false,
+      "xss_vulnerability": false,
+      "async_error": true,
+      "resource_leak": true,
+      "crypto_vulnerability": false,
+      "path_traversal": false,
+      "command_injection": false
+    },
+    "requireManualReview": [
+      "crypto_vulnerability",
+      "path_traversal", 
+      "command_injection",
+      "sql_injection",
+      "xss_vulnerability"
+    ],
+    "maxAutoFixesPerRun": 10,
+    "createBackups": true,
+    "runTestsAfterFix": true
+  },
+  "logging": {
+    "level": "info",
+    "auditLog": true,
+    "securityLog": true,
+    "performanceLog": false,
+    "logDirectory": "./logs/autofixer",
+    "maxLogSize": "100MB",
+    "maxLogFiles": 10,
+    "sensitiveDataMasking": true
+  },
+  "rollback": {
+    "enabled": true,
+    "maxBackupFiles": 50,
+    "backupRetentionDays": 30,
+    "compressBackups": true
+  }
+}
