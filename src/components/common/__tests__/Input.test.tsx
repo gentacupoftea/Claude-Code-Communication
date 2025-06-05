@@ -2,119 +2,39 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { Input } from '../Input';
-import { Mail, Search } from 'lucide-react';
+import { Mail, Search, Eye } from 'lucide-react';
 
-describe('Input Component', () => {
-  test('renders with default props', () => {
-    render(<Input placeholder="Enter text" />);
-    const input = screen.getByPlaceholderText('Enter text');
+describe('Input', () => {
+  it('renders input field correctly', () => {
+    render(<Input />);
+    const input = screen.getByRole('textbox');
     expect(input).toBeInTheDocument();
-    expect(input).toHaveClass('w-full');
   });
 
-  test('renders with label', () => {
-    render(<Input label="Email Address" placeholder="email@example.com" />);
+  it('renders with label when provided', () => {
+    render(<Input label="Email Address" />);
+    
     expect(screen.getByLabelText('Email Address')).toBeInTheDocument();
     expect(screen.getByText('Email Address')).toBeInTheDocument();
   });
 
-  test('renders with error message', () => {
-    render(<Input error="This field is required" />);
-    const errorMessage = screen.getByText('This field is required');
-    expect(errorMessage).toBeInTheDocument();
-    expect(errorMessage).toHaveClass('text-red-400');
-  });
-
-  test('applies error styling when error is present', () => {
-    render(<Input error="Error message" />);
-    const input = screen.getByRole('textbox');
-    expect(input).toHaveClass('border-red-500');
-    expect(input).toHaveAttribute('aria-invalid', 'true');
-  });
-
-  test('renders with left icon', () => {
-    render(<Input leftIcon={<Mail data-testid="mail-icon" />} />);
-    expect(screen.getByTestId('mail-icon')).toBeInTheDocument();
-    const input = screen.getByRole('textbox');
-    expect(input).toHaveClass('pl-10');
-  });
-
-  test('renders with right icon', () => {
-    render(<Input rightIcon={<Search data-testid="search-icon" />} />);
-    expect(screen.getByTestId('search-icon')).toBeInTheDocument();
-    const input = screen.getByRole('textbox');
-    expect(input).toHaveClass('pr-10');
-  });
-
-  test('renders with both left and right icons', () => {
-    render(
-      <Input 
-        leftIcon={<Mail data-testid="mail-icon" />}
-        rightIcon={<Search data-testid="search-icon" />}
-      />
-    );
-    expect(screen.getByTestId('mail-icon')).toBeInTheDocument();
-    expect(screen.getByTestId('search-icon')).toBeInTheDocument();
-    const input = screen.getByRole('textbox');
-    expect(input).toHaveClass('pl-10', 'pr-10');
-  });
-
-  test('applies fullWidth prop', () => {
-    render(<Input fullWidth />);
-    const wrapper = screen.getByRole('textbox').parentElement?.parentElement;
-    expect(wrapper).toHaveClass('w-full');
-  });
-
-  test('applies custom className', () => {
-    render(<Input className="custom-input" />);
-    expect(screen.getByRole('textbox')).toHaveClass('custom-input');
-  });
-
-  test('forwards input props correctly', () => {
-    render(
-      <Input 
-        type="email"
-        required
-        data-testid="email-input"
-        maxLength={50}
-      />
-    );
-    const input = screen.getByTestId('email-input');
-    expect(input).toHaveAttribute('type', 'email');
-    expect(input).toHaveAttribute('required');
-    expect(input).toHaveAttribute('maxLength', '50');
-  });
-
-  test('handles input change events', () => {
-    const handleChange = jest.fn();
-    render(<Input onChange={handleChange} />);
+  it('associates label with input using htmlFor and id', () => {
+    render(<Input label="Username" id="username-input" />);
+    
+    const label = screen.getByText('Username');
     const input = screen.getByRole('textbox');
     
-    fireEvent.change(input, { target: { value: 'test input' } });
-    expect(handleChange).toHaveBeenCalledTimes(1);
+    expect(label).toHaveAttribute('for', 'username-input');
+    expect(input).toHaveAttribute('id', 'username-input');
   });
 
-  test('handles focus and blur events', () => {
-    const handleFocus = jest.fn();
-    const handleBlur = jest.fn();
-    render(<Input onFocus={handleFocus} onBlur={handleBlur} />);
-    const input = screen.getByRole('textbox');
-    
-    fireEvent.focus(input);
-    expect(handleFocus).toHaveBeenCalledTimes(1);
-    
-    fireEvent.blur(input);
-    expect(handleBlur).toHaveBeenCalledTimes(1);
-  });
-
-  test('generates unique id when not provided', () => {
-    const { unmount } = render(<Input label="First Input" />);
-    const firstInput = screen.getByLabelText('First Input');
+  it('generates unique id when not provided', () => {
+    const { rerender } = render(<Input label="First Input" />);
+    const firstInput = screen.getByRole('textbox');
     const firstId = firstInput.getAttribute('id');
     
-    unmount();
-    render(<Input label="Second Input" />);
-    const secondInput = screen.getByLabelText('Second Input');
+    rerender(<Input label="Second Input" />);
+    const secondInput = screen.getByRole('textbox');
     const secondId = secondInput.getAttribute('id');
     
     expect(firstId).toBeTruthy();
@@ -122,92 +42,188 @@ describe('Input Component', () => {
     expect(firstId).not.toBe(secondId);
   });
 
-  test('uses provided id', () => {
-    render(<Input id="custom-id" label="Custom ID Input" />);
-    const input = screen.getByLabelText('Custom ID Input');
-    expect(input).toHaveAttribute('id', 'custom-id');
+  it('displays error message when provided', () => {
+    render(<Input label="Email" error="Please enter a valid email" />);
+    
+    expect(screen.getByText('Please enter a valid email')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toBeInTheDocument();
   });
 
-  test('connects label with input via htmlFor', () => {
-    render(<Input label="Test Label" />);
-    const label = screen.getByText('Test Label');
-    const input = screen.getByLabelText('Test Label');
-    expect(label).toHaveAttribute('for', input.getAttribute('id'));
+  it('associates error message with input using aria-describedby', () => {
+    render(<Input label="Email" error="Invalid email" id="email-input" />);
+    
+    const input = screen.getByRole('textbox');
+    const errorMessage = screen.getByText('Invalid email');
+    
+    expect(input).toHaveAttribute('aria-describedby', 'email-input-error');
+    expect(errorMessage).toHaveAttribute('id', 'email-input-error');
   });
 
-  test('connects error message with input via aria-describedby', () => {
+  it('sets aria-invalid when error is present', () => {
+    const { rerender } = render(<Input />);
+    let input = screen.getByRole('textbox');
+    expect(input).toHaveAttribute('aria-invalid', 'false');
+    
+    rerender(<Input error="Error message" />);
+    input = screen.getByRole('textbox');
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('applies error styles when error is present', () => {
     render(<Input error="Error message" />);
     const input = screen.getByRole('textbox');
-    const errorId = `${input.getAttribute('id')}-error`;
-    expect(input).toHaveAttribute('aria-describedby', errorId);
-    expect(screen.getByText('Error message')).toHaveAttribute('id', errorId);
+    
+    expect(input).toHaveClass('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
   });
 
-  test('error message has proper accessibility attributes', () => {
-    render(<Input error="Validation error" />);
-    const errorMessage = screen.getByText('Validation error');
-    expect(errorMessage).toHaveAttribute('role', 'alert');
-  });
-
-  test('applies focus styles correctly', () => {
-    render(<Input />);
+  it('renders left icon', () => {
+    render(<Input leftIcon={<Mail data-testid="mail-icon" />} />);
+    
+    expect(screen.getByTestId('mail-icon')).toBeInTheDocument();
     const input = screen.getByRole('textbox');
-    expect(input).toHaveClass('focus:outline-none', 'focus:border-[#1ABC9C]');
+    expect(input).toHaveClass('pl-10');
   });
 
-  test('container sizing with fullWidth false', () => {
-    render(<Input fullWidth={false} />);
-    const wrapper = screen.getByRole('textbox').parentElement?.parentElement;
-    expect(wrapper).toHaveClass('max-w-md');
-  });
-
-  test('maintains input value', () => {
-    render(<Input value="initial value" readOnly />);
-    const input = screen.getByDisplayValue('initial value');
-    expect(input).toBeInTheDocument();
-  });
-
-  test('handles disabled state', () => {
-    render(<Input disabled />);
+  it('renders right icon', () => {
+    render(<Input rightIcon={<Search data-testid="search-icon" />} />);
+    
+    expect(screen.getByTestId('search-icon')).toBeInTheDocument();
     const input = screen.getByRole('textbox');
-    expect(input).toBeDisabled();
+    expect(input).toHaveClass('pr-10');
   });
 
-  test('renders without label or error', () => {
-    render(<Input placeholder="Just input" />);
-    expect(screen.getByPlaceholderText('Just input')).toBeInTheDocument();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-  });
-
-  test('icon positioning in container', () => {
+  it('adjusts padding when both icons are present', () => {
     render(
       <Input 
         leftIcon={<Mail data-testid="left-icon" />}
-        rightIcon={<Search data-testid="right-icon" />}
+        rightIcon={<Eye data-testid="right-icon" />}
       />
     );
     
-    const leftIcon = screen.getByTestId('left-icon');
-    const rightIcon = screen.getByTestId('right-icon');
-    
-    expect(leftIcon.closest('div')).toHaveClass('absolute', 'left-3');
-    expect(rightIcon.closest('div')).toHaveClass('absolute', 'right-3');
+    const input = screen.getByRole('textbox');
+    expect(input).toHaveClass('pl-10', 'pr-10');
+    expect(screen.getByTestId('left-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('right-icon')).toBeInTheDocument();
   });
 
-  test('preserves all standard input functionality', () => {
+  it('applies full width when specified', () => {
+    render(<Input fullWidth />);
+    const container = screen.getByRole('textbox').parentElement?.parentElement;
+    expect(container).toHaveClass('w-full');
+  });
+
+  it('forwards HTML input attributes', () => {
     render(
       <Input 
-        type="password"
-        autoComplete="current-password"
-        name="password"
-        form="login-form"
+        type="email"
+        placeholder="Enter your email"
+        required
+        disabled
+        maxLength={50}
+        data-testid="email-input"
       />
     );
     
-    const input = screen.getByDisplayValue('') as HTMLInputElement;
-    expect(input).toHaveAttribute('type', 'password');
-    expect(input).toHaveAttribute('autoComplete', 'current-password');
-    expect(input).toHaveAttribute('name', 'password');
-    expect(input).toHaveAttribute('form', 'login-form');
+    const input = screen.getByRole('textbox');
+    expect(input).toHaveAttribute('type', 'email');
+    expect(input).toHaveAttribute('placeholder', 'Enter your email');
+    expect(input).toHaveAttribute('required');
+    expect(input).toBeDisabled();
+    expect(input).toHaveAttribute('maxLength', '50');
+    expect(input).toHaveAttribute('data-testid', 'email-input');
+  });
+
+  it('handles user input correctly', async () => {
+    const handleChange = vi.fn();
+    const user = userEvent.setup();
+    
+    render(<Input onChange={handleChange} />);
+    const input = screen.getByRole('textbox');
+    
+    await user.type(input, 'test@example.com');
+    
+    expect(input).toHaveValue('test@example.com');
+    expect(handleChange).toHaveBeenCalled();
+  });
+
+  it('applies custom className', () => {
+    render(<Input className="custom-input-class" />);
+    const input = screen.getByRole('textbox');
+    expect(input).toHaveClass('custom-input-class');
+  });
+
+  it('has proper focus styles', () => {
+    render(<Input />);
+    const input = screen.getByRole('textbox');
+    
+    expect(input).toHaveClass(
+      'focus:outline-none',
+      'focus:border-[#1ABC9C]',
+      'focus:ring-2',
+      'focus:ring-[#1ABC9C]',
+      'focus:ring-offset-2',
+      'focus:ring-offset-gray-900'
+    );
+  });
+
+  it('applies responsive text sizing', () => {
+    render(<Input />);
+    const input = screen.getByRole('textbox');
+    expect(input).toHaveClass('text-sm', 'sm:text-base');
+  });
+
+  it('handles different input types', () => {
+    const { rerender } = render(<Input type="password" />);
+    expect(screen.getByLabelText('')).toHaveAttribute('type', 'password');
+    
+    rerender(<Input type="email" />);
+    expect(screen.getByRole('textbox')).toHaveAttribute('type', 'email');
+    
+    rerender(<Input type="tel" />);
+    expect(screen.getByRole('textbox')).toHaveAttribute('type', 'tel');
+  });
+
+  it('applies glassmorphic background styling', () => {
+    render(<Input />);
+    const input = screen.getByRole('textbox');
+    
+    expect(input).toHaveClass(
+      'bg-white/10',
+      'border',
+      'border-white/20',
+      'rounded-lg',
+      'text-white',
+      'placeholder-gray-400'
+    );
+  });
+
+  it('maintains accessibility with icons', () => {
+    render(
+      <Input 
+        label="Search"
+        leftIcon={<Search aria-hidden="true" />}
+        rightIcon={<Eye aria-hidden="true" />}
+      />
+    );
+    
+    const input = screen.getByLabelText('Search');
+    expect(input).toBeInTheDocument();
+    // Icons should be presentational only
+    expect(screen.getByLabelText('Search')).toHaveAccessibleName('Search');
+  });
+
+  it('handles ref forwarding', () => {
+    const ref = vi.fn();
+    render(<Input ref={ref} />);
+    
+    expect(ref).toHaveBeenCalledWith(expect.any(HTMLInputElement));
+  });
+
+  it('displays error with proper ARIA live region', () => {
+    render(<Input error="This field is required" />);
+    
+    const errorElement = screen.getByText('This field is required');
+    expect(errorElement).toHaveAttribute('role', 'alert');
+    expect(errorElement).toHaveAttribute('aria-live', 'polite');
   });
 });

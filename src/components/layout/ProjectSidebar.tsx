@@ -205,9 +205,15 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
   return (
     <>
       <motion.aside
-        animate={{ width: isCollapsed ? 64 : 280 }}
+        animate={{ 
+          width: isCollapsed ? 64 : 280,
+          transform: window.innerWidth < 768 && !isCollapsed ? 'translateX(0)' : undefined
+        }}
         transition={{ duration: 0.3 }}
-        className="bg-gray-900/50 backdrop-blur-lg border-r border-white/10 h-full flex flex-col"
+        className="bg-gray-900/50 backdrop-blur-lg border-r border-white/10 h-full flex flex-col md:relative fixed md:translate-x-0 z-40"
+        style={{
+          transform: typeof window !== 'undefined' && window.innerWidth < 768 && !isCollapsed ? 'translateX(-100%)' : undefined
+        }}
       >
         {/* ヘッダー */}
         <div className="p-4 border-b border-white/10">

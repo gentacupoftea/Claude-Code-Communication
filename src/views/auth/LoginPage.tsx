@@ -56,24 +56,24 @@ export default function LoginPage() {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="relative z-10 w-full max-w-md px-4"
+        className="relative z-10 w-full max-w-md px-4 sm:px-6 lg:px-8"
       >
         <GlassmorphicCard>
           <div className="text-center mb-8">
             <Bot className="w-16 h-16 text-[#1ABC9C] mx-auto mb-4" />
-            <h1 className="text-3xl font-bold mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">
               おかえりなさい
             </h1>
-            <p className="text-gray-400">
+            <p className="text-gray-400 text-sm sm:text-base">
               アカウントにログインして続行
             </p>
           </div>
 
           {/* デモ用のログイン情報 */}
-          <div className="bg-[#1ABC9C]/20 border border-[#1ABC9C]/50 rounded-lg p-3 mb-6">
-            <p className="text-sm text-[#1ABC9C] font-semibold mb-1">デモアカウント</p>
-            <p className="text-xs text-gray-300">メール: demo@conea.ai</p>
-            <p className="text-xs text-gray-300">パスワード: demo123</p>
+          <div className="bg-[#1ABC9C]/20 border border-[#1ABC9C]/50 rounded-lg p-3 sm:p-4 mb-6">
+            <p className="text-sm sm:text-base text-[#1ABC9C] font-semibold mb-1">デモアカウント</p>
+            <p className="text-xs sm:text-sm text-gray-300">メール: demo@conea.ai</p>
+            <p className="text-xs sm:text-sm text-gray-300">パスワード: demo123</p>
             <p className="text-xs text-gray-400 mt-2">※どのメールアドレス・パスワードでもログイン可能です</p>
           </div>
 
@@ -88,9 +88,10 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-[#1ABC9C] transition-colors"
+                  className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-[#1ABC9C] transition-colors text-sm sm:text-base"
                   placeholder="your@email.com"
                   required
+                  aria-label="メールアドレス"
                 />
               </div>
             </div>
@@ -105,30 +106,41 @@ export default function LoginPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-[#1ABC9C] transition-colors"
+                  className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-[#1ABC9C] transition-colors text-sm sm:text-base"
                   placeholder="••••••••"
                   required
+                  aria-label="パスワード"
                 />
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <label className="flex items-center">
+              <label className="flex items-center cursor-pointer">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 bg-white/10 border border-white/20 rounded focus:ring-[#1ABC9C]"
+                  className="w-4 h-4 bg-white/10 border border-white/20 rounded focus:ring-[#1ABC9C] focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900"
+                  id="remember-me"
+                  aria-describedby="remember-me-description"
                 />
-                <span className="ml-2 text-sm text-gray-300">
+                <span id="remember-me-description" className="ml-2 text-sm text-gray-300">
                   ログイン状態を保持
                 </span>
               </label>
-              <Link href="#" className="text-sm text-[#1ABC9C] hover:underline">
+              <Link 
+                href="#" 
+                className="text-sm text-[#1ABC9C] hover:underline focus:outline-none focus:ring-2 focus:ring-[#1ABC9C] focus:ring-offset-2 focus:ring-offset-gray-900 rounded px-1 py-1"
+                aria-label="パスワードリセットページへ移動"
+              >
                 パスワードを忘れた？
               </Link>
             </div>
 
             {error && (
-              <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-red-200 text-sm">
+              <div 
+                className="bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-red-200 text-sm"
+                role="alert"
+                aria-live="polite"
+              >
                 {error}
               </div>
             )}
@@ -136,7 +148,8 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#1ABC9C] py-3 rounded-lg font-semibold hover:bg-[#16A085] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full bg-[#1ABC9C] py-3 rounded-lg font-semibold hover:bg-[#16A085] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#1ABC9C] focus:ring-offset-2 focus:ring-offset-gray-900"
+              aria-label={isLoading ? "ログイン処理中..." : "ログインボタン"}
             >
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
