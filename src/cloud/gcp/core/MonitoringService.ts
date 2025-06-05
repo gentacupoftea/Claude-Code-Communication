@@ -481,7 +481,13 @@ export class MonitoringService {
 
   // Custom Dashboards
   getMetricsSummary(): any {
-    const summary = {
+    const summary: {
+      timestamp: string;
+      metrics: Record<string, any>;
+      alerts: Record<string, any>;
+      slos: Record<string, any>;
+      healthChecks: Record<string, any>;
+    } = {
       timestamp: new Date().toISOString(),
       metrics: {},
       alerts: {},

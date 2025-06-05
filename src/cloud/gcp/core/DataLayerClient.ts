@@ -74,7 +74,7 @@ export class DataLayerClient {
       port: config.redis.port,
       password: config.redis.password,
       db: 0,
-      retryStrategy: (times) => Math.min(times * 50, 2000),
+      retryStrategy: (times: number) => Math.min(times * 50, 2000),
     });
 
     this.storage = new Storage({
@@ -89,7 +89,7 @@ export class DataLayerClient {
       logger.info('Redis connected');
     });
 
-    this.redis.on('error', (error) => {
+    this.redis.on('error', (error: any) => {
       logger.error('Redis error', { error });
     });
 
@@ -162,7 +162,7 @@ export class DataLayerClient {
       }
 
       const snapshot = await query.get();
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
       logger.error('Firestore query error', { collection, options, error });
       throw error;
@@ -405,7 +405,7 @@ export class DataLayerClient {
       const bucket = this.storage.bucket(bucketName);
       const [files] = await bucket.getFiles({ prefix });
       
-      return files.map(file => file.name);
+      return files.map((file: any) => file.name);
     } catch (error) {
       logger.error('Storage list error', { bucketName, prefix, error });
       throw error;
@@ -553,7 +553,7 @@ export class DataLayerClient {
 
       const batch = this.firestore.batch();
       
-      snapshot.docs.forEach(doc => {
+      snapshot.docs.forEach((doc: any) => {
         const data = transform ? transform(doc.data()) : doc.data();
         const targetDoc = targetRef.doc(doc.id);
         batch.set(targetDoc, data);

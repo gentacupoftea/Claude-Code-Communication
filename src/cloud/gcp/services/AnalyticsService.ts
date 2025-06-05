@@ -99,7 +99,7 @@ export class AnalyticsService {
     this.app.use(express.json());
 
     // Health check
-    this.app.get('/health', (req, res) => {
+    this.app.get('/health', (req: any, res: any) => {
       res.json({ status: 'healthy', service: 'analytics' });
     });
 
