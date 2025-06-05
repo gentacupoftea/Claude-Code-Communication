@@ -3,6 +3,14 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
+interface TestResult {
+  questionId: string;
+  scores?: {
+    overall: number;
+  };
+  [key: string]: any;
+}
+
 interface ComparisonResult {
   baseline: any;
   improved: any;
@@ -90,15 +98,16 @@ export class ResultsComparator {
       baseline.results.map((r: any) => [r.questionId, r])
     );
     
-    improved.results.forEach((improvedResult: any) => {
+    improved.results.forEach((improvedResult: TestResult) => {
       const baselineResult = baselineResults.get(improvedResult.questionId);
-      if (baselineResult && improvedResult.scores.overall < baselineResult.scores.overall) {
+      if (baselineResult && improvedResult.scores?.overall && baselineResult.scores?.overall && 
+          improvedResult.scores.overall < baselineResult.scores.overall) {
         const decrease = baselineResult.scores.overall - improvedResult.scores.overall;
         if (decrease > 0.05) { // 5%以上の低下
           regressions.push(
             `質問 ${improvedResult.questionId}: ` +
             `${(decrease * 100).toFixed(1)}%低下 ` +
-            `(${baselineResult.scores.overall.toFixed(2)} → ${improvedResult.scores.overall.toFixed(2)})`
+            `(${baselineResult.scores?.overall?.toFixed(2)} → ${improvedResult.scores?.overall?.toFixed(2)})`
           );
         }
       }
@@ -229,8 +238,8 @@ export class ResultsComparator {
         return {
           questionId: improved.questionId,
           category: improved.category,
-          improvement: improved.scores.overall - baseline.scores.overall,
-          newScore: improved.scores.overall
+          improvement: (improved.scores?.overall || 0) - (baseline.scores?.overall || 0),
+          newScore: improved.scores?.overall || 0
         };
       })
       .filter(Boolean)
@@ -245,12 +254,12 @@ export class ResultsComparator {
 
   private getBottomPerformers(results: any[]): string[] {
     const bottom = results
-      .sort((a, b) => a.scores.overall - b.scores.overall)
+      .sort((a, b) => (a.scores?.overall || 0) - (b.scores?.overall || 0))
       .slice(0, 10);
 
     return bottom.map((item, index) => 
       `${index + 1}. ${item.category} (${item.questionId}): ` +
-      `${(item.scores.overall * 100).toFixed(1)}% ${item.passed ? '' : '❌'}`
+      `${((item.scores?.overall || 0) * 100).toFixed(1)}% ${item.passed ? '' : '❌'}`
     );
   }
 }

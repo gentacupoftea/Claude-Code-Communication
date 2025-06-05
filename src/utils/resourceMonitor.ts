@@ -8,6 +8,11 @@
 import { EventEmitter } from 'events';
 import { logger } from './logger';
 
+// Global型の拡張
+declare global {
+  var gc: (() => void) | undefined;
+}
+
 /**
  * メモリ使用量レポートインターフェース
  */
@@ -405,8 +410,10 @@ export class ResourceMonitor extends EventEmitter {
     try {
       const beforeHeapUsed = process.memoryUsage().heapUsed;
       
-      // GCを実行
-      global.gc();
+      // GCを実行 (利用可能な場合のみ)
+      if (global.gc) {
+        global.gc();
+      }
       
       const afterHeapUsed = process.memoryUsage().heapUsed;
       const freedBytes = beforeHeapUsed - afterHeapUsed;

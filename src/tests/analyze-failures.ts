@@ -18,6 +18,7 @@ interface FailureAnalysis {
     priority: string;
     description: string;
     implementation: string;
+    expectedImpact?: string;
   }>;
 }
 

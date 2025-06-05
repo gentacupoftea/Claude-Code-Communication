@@ -1,4 +1,5 @@
-import winston from 'winston';
+// Simple logger implementation (winston dependency temporarily removed)
+// TODO: Re-add winston dependency and restore full logging functionality
 
 // ログレベルの定義
 const logLevels = {
@@ -7,43 +8,55 @@ const logLevels = {
   info: 2,
   http: 3,
   debug: 4,
-};
+} as const;
 
 // 環境に応じたログレベルの設定
-const level = () => {
+const getLevel = () => {
   const env = process.env.NODE_ENV || 'development';
   const isDevelopment = env === 'development';
   return isDevelopment ? 'debug' : 'info';
 };
 
-// ログフォーマットの定義
-const format = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
-  winston.format.colorize({ all: true }),
-  winston.format.printf(
-    (info) => `${info.timestamp} ${info.level}: ${info.message}`,
-  ),
-);
+// 簡易ロガー実装
+const createSimpleLogger = () => {
+  const currentLevel = getLevel();
+  const currentLevelValue = logLevels[currentLevel as keyof typeof logLevels];
 
-// トランスポートの定義
-const transports = [
-  // コンソール出力
-  new winston.transports.Console(),
-  // エラーログファイル
-  new winston.transports.File({
-    filename: 'logs/error.log',
-    level: 'error',
-  }),
-  // 全ログファイル
-  new winston.transports.File({ filename: 'logs/all.log' }),
-];
+  const shouldLog = (level: keyof typeof logLevels) => {
+    return logLevels[level] <= currentLevelValue;
+  };
+
+  return {
+    error: (message: string) => {
+      if (shouldLog('error')) {
+        console.error(`[ERROR] ${new Date().toISOString()} - ${message}`);
+      }
+    },
+    warn: (message: string) => {
+      if (shouldLog('warn')) {
+        console.warn(`[WARN] ${new Date().toISOString()} - ${message}`);
+      }
+    },
+    info: (message: string) => {
+      if (shouldLog('info')) {
+        console.info(`[INFO] ${new Date().toISOString()} - ${message}`);
+      }
+    },
+    debug: (message: string) => {
+      if (shouldLog('debug')) {
+        console.debug(`[DEBUG] ${new Date().toISOString()} - ${message}`);
+      }
+    },
+    http: (message: string) => {
+      if (shouldLog('http')) {
+        console.log(`[HTTP] ${new Date().toISOString()} - ${message}`);
+      }
+    }
+  };
+};
 
 // Loggerインスタンスの作成
-const logger = winston.createLogger({
-  level: level(),
-  levels: logLevels,
-  format,
-  transports,
-});
+const logger = createSimpleLogger();
 
 export default logger;
+export { logger };
