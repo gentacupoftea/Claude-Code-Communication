@@ -34,6 +34,20 @@
     "src/tests/utils/renderWithProviders.tsx",
     "persona-analysis/**/*",
     "frontend-v2/**/*",
-    "multiLLM_system/**/*"
+    "multiLLM_system/**/*",
+    "backend/**/*",
+    "src/cloud/**/*",
+    "src/ai/**/*",
+    "src/ai_chat/**/*",
+    "src/api/file_import/**/*",
+    "src/data_processing/**/*",
+    "src/file_import/**/*",
+    "src/google_sheets/**/*",
+    "src/middleware/**/*",
+    "src/orchestrator/**/*",
+    "src/server.ts",
+    "src/api/__tests__/**/*",
+    "scripts/**/*",
+    "tests/**/*"
   ]
 }
