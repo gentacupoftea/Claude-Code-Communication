@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { Input } from '../Input';
 import { Mail, Search, Eye } from 'lucide-react';
@@ -134,7 +135,7 @@ describe('Input', () => {
   });
 
   it('handles user input correctly', async () => {
-    const handleChange = vi.fn();
+    const handleChange = jest.fn();
     const user = userEvent.setup();
     
     render(<Input onChange={handleChange} />);
@@ -173,8 +174,8 @@ describe('Input', () => {
   });
 
   it('handles different input types', () => {
-    const { rerender } = render(<Input type="password" />);
-    expect(screen.getByLabelText('')).toHaveAttribute('type', 'password');
+    const { rerender, container } = render(<Input type="password" />);
+    expect(container.querySelector('input')).toHaveAttribute('type', 'password');
     
     rerender(<Input type="email" />);
     expect(screen.getByRole('textbox')).toHaveAttribute('type', 'email');
@@ -213,10 +214,10 @@ describe('Input', () => {
   });
 
   it('handles ref forwarding', () => {
-    const ref = vi.fn();
+    const ref = React.createRef<HTMLInputElement>();
     render(<Input ref={ref} />);
     
-    expect(ref).toHaveBeenCalledWith(expect.any(HTMLInputElement));
+    expect(ref.current).toBeInstanceOf(HTMLInputElement);
   });
 
   it('displays error with proper ARIA live region', () => {

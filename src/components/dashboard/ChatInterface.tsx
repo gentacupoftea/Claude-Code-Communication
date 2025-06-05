@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Bot, User, Loader2, AlertCircle, RefreshCcw, Paperclip, Search, Settings as SettingsIcon } from 'lucide-react';
 import { MultiLLMService } from '@/src/services/multillm.service';
-import { LLMResponse, MultiLLMRequest } from '@/src/types/multillm';
+import { MultiLLMResponse, MultiLLMRequest } from '@/src/types/multillm';
 import { API_ENDPOINTS, createApiUrl } from '@/src/lib/api-config';
 
 interface Message {
@@ -124,20 +124,28 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         temperature: agentConfig.temperature || 0.7,
         maxTokens: agentConfig.max_tokens || 1000,
         systemPrompt: agentConfig.system_prompt,
-        streamResponse: false
+        streamResponse: false,
+        settings: {
+          temperature: agentConfig.temperature || 0.7,
+          maxTokens: agentConfig.max_tokens || 1000,
+          stream: false,
+          compareResponses: false
+        }
       };
 
       // API呼び出し
-      const responses = await multiLLMService.generateResponses(request);
+      const response = await multiLLMService.sendMultiModelRequest(request);
+      console.log('MultiLLM Response:', response); // デバッグ用
       
-      if (responses.length > 0) {
-        const response = responses[0];
+      // 型安全なアクセス
+      if (response && 'responses' in response && Array.isArray(response.responses) && response.responses.length > 0) {
+        const firstResponse = response.responses[0];
         const aiMessage: Message = {
           id: (Date.now() + 1).toString(),
-          text: response.response.content,
+          text: firstResponse.content || 'エラーが発生しました',
           sender: 'ai',
           timestamp: new Date(),
-          model: response.model
+          model: firstResponse.model
         };
 
         setMessages(prev => [...prev, aiMessage]);

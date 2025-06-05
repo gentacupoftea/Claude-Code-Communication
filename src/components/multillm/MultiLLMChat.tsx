@@ -8,7 +8,7 @@ import {
   User, 
   Loader2, 
   Settings, 
-  Compare,
+  GitCompare,
   Sparkles,
   MessageSquare,
   Plus,
@@ -23,7 +23,7 @@ import {
   MultiLLMRequest, 
   MultiLLMResponse, 
   ModelComparison as IModelComparison 
-} from '@/src/types/multillm-new';
+} from '@/src/types/multillm';
 
 interface MultiLLMChatProps {
   onGenerateWidget?: (widgetData: any) => void;
@@ -262,7 +262,7 @@ export const MultiLLMChat: React.FC<MultiLLMChatProps> = ({ onGenerateWidget }) 
               }`}
               title="比較結果"
             >
-              <Compare className="w-4 h-4" />
+              <GitCompare className="w-4 h-4" />
             </button>
           )}
           

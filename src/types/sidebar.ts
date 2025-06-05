@@ -1,12 +1,17 @@
 export interface ProjectFolder {
   id: string;
   name: string;
-  type: 'project' | 'chat' | 'folder';
+  type: 'project' | 'chat' | 'folder' | 'analytics' | 'dashboard' | 'notebook';
   icon?: string;
   children?: ProjectFolder[];
   parentId?: string;
   createdAt: string;
   updatedAt: string;
+  lastAccessed?: string;
+  lastMessage?: string;
+  chatCount?: number;
+  isStarred?: boolean;
+  isActive?: boolean;
   metadata?: {
     description?: string;
     tags?: string[];

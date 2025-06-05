@@ -225,17 +225,23 @@ export class RoutingOptimizer {
     // カテゴリ別の強み・弱みを特定
     Object.entries(performanceAnalysis.categoryProviderFit).forEach(([category, providers]: [string, any]) => {
       const sortedProviders = Object.entries(providers)
-        .sort(([, a]: any, [, b]: any) => b - a);
+        .sort(([, a]: [string, any], [, b]: [string, any]) => b - a) as [string, number][];
       
       // 最高性能のプロバイダー
       if (sortedProviders[0] && sortedProviders[0][1] > 0.8) {
-        strengths[sortedProviders[0][0]].strengths.push(category);
+        const providerName = sortedProviders[0][0] as keyof typeof strengths;
+        if (providerName in strengths) {
+          strengths[providerName].strengths.push(category);
+        }
       }
       
       // 最低性能のプロバイダー
       if (sortedProviders[sortedProviders.length - 1] && 
           sortedProviders[sortedProviders.length - 1][1] < 0.6) {
-        strengths[sortedProviders[sortedProviders.length - 1][0]].weaknesses.push(category);
+        const providerName = sortedProviders[sortedProviders.length - 1][0] as keyof typeof strengths;
+        if (providerName in strengths) {
+          strengths[providerName].weaknesses.push(category);
+        }
       }
     });
 

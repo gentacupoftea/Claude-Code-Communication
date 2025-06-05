@@ -28,7 +28,7 @@ export interface SidebarState {
   isCollapsed: boolean;
   selectedProjectId?: string;
   searchQuery: string;
-  activeFilter: 'all'; // 現状の実装では'all'のみ使用。将来的に 'starred' | 'recent' | 'archived' を追加予定
+  activeFilter: 'all' | 'starred' | 'recent' | 'chat' | 'analytics'; // フィルターの種類
   sections: SidebarSectionState[];
   recentProjects: ProjectFolder[];
   starredProjects: ProjectFolder[];

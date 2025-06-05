@@ -247,7 +247,7 @@ export function useSidebar(): UseSidebarReturn {
       
       if (selectedProject) {
         const updatedRecent = [
-          { ...selectedProject, lastAccessed: new Date() },
+          { ...selectedProject, lastAccessed: new Date().toISOString() },
           ...prev.recentProjects.filter((p: ProjectFolder) => p.id !== projectId)
         ].slice(0, 5);
 

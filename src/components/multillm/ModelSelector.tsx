@@ -16,7 +16,7 @@ import {
   BarChart3,
   Sparkles
 } from 'lucide-react';
-import { LLMProvider, LLMModel } from '@/src/types/multillm-new';
+import { LLMProvider, LLMModel } from '@/src/types/multillm';
 import { MultiLLMService } from '@/src/services/multillm.service';
 
 interface ModelSelectorProps {

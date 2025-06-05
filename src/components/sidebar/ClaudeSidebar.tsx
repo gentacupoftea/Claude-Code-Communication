@@ -92,7 +92,7 @@ export const ClaudeSidebar: React.FC<ClaudeSidebarProps> = ({ onProjectSelect })
     return projects.filter(project => {
       const matchesSearch = sidebar.searchQuery === '' || 
         project.name.toLowerCase().includes(sidebar.searchQuery.toLowerCase()) ||
-        project.tags.some((tag: any) => tag.toLowerCase().includes(sidebar.searchQuery.toLowerCase()));
+        (project.metadata?.tags && project.metadata.tags.some((tag: string) => tag.toLowerCase().includes(sidebar.searchQuery.toLowerCase())));
       
       switch (sidebar.activeFilter) {
         case 'starred':
@@ -270,7 +270,7 @@ export const ClaudeSidebar: React.FC<ClaudeSidebarProps> = ({ onProjectSelect })
                                       </span>
                                       <div className="flex items-center space-x-1">
                                         <span className="text-xs opacity-60">
-                                          {formatLastAccessed(project.lastAccessed)}
+                                          {project.lastAccessed && formatLastAccessed(new Date(project.lastAccessed))}
                                         </span>
                                         {project.isStarred && (
                                           <Star className="w-3 h-3 text-yellow-400 fill-current" />
@@ -434,9 +434,9 @@ export const ClaudeSidebar: React.FC<ClaudeSidebarProps> = ({ onProjectSelect })
                                               {project.lastMessage}
                                             </p>
                                           )}
-                                          {!editingId && project.tags.length > 0 && (
+                                          {!editingId && project.metadata?.tags && project.metadata.tags.length > 0 && (
                                             <div className="flex flex-wrap gap-1 mt-1">
-                                              {project.tags.slice(0, 2).map((tag: any) => (
+                                              {project.metadata.tags.slice(0, 2).map((tag: string) => (
                                                 <span
                                                   key={tag}
                                                   className="text-xs bg-white/5 px-1.5 py-0.5 rounded"

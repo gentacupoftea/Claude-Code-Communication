@@ -200,7 +200,7 @@ export async function bulkUpdateUserPreferences(updates: Array<{userId: string, 
 /**
  * 大量データの効率的な削除（バッチ処理）
  */
-export async function batchDeleteOldRecords<T>(
+export async function batchDeleteOldRecords(
   entityClass: any,
   dateField: string,
   cutoffDate: Date,
@@ -211,11 +211,10 @@ export async function batchDeleteOldRecords<T>(
   
   do {
     // バッチサイズ単位で削除
-    const result = await getRepository<T>(entityClass)
+    const result = await getRepository(entityClass)
       .createQueryBuilder()
       .delete()
       .where(`${dateField} < :cutoffDate`, { cutoffDate })
-      .take(batchSize)
       .execute();
     
     deleted = result.affected || 0;

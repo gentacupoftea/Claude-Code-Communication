@@ -14,7 +14,7 @@ import {
   Brain,
   Gauge
 } from 'lucide-react';
-import { ModelComparison as IModelComparison, MultiLLMResponse } from '@/src/types/multillm-new';
+import { ModelComparison as IModelComparison, MultiLLMResponse } from '@/src/types/multillm';
 
 interface ModelComparisonProps {
   comparison: IModelComparison;
@@ -110,7 +110,7 @@ export const ModelComparison: React.FC<ModelComparisonProps> = ({
       </div>
 
       {/* 勝者の発表 */}
-      {comparison.analysis.winner && (
+      {comparison.analysis?.winner && (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -120,10 +120,10 @@ export const ModelComparison: React.FC<ModelComparisonProps> = ({
           <div className="flex items-center justify-center space-x-3 mb-3">
             <Trophy className="w-8 h-8 text-yellow-400" />
             <h3 className="text-2xl font-bold text-white">
-              優勝: {comparison.responses.find(r => r.model === comparison.analysis.winner)?.model}
+              優勝: {comparison.responses.find(r => r.model === comparison.analysis?.winner)?.model}
             </h3>
           </div>
-          <p className="text-gray-300">{comparison.analysis.reasoning}</p>
+          <p className="text-gray-300">{comparison.analysis?.reasoning}</p>
         </motion.div>
       )}
 
@@ -165,13 +165,13 @@ export const ModelComparison: React.FC<ModelComparisonProps> = ({
         <div className="space-y-4">
           {getSortedResponses().map((response, index) => {
             const score = getMetricValue(response, selectedMetric);
-            const isWinner = response.model === comparison.analysis.winner;
+            const isWinner = response.model === comparison.analysis?.winner;
             
             return (
               <div key={response.model} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <span className="text-lg">{getProviderIcon(response.provider)}</span>
+                    <span className="text-lg">{getProviderIcon(response.provider || 'unknown')}</span>
                     <span className="text-white font-medium">{response.model}</span>
                     {isWinner && <Trophy className="w-4 h-4 text-yellow-400" />}
                     {index === 0 && <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">#1</span>}
@@ -200,7 +200,7 @@ export const ModelComparison: React.FC<ModelComparisonProps> = ({
       {/* 詳細メトリクス */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {responses.map((response) => {
-          const isWinner = response.model === comparison.analysis.winner;
+          const isWinner = response.model === comparison.analysis?.winner;
           
           return (
             <motion.div
@@ -274,7 +274,7 @@ export const ModelComparison: React.FC<ModelComparisonProps> = ({
                   
                   <div className="bg-white/5 rounded-lg p-4 border border-white/10">
                     <pre className="text-gray-300 whitespace-pre-wrap font-sans">
-                      {response.response}
+                      {response.content || ''}
                     </pre>
                   </div>
 
@@ -333,7 +333,7 @@ export const ModelComparison: React.FC<ModelComparisonProps> = ({
       <div className="bg-gray-900/50 backdrop-blur-lg rounded-xl border border-white/10 p-6">
         <h3 className="text-lg font-semibold text-white mb-3">評価基準</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          {comparison.analysis.criteria.map((criterion, index) => (
+          {comparison.analysis?.criteria?.map((criterion, index) => (
             <div key={index} className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-[#1ABC9C] rounded-full" />
               <span className="text-gray-300">{criterion}</span>

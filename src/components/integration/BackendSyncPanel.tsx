@@ -46,9 +46,9 @@ export const BackendSyncPanel: React.FC = () => {
       setMessages(prev => [message, ...prev.slice(0, 9)]); // 最新10件を保持
     };
 
-    backendIntegrationService.addSyncListener(handleSyncUpdate);
-    backendIntegrationService.addHealthListener(handleHealthUpdate);
-    backendIntegrationService.addMessageListener(handleMessage);
+    const removeSyncListener = backendIntegrationService.addSyncListener(handleSyncUpdate);
+    const removeHealthListener = backendIntegrationService.addHealthListener(handleHealthUpdate);
+    const removeMessageListener = backendIntegrationService.addMessageListener(handleMessage);
 
     // オンライン/オフライン状態の監視
     const handleOnline = () => setIsOnline(true);
@@ -57,9 +57,9 @@ export const BackendSyncPanel: React.FC = () => {
     window.addEventListener('offline', handleOffline);
 
     return () => {
-      backendIntegrationService.removeSyncListener(handleSyncUpdate);
-      backendIntegrationService.removeHealthListener(handleHealthUpdate);
-      backendIntegrationService.removeMessageListener(handleMessage);
+      removeSyncListener();
+      removeHealthListener();
+      removeMessageListener();
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
@@ -123,8 +123,10 @@ export const BackendSyncPanel: React.FC = () => {
     }
   };
 
-  const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString('ja-JP', {
+  const formatTime = (timestamp: string | Date | null) => {
+    if (!timestamp) return '未同期';
+    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    return date.toLocaleString('ja-JP', {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit'

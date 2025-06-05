@@ -2,7 +2,7 @@
 
 import { Anthropic } from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
-import { VertexAI } from '@google-cloud/aiplatform';
+// import { VertexAI } from '@google-cloud/aiplatform';
 import { claudePrompts, selectClaudePrompt } from '../prompts/claude-prompts';
 import { geminiPrompts } from '../prompts/gemini-prompts';
 import { gpt4Prompts } from '../prompts/gpt4-prompts';
@@ -19,7 +19,7 @@ interface LLMConfig {
 export class MultiLLMOrchestrator {
   private claude?: Anthropic;
   private openai?: OpenAI;
-  private vertexAI?: VertexAI;
+  private vertexAI?: any; // VertexAI
   private isTestMode: boolean = false;
 
   constructor(config?: {
@@ -103,7 +103,12 @@ ${promptTemplate.responseFormat}
         ]
       });
 
-      return response.content[0].text;
+      const content = response.content[0];
+      if ('text' in content) {
+        return content.text;
+      } else {
+        throw new Error('Unexpected response format from Claude');
+      }
     } catch (error) {
       console.error('Claude API error:', error);
       throw error;

@@ -154,7 +154,7 @@ const test: EnvironmentConfig = {
 
 // 環境に応じた設定を取得する関数
 export const getEnvironment = (): EnvironmentConfig => {
-  const env = process.env.NODE_ENV || 'development';
+  const env = (process.env.NODE_ENV || 'development') as Environment;
   
   switch (env) {
     case 'production':

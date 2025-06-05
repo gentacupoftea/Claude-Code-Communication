@@ -9,7 +9,7 @@ import {
   LLMUsageStats,
   ModelPerformanceMetrics,
   StreamingResponse
-} from '@/src/types/multillm-new';
+} from '@/src/types/multillm';
 
 export class MultiLLMService {
   private static instance: MultiLLMService;
@@ -317,7 +317,7 @@ export class MultiLLMService {
       })
     );
 
-    const comparison = request.settings.compareResponses ? 
+    const comparison = request.settings?.compareResponses ? 
       this.generateComparison(request.prompt, responses) : undefined;
 
     return {

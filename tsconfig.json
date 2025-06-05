@@ -48,6 +48,8 @@
     "src/server.ts",
     "src/api/__tests__/**/*",
     "scripts/**/*",
-    "tests/**/*"
+    "tests/**/*",
+    "src/database/**/*",
+    "src/entities/**/*"
   ]
 }

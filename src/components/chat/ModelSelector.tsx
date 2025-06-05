@@ -146,7 +146,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                           <div className="text-white font-medium">{model.name}</div>
                           <div className="text-sm text-gray-400">{model.description}</div>
                           <div className="text-xs text-gray-500 mt-1">
-                            ${model.costPer1kTokens.input.toFixed(4)}/1K input tokens
+                            ${model.costPer1kTokens?.input?.toFixed(4) || '0.0000'}/1K input tokens
                           </div>
                         </div>
                       </div>
