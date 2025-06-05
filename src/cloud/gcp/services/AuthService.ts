@@ -130,7 +130,7 @@ export class AuthService {
     this.app.use(express.urlencoded({ extended: true }));
 
     // CORS middleware
-    this.app.use((req, res, next) => {
+    this.app.use((req: any, res: any, next: any) => {
       res.header('Access-Control-Allow-Origin', '*');
       res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
       res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -138,7 +138,7 @@ export class AuthService {
     });
 
     // Request logging
-    this.app.use((req, res, next) => {
+    this.app.use((req: any, res: any, next: any) => {
       logger.info('Auth request', {
         method: req.method,
         path: req.path,
@@ -151,7 +151,7 @@ export class AuthService {
 
   private setupRoutes(): void {
     // Health check
-    this.app.get('/health', (req, res) => {
+    this.app.get('/health', (req: any, res: any) => {
       res.json({ status: 'healthy', service: 'auth' });
     });
 

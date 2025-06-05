@@ -1,19 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useAuth } from '../useAuth';
-import { apiClient } from '../../api/apiClient';
+import * as authService from '../../api/authService';
 import { createWrapper } from '../../tests/utils/testUtils';
 import { mockAuthResponse, mockErrorResponse } from '../../tests/mocks/apiMocks';
 
-// Mock the API client
-vi.mock('../../api/apiClient', () => ({
-  apiClient: {
-    auth: {
-      login: vi.fn(),
-      refresh: vi.fn(),
-      logout: vi.fn()
-    }
-  }
+// Mock the auth service
+vi.mock('../../api/authService', () => ({
+  login: vi.fn(),
+  refreshAccessToken: vi.fn(),
+  logout: vi.fn(),
+  getUser: vi.fn(),
+  getAccessToken: vi.fn(),
+  isTokenValid: vi.fn()
 }));
 
 // Mock storage
@@ -43,9 +42,9 @@ describe('useAuth', () => {
     mockLocalStorage.clear();
     
     // Reset mocks
-    vi.mocked(apiClient.auth.login).mockReset();
-    vi.mocked(apiClient.auth.refresh).mockReset();
-    vi.mocked(apiClient.auth.logout).mockReset();
+    vi.mocked(authService.login).mockReset();
+    vi.mocked(authService.refreshAccessToken).mockReset();
+    vi.mocked(authService.logout).mockReset();
   });
 
   it('should initialize with unauthenticated state', () => {
@@ -58,7 +57,7 @@ describe('useAuth', () => {
   });
 
   it('should login successfully', async () => {
-    vi.mocked(apiClient.auth.login).mockResolvedValue(mockAuthResponse);
+    vi.mocked(authService.login).mockResolvedValue(mockAuthResponse);
     
     const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
     
@@ -90,11 +89,11 @@ describe('useAuth', () => {
     );
     
     // API called correctly
-    expect(apiClient.auth.login).toHaveBeenCalledWith('test-shop.myshopify.com');
+    expect(authService.login).toHaveBeenCalledWith('test-shop.myshopify.com');
   });
 
   it('should handle login failure', async () => {
-    vi.mocked(apiClient.auth.login).mockRejectedValue(new Error('Auth failed'));
+    vi.mocked(authService.login).mockRejectedValue(new Error('Auth failed'));
     
     const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
     
@@ -128,7 +127,7 @@ describe('useAuth', () => {
       expiresAt: new Date(Date.now() - 1000).toISOString() // Expired token
     }));
     
-    vi.mocked(apiClient.auth.refresh).mockResolvedValue({
+    vi.mocked(authService.refresh).mockResolvedValue({
       ...mockAuthResponse,
       accessToken: 'new-access-token'
     });
@@ -138,7 +137,7 @@ describe('useAuth', () => {
     
     // Hook should attempt to refresh the token automatically
     await waitFor(() => {
-      expect(apiClient.auth.refresh).toHaveBeenCalledWith('test-refresh-token');
+      expect(authService.refresh).toHaveBeenCalledWith('test-refresh-token');
     });
     
     // Should update the token in storage
@@ -179,7 +178,7 @@ describe('useAuth', () => {
     expect(mockLocalStorage.removeItem).toHaveBeenCalledWith('auth_token');
     
     // API logout should be called
-    expect(apiClient.auth.logout).toHaveBeenCalled();
+    expect(authService.logout).toHaveBeenCalled();
   });
 
   it('should handle expired tokens and failed refresh', async () => {
@@ -191,14 +190,14 @@ describe('useAuth', () => {
     }));
     
     // Refresh will fail
-    vi.mocked(apiClient.auth.refresh).mockRejectedValue(new Error('Refresh failed'));
+    vi.mocked(authService.refresh).mockRejectedValue(new Error('Refresh failed'));
     
     // Initialize hook with expired token
     const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
     
     // Should attempt to refresh
     await waitFor(() => {
-      expect(apiClient.auth.refresh).toHaveBeenCalledWith('invalid-refresh-token');
+      expect(authService.refresh).toHaveBeenCalledWith('invalid-refresh-token');
     });
     
     // Should fail to authenticate

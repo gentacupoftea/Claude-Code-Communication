@@ -92,13 +92,13 @@ export const ClaudeSidebar: React.FC<ClaudeSidebarProps> = ({ onProjectSelect })
     return projects.filter(project => {
       const matchesSearch = sidebar.searchQuery === '' || 
         project.name.toLowerCase().includes(sidebar.searchQuery.toLowerCase()) ||
-        project.tags.some(tag => tag.toLowerCase().includes(sidebar.searchQuery.toLowerCase()));
+        project.tags.some((tag: any) => tag.toLowerCase().includes(sidebar.searchQuery.toLowerCase()));
       
       switch (sidebar.activeFilter) {
         case 'starred':
           return matchesSearch && project.isStarred;
         case 'recent':
-          return matchesSearch && sidebar.recentProjects.some(rp => rp.id === project.id);
+          return matchesSearch && sidebar.recentProjects.some((rp: any) => rp.id === project.id);
         case 'chat':
           return matchesSearch && project.type === 'chat';
         case 'analytics':
@@ -190,7 +190,7 @@ export const ClaudeSidebar: React.FC<ClaudeSidebarProps> = ({ onProjectSelect })
 
         {/* プロジェクトリスト */}
         <div className="flex-1 overflow-y-auto">
-          {sidebar.sections.map((section) => (
+          {sidebar.sections.map((section: any) => (
             <div key={section.id} className="mb-2">
               {!sidebar.isCollapsed && (
                 <div className="px-4 py-2">
@@ -332,7 +332,7 @@ export const ClaudeSidebar: React.FC<ClaudeSidebarProps> = ({ onProjectSelect })
                     )}
 
                     {/* フォルダ */}
-                    {section.folders.map((folder) => (
+                    {section.folders.map((folder: any) => (
                       <div key={folder.id} className="mb-2">
                         {!sidebar.isCollapsed && folder.isCollapsible && (
                           <div className="px-4">
@@ -436,7 +436,7 @@ export const ClaudeSidebar: React.FC<ClaudeSidebarProps> = ({ onProjectSelect })
                                           )}
                                           {!editingId && project.tags.length > 0 && (
                                             <div className="flex flex-wrap gap-1 mt-1">
-                                              {project.tags.slice(0, 2).map((tag) => (
+                                              {project.tags.slice(0, 2).map((tag: any) => (
                                                 <span
                                                   key={tag}
                                                   className="text-xs bg-white/5 px-1.5 py-0.5 rounded"
@@ -506,8 +506,8 @@ export const ClaudeSidebar: React.FC<ClaudeSidebarProps> = ({ onProjectSelect })
             <button
               onClick={() => handleRename(contextMenu.id, 
                 contextMenu.type === 'folder' 
-                  ? sidebar.sections.flatMap(s => s.folders).find(f => f.id === contextMenu.id)?.name || ''
-                  : sidebar.sections.flatMap(s => s.folders.flatMap(f => f.projects)).find(p => p.id === contextMenu.id)?.name || ''
+                  ? sidebar.sections.flatMap((s: any) => s.folders).find((f: any) => f.id === contextMenu.id)?.name || ''
+                  : sidebar.sections.flatMap((s: any) => s.folders.flatMap((f: any) => f.projects)).find((p: any) => p.id === contextMenu.id)?.name || ''
               )}
               className="w-full px-4 py-2 text-left text-sm text-white hover:bg-white/10 flex items-center space-x-2"
             >

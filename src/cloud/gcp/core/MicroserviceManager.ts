@@ -582,8 +582,8 @@ export class MicroserviceManager {
       const { body: services } = await k8sCoreClient.listNamespacedService(namespace);
       
       return services.items
-        .filter(svc => svc.metadata?.labels?.project === 'shopify-mcp')
-        .map(svc => ({
+        .filter((svc: any) => svc.metadata?.labels?.project === 'shopify-mcp')
+        .map((svc: any) => ({
           name: svc.metadata!.name!,
           image: '', // Would need to fetch from deployment
           replicas: 1,
@@ -902,16 +902,16 @@ export class MicroserviceManager {
           updatedReplicas: deployment.status?.updatedReplicas,
           availableReplicas: deployment.status?.availableReplicas
         },
-        pods: pods.items.map(pod => ({
+        pods: pods.items.map((pod: any) => ({
           name: pod.metadata?.name,
           phase: pod.status?.phase,
-          ready: pod.status?.conditions?.find(c => c.type === 'Ready')?.status === 'True',
+          ready: pod.status?.conditions?.find((c: any) => c.type === 'Ready')?.status === 'True',
           restarts: pod.status?.containerStatuses?.[0]?.restartCount || 0,
           startTime: pod.status?.startTime
         })),
-        endpoints: endpoints.subsets?.map(subset => ({
+        endpoints: endpoints.subsets?.map((subset: any) => ({
           addresses: subset.addresses?.length || 0,
-          ports: subset.ports?.map(p => p.port)
+          ports: subset.ports?.map((p: any) => p.port)
         }))
       };
     } catch (error) {

@@ -273,7 +273,7 @@ export class EventBroker {
       }
     });
 
-    subscription.on('error', (error) => {
+    subscription.on('error', (error: any) => {
       logger.error('Subscription error', { error, subscriptionName });
     });
 

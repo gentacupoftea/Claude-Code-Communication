@@ -99,7 +99,7 @@ export class AnalyticsService {
     this.app.use(express.json());
 
     // Health check
-    this.app.get('/health', (req, res) => {
+    this.app.get('/health', (req: any, res: any) => {
       res.json({ status: 'healthy', service: 'analytics' });
     });
 
@@ -553,6 +553,31 @@ export class AnalyticsService {
     }
   }
 
+  private async handleUpdateDashboard(req: express.Request, res: express.Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      const dashboard = await this.dataLayer.firestoreUpdate('dashboards', id, updates);
+      res.json(dashboard);
+    } catch (error) {
+      logger.error('Update dashboard error', { error });
+      res.status(500).json({ error: 'Failed to update dashboard' });
+    }
+  }
+
+  private async handleDeleteDashboard(req: express.Request, res: express.Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      
+      await this.dataLayer.firestoreDelete('dashboards', id);
+      res.status(204).send();
+    } catch (error) {
+      logger.error('Delete dashboard error', { error });
+      res.status(500).json({ error: 'Failed to delete dashboard' });
+    }
+  }
+
   // Report handlers
   private async handleListReports(req: express.Request, res: express.Response): Promise<void> {
     try {
@@ -592,6 +617,48 @@ export class AnalyticsService {
     }
   }
 
+  private async handleGetReport(req: express.Request, res: express.Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const report = await this.dataLayer.firestoreGet('reports', id);
+      
+      if (!report) {
+        res.status(404).json({ error: 'Report not found' });
+        return;
+      }
+      
+      res.json(report);
+    } catch (error) {
+      logger.error('Get report error', { error });
+      res.status(500).json({ error: 'Failed to get report' });
+    }
+  }
+
+  private async handleUpdateReport(req: express.Request, res: express.Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      const report = await this.dataLayer.firestoreUpdate('reports', id, updates);
+      res.json(report);
+    } catch (error) {
+      logger.error('Update report error', { error });
+      res.status(500).json({ error: 'Failed to update report' });
+    }
+  }
+
+  private async handleDeleteReport(req: express.Request, res: express.Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      
+      await this.dataLayer.firestoreDelete('reports', id);
+      res.status(204).send();
+    } catch (error) {
+      logger.error('Delete report error', { error });
+      res.status(500).json({ error: 'Failed to delete report' });
+    }
+  }
+
   private async handleGenerateReport(req: express.Request, res: express.Response): Promise<void> {
     try {
       const { id } = req.params;
@@ -612,6 +679,25 @@ export class AnalyticsService {
     } catch (error) {
       logger.error('Generate report error', { error });
       res.status(500).json({ error: 'Failed to generate report' });
+    }
+  }
+
+  private async handleScheduleReport(req: express.Request, res: express.Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { schedule, shopId } = req.body;
+
+      const report = await this.dataLayer.firestoreGet('reports', id) as Report;
+      if (!report) {
+        res.status(404).json({ error: 'Report not found' });
+        return;
+      }
+
+      await this.scheduleReport(report, schedule, shopId);
+      res.json({ message: 'Report scheduled successfully' });
+    } catch (error) {
+      logger.error('Schedule report error', { error });
+      res.status(500).json({ error: 'Failed to schedule report' });
     }
   }
 
@@ -637,6 +723,39 @@ export class AnalyticsService {
     } catch (error) {
       logger.error('Query error', { error });
       res.status(500).json({ error: 'Failed to execute query' });
+    }
+  }
+
+  private async handleListSavedQueries(req: express.Request, res: express.Response): Promise<void> {
+    try {
+      const queries = await this.dataLayer.firestoreQuery('saved_queries', {
+        orderBy: [{ field: 'createdAt', direction: 'desc' }]
+      });
+      
+      res.json(queries);
+    } catch (error) {
+      logger.error('List saved queries error', { error });
+      res.status(500).json({ error: 'Failed to list saved queries' });
+    }
+  }
+
+  private async handleSaveQuery(req: express.Request, res: express.Response): Promise<void> {
+    try {
+      const { name, description, query, params } = req.body;
+      
+      const savedQuery = await this.dataLayer.firestoreCreate('saved_queries', {
+        name,
+        description,
+        query,
+        params,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      
+      res.status(201).json(savedQuery);
+    } catch (error) {
+      logger.error('Save query error', { error });
+      res.status(500).json({ error: 'Failed to save query' });
     }
   }
 
