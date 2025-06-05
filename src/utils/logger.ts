@@ -27,27 +27,27 @@ const createSimpleLogger = () => {
   };
 
   return {
-    error: (message: string, meta?: any) => {
+    error: (message: string, meta?: Record<string, unknown> | string | number) => {
       if (shouldLog('error')) {
         console.error(`[ERROR] ${new Date().toISOString()} - ${message}`, meta || '');
       }
     },
-    warn: (message: string, meta?: any) => {
+    warn: (message: string, meta?: Record<string, unknown> | string | number) => {
       if (shouldLog('warn')) {
         console.warn(`[WARN] ${new Date().toISOString()} - ${message}`, meta || '');
       }
     },
-    info: (message: string, meta?: any) => {
+    info: (message: string, meta?: Record<string, unknown> | string | number) => {
       if (shouldLog('info')) {
         console.info(`[INFO] ${new Date().toISOString()} - ${message}`, meta || '');
       }
     },
-    debug: (message: string, meta?: any) => {
+    debug: (message: string, meta?: Record<string, unknown> | string | number) => {
       if (shouldLog('debug')) {
         console.debug(`[DEBUG] ${new Date().toISOString()} - ${message}`, meta || '');
       }
     },
-    http: (message: string, meta?: any) => {
+    http: (message: string, meta?: Record<string, unknown> | string | number) => {
       if (shouldLog('http')) {
         console.log(`[HTTP] ${new Date().toISOString()} - ${message}`, meta || '');
       }
