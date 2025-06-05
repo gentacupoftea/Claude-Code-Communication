@@ -134,11 +134,11 @@ export function useSidebar(): SidebarState & SidebarActions {
             ...initialState,
             ...parsed,
             // サンプルプロジェクトを追加
-            sections: initialState.sections.map(section => {
+            sections: initialState.sections.map((section: any) => {
               if (section.id === 'projects') {
                 return {
                   ...section,
-                  folders: section.folders.map(folder => ({
+                  folders: section.folders.map((folder: any) => ({
                     ...folder,
                     projects: sampleProjects.filter(p => p.type === 'chat' || p.type === 'notebook')
                   }))
@@ -147,7 +147,7 @@ export function useSidebar(): SidebarState & SidebarActions {
               if (section.id === 'analytics') {
                 return {
                   ...section,
-                  folders: section.folders.map(folder => ({
+                  folders: section.folders.map((folder: any) => ({
                     ...folder,
                     projects: sampleProjects.filter(p => p.type === 'analytics' || p.type === 'dashboard')
                   }))
@@ -167,11 +167,11 @@ export function useSidebar(): SidebarState & SidebarActions {
     // 初期状態にサンプルプロジェクトを追加
     return {
       ...initialState,
-      sections: initialState.sections.map(section => {
+      sections: initialState.sections.map((section: any) => {
         if (section.id === 'projects') {
           return {
             ...section,
-            folders: section.folders.map(folder => ({
+            folders: section.folders.map((folder: any) => ({
               ...folder,
               projects: sampleProjects.filter(p => p.type === 'chat' || p.type === 'notebook')
             }))
