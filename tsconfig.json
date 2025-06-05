@@ -29,23 +29,11 @@
     "admin-dashboard/**/*",
     "admin_dashboard/**/*",
     "cypress/**/*",
-    "src/tests/**/*",
-    "frontend-v2/**/*",
-    "src/orchestrator/**/*",
-    "src/server.ts",
-    "src/optimization/**/*",
-    "multiLLM_system/**/*",
-    "app/**/*",
-    "src/hooks/**/*",
-    "src/components/**/*",
-    "src/lib/**/*",
+    "src/tests/mocks/**/*",
+    "src/tests/setup.ts",
+    "src/tests/utils/renderWithProviders.tsx",
     "persona-analysis/**/*",
-    "src/cloud/**/*",
-    "src/database/**/*",
-    "src/config/**/*",
-    "src/ai/**/*",
-    "src/ai_chat/**/*",
-    "src/api/**/*",
-    "scripts/**/*"
+    "frontend-v2/**/*",
+    "multiLLM_system/**/*"
   ]
 }

@@ -62,7 +62,7 @@ export class ChartRenderer {
       return chartImage;
     } catch (error) {
       console.error('Chart rendering failed:', error);
-      throw new Error(`Failed to render chart: ${error.message}`);
+      throw new Error(`Failed to render chart: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   
@@ -80,7 +80,9 @@ export class ChartRenderer {
     // If cache is full, remove oldest item
     if (this.chartCache.size >= this.CACHE_MAX_SIZE) {
       const oldestKey = this.chartCache.keys().next().value;
-      this.chartCache.delete(oldestKey);
+      if (oldestKey !== undefined) {
+        this.chartCache.delete(oldestKey);
+      }
     }
     
     // Add to cache
