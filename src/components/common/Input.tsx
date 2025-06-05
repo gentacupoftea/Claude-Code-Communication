@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -18,7 +18,8 @@ const Input: React.FC<InputProps> = ({
   id,
   ...props
 }) => {
-  const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+  const generatedId = useId();
+  const inputId = id || generatedId;
 
   const baseStyles = 'w-full px-3 py-2 bg-white/10 border rounded-lg transition-colors focus:outline-none';
   const normalStyles = 'border-white/20 focus:border-[#1ABC9C] text-white placeholder-gray-400';
