@@ -14,6 +14,9 @@ export interface ProjectFolder {
   };
 }
 
+// 互換性のためのエイリアス
+export type SidebarProject = ProjectFolder;
+
 export interface SidebarItem {
   id: string;
   label: string;

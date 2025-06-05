@@ -1,11 +1,16 @@
 import { useState, useCallback, useEffect } from 'react';
-// import { SidebarState, SidebarActions, SidebarProject, SidebarFolder } from '@/src/types/sidebar';
-import { ProjectFolder, SidebarItem, SidebarSection } from '@/src/types/sidebar'; // SidebarProject を削除し ProjectFolder をインポート。他はコメントアウト
+import { ProjectFolder } from '@/src/types/sidebar';
+import { 
+  SidebarState, 
+  SidebarActions, 
+  SidebarFolder, 
+  SidebarSectionState,
+  UseSidebarReturn 
+} from '@/src/types/sidebar-hook';
 
 const STORAGE_KEY = 'conea-sidebar-state';
 
-// initialState の型注釈を一旦 any に変更 (SidebarState がないため)
-const initialState: any = {
+const initialState: SidebarState = {
   isCollapsed: false,
   selectedProjectId: undefined,
   searchQuery: '',
@@ -67,8 +72,8 @@ const initialState: any = {
   starredProjects: []
 };
 
-// デモ用のサンプルプロジェクト (型を ProjectFolder[] に)
-const sampleProjects: any[] = [
+// デモ用のサンプルプロジェクト
+const sampleProjects: ProjectFolder[] = [
   {
     id: '1',
     name: 'AI チャットボット開発',
@@ -123,9 +128,8 @@ const sampleProjects: any[] = [
   }
 ];
 
-// useSidebar の戻り値の型注釈を一旦 any に変更 (SidebarState, SidebarActions がないため)
-export function useSidebar(): any {
-  const [state, setState] = useState<any>(() => { // SidebarState がないので any
+export function useSidebar(): UseSidebarReturn {
+  const [state, setState] = useState<SidebarState>(() => {
     // ローカルストレージから状態を復元
     if (typeof window !== 'undefined') {
       try {
@@ -136,29 +140,29 @@ export function useSidebar(): any {
             ...initialState,
             ...parsed,
             // サンプルプロジェクトを追加
-            sections: initialState.sections.map((section: any) => {
+            sections: initialState.sections.map((section: SidebarSectionState) => {
               if (section.id === 'projects') {
                 return {
                   ...section,
-                  folders: section.folders.map((folder: any) => ({
+                  folders: section.folders.map((folder: SidebarFolder) => ({
                     ...folder,
-                    projects: sampleProjects.filter((p: ProjectFolder) => p.type === 'chat' || p.type === 'project') // p の型を ProjectFolder に。notebook を project に変更
+                    projects: sampleProjects.filter((p: ProjectFolder) => p.type === 'chat' || p.type === 'project')
                   }))
                 };
               }
               if (section.id === 'analytics') {
                 return {
                   ...section,
-                  folders: section.folders.map((folder: any) => ({
+                  folders: section.folders.map((folder: SidebarFolder) => ({
                     ...folder,
-                    projects: sampleProjects.filter((p: ProjectFolder) => p.type === 'project') // p の型を ProjectFolder に。analytics や dashboard を project に変更
+                    projects: sampleProjects.filter((p: ProjectFolder) => p.type === 'project')
                   }))
                 };
               }
               return section;
             }),
             recentProjects: sampleProjects.slice(0, 3),
-            starredProjects: sampleProjects.filter((p: any) => p.isStarred) // ここは一旦 any のまま
+            starredProjects: sampleProjects.filter((p: ProjectFolder) => p.metadata?.tags?.includes('starred'))
           };
         }
       } catch (error) {
@@ -169,29 +173,29 @@ export function useSidebar(): any {
     // 初期状態にサンプルプロジェクトを追加
     return {
       ...initialState,
-      sections: initialState.sections.map((section: any) => {
+      sections: initialState.sections.map((section: SidebarSectionState) => {
         if (section.id === 'projects') {
           return {
             ...section,
-            folders: section.folders.map((folder: any) => ({
+            folders: section.folders.map((folder: SidebarFolder) => ({
               ...folder,
-              projects: sampleProjects.filter((p: ProjectFolder) => p.type === 'chat' || p.type === 'project') // p の型を ProjectFolder に。notebook を project に変更
+              projects: sampleProjects.filter((p: ProjectFolder) => p.type === 'chat' || p.type === 'project')
             }))
           };
         }
         if (section.id === 'analytics') {
           return {
             ...section,
-            folders: section.folders.map((folder: any) => ({
+            folders: section.folders.map((folder: SidebarFolder) => ({
               ...folder,
-              projects: sampleProjects.filter((p: ProjectFolder) => p.type === 'project') // p の型を ProjectFolder に。analytics や dashboard を project に変更
+              projects: sampleProjects.filter((p: ProjectFolder) => p.type === 'project')
             }))
           };
         }
         return section;
       }),
       recentProjects: sampleProjects.slice(0, 3),
-      starredProjects: sampleProjects.filter((p: any) => p.isStarred) // ここは一旦 any のまま
+      starredProjects: sampleProjects.filter((p: ProjectFolder) => p.metadata?.tags?.includes('starred'))
     };
   });
 
@@ -207,13 +211,13 @@ export function useSidebar(): any {
   }, [state]);
 
   const toggleSidebar = useCallback(() => {
-    setState((prev: any) => ({ ...prev, isCollapsed: !prev.isCollapsed })); // prev の型を any に
+    setState((prev: SidebarState) => ({ ...prev, isCollapsed: !prev.isCollapsed }));
   }, []);
 
   const toggleSection = useCallback((sectionId: string) => {
-    setState((prev: any) => ({ // prev の型を any に
+    setState((prev: SidebarState) => ({
       ...prev,
-      sections: prev.sections.map((section: any) => // section の型を any に
+      sections: prev.sections.map((section: SidebarSectionState) =>
         section.id === sectionId
           ? { ...section, isCollapsed: !section.isCollapsed }
           : section
@@ -222,11 +226,11 @@ export function useSidebar(): any {
   }, []);
 
   const toggleFolder = useCallback((folderId: string) => {
-    setState((prev: any) => ({ // prev の型を any に
+    setState((prev: SidebarState) => ({
       ...prev,
-      sections: prev.sections.map((section: any) => ({ // section の型を any に
+      sections: prev.sections.map((section: SidebarSectionState) => ({
         ...section,
-        folders: section.folders.map((folder: any) => // folder の型を any に
+        folders: section.folders.map((folder: SidebarFolder) =>
           folder.id === folderId
             ? { ...folder, isExpanded: !folder.isExpanded }
             : folder
@@ -236,15 +240,15 @@ export function useSidebar(): any {
   }, []);
 
   const selectProject = useCallback((projectId: string) => {
-    setState((prev: any) => { // prev の型を any に
+    setState((prev: SidebarState) => {
       // 最近のプロジェクトリストを更新
-      const allProjects = prev.sections.flatMap((s: any) => s.folders.flatMap((f: any) => f.projects)); // s, f の型を any に
-      const selectedProject = allProjects.find((p: ProjectFolder) => p.id === projectId); // p の型を ProjectFolder に
+      const allProjects = prev.sections.flatMap((s: SidebarSectionState) => s.folders.flatMap((f: SidebarFolder) => f.projects));
+      const selectedProject = allProjects.find((p: ProjectFolder) => p.id === projectId);
       
       if (selectedProject) {
         const updatedRecent = [
           { ...selectedProject, lastAccessed: new Date() },
-          ...prev.recentProjects.filter((p: ProjectFolder) => p.id !== projectId) // p の型を ProjectFolder に
+          ...prev.recentProjects.filter((p: ProjectFolder) => p.id !== projectId)
         ].slice(0, 5);
 
         return {
@@ -295,15 +299,15 @@ export function useSidebar(): any {
   }, []);
 
   const starProject = useCallback((projectId: string) => {
-    setState((prev: any) => {
-      const allProjects = prev.sections.flatMap((s: any) => s.folders.flatMap((f: any) => f.projects));
+    setState((prev: SidebarState) => {
+      const allProjects = prev.sections.flatMap((s: SidebarSectionState) => s.folders.flatMap((f: SidebarFolder) => f.projects));
       const project = allProjects.find((p: ProjectFolder) => p.id === projectId);
       
       return {
         ...prev,
-        sections: prev.sections.map((section: any) => ({
+        sections: prev.sections.map((section: SidebarSectionState) => ({
           ...section,
-          folders: section.folders.map((folder: any) => ({
+          folders: section.folders.map((folder: SidebarFolder) => ({
             ...folder,
             projects: folder.projects.map((p: ProjectFolder) =>
               p.id === projectId ? { ...p, metadata: { ...p.metadata, tags: [...(p.metadata?.tags || []), 'starred'] } } : p
@@ -318,14 +322,14 @@ export function useSidebar(): any {
   }, []);
 
   const unstarProject = useCallback((projectId: string) => {
-    setState((prev: any) => ({
+    setState((prev: SidebarState) => ({
       ...prev,
-      sections: prev.sections.map((section: any) => ({
+      sections: prev.sections.map((section: SidebarSectionState) => ({
         ...section,
-        folders: section.folders.map(folder => ({
+        folders: section.folders.map((folder: SidebarFolder) => ({
           ...folder,
           projects: folder.projects.map(p =>
-            p.id === projectId ? { ...p, metadata: { ...p.metadata, tags: p.metadata?.tags?.filter((t: string) => t !== 'starred') } } : p
+            p.id === projectId ? { ...p, metadata: { ...p.metadata, tags: p.metadata?.tags?.filter(t => t !== 'starred') } } : p
           )
         }))
       })),
@@ -396,12 +400,12 @@ export function useSidebar(): any {
     setState(prev => ({ ...prev, searchQuery: query }));
   }, []);
 
-  const setFilter = useCallback((filter: any['activeFilter']) => {
+  const setFilter = useCallback((filter: SidebarState['activeFilter']) => {
     setState(prev => ({ ...prev, activeFilter: filter }));
   }, []);
 
   const createFolder = useCallback((sectionId: string, name: string) => {
-    const newFolder: any = {
+    const newFolder: SidebarFolder = {
       id: `folder-${Date.now()}`,
       name,
       projects: [],
@@ -432,11 +436,11 @@ export function useSidebar(): any {
   }, []);
 
   const renameFolder = useCallback((folderId: string, newName: string) => {
-    setState((prev: any) => ({
+    setState((prev: SidebarState) => ({
       ...prev,
-      sections: prev.sections.map((section: any) => ({
+      sections: prev.sections.map((section: SidebarSectionState) => ({
         ...section,
-        folders: section.folders.map((folder: any) =>
+        folders: section.folders.map((folder: SidebarFolder) =>
           folder.id === folderId ? { ...folder, name: newName } : folder
         )
       }))
