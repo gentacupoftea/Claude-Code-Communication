@@ -1472,6 +1472,39 @@
           "parentTaskId": 41
         }
       ]
+    },
+    {
+      "id": 42,
+      "title": "UI/UX最終ブラッシュアップとレスポンシブ対応強化 (PR #62)",
+      "description": "MVPリリースに向けたUI/UXの最終改善作業。デザインシステム強化、共通コンポーネント実装、レスポンシブ対応、アクセシビリティ準拠。PR #62に対応。",
+      "details": "",
+      "testStrategy": "",
+      "status": "in-progress",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 43,
+      "title": "E2Eテストカバレッジ向上と主要ユースケース網羅 (PR #61)",
+      "description": "MVPリリースに向けたE2Eテストスイートの拡充と品質向上。主要ユーザーフロー及びクリティカルパスの網羅。PR #61に対応。",
+      "details": "",
+      "testStrategy": "",
+      "status": "review",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 44,
+      "title": "デプロイメントプロセス最終確認とドキュメント整備 (PR #63)",
+      "description": "MVPリリースに向けたデプロイメントプロセスの最終確認、ドキュメント整備、スクリプト改善。PR #63に対応。",
+      "details": "",
+      "testStrategy": "",
+      "status": "in-progress",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
     }
   ]
 }

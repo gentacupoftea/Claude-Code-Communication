@@ -1,0 +1,11 @@
+# Task ID: 43
+# Title: E2Eテストカバレッジ向上と主要ユースケース網羅 (PR #61)
+# Status: review
+# Dependencies: None
+# Priority: high
+# Description: MVPリリースに向けたE2Eテストスイートの拡充と品質向上。主要ユーザーフロー及びクリティカルパスの網羅。PR #61に対応。
+# Details:
+
+
+# Test Strategy:
+

@@ -1,0 +1,11 @@
+# Task ID: 44
+# Title: デプロイメントプロセス最終確認とドキュメント整備 (PR #63)
+# Status: in-progress
+# Dependencies: None
+# Priority: high
+# Description: MVPリリースに向けたデプロイメントプロセスの最終確認、ドキュメント整備、スクリプト改善。PR #63に対応。
+# Details:
+
+
+# Test Strategy:
+

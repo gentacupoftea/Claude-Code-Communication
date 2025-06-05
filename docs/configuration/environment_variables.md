@@ -48,13 +48,13 @@ SESSION_TIMEOUT=3600
 #### PostgreSQL
 
 ```bash
-# 開発環境
-DATABASE_URL=postgresql://postgres:password@localhost:5432/conea_dev
+# 開発環境 (docker-compose.ymlに合わせて修正)
+DATABASE_URL=postgresql://conea:conea123@localhost:5432/conea
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
-DATABASE_NAME=conea_dev
-DATABASE_USER=postgres
-DATABASE_PASSWORD=password
+DATABASE_NAME=conea
+DATABASE_USER=conea
+DATABASE_PASSWORD=conea123
 
 # 本番環境（例）
 DATABASE_URL=postgresql://user:pass@db.example.com:5432/conea_prod
@@ -410,7 +410,11 @@ postgresql://[user[:password]@][host][:port][/dbname][?param1=value1&...]
 
 # デバッグ
 echo $DATABASE_URL
-npm run db:test-connection
+# TODO: db:test-connection コマンド実装後に有効化
+# npm run db:test-connection
+
+# 現在の接続テスト方法
+docker-compose exec postgres pg_isready -U postgres || echo "PostgreSQL接続を確認してください"
 ```
 
 #### 2. Redis接続エラー
@@ -475,7 +479,6 @@ diff .env.staging .env.production
 ## 関連ドキュメント
 
 - [デプロイメントガイド](../infrastructure/deployment_guide.md)
-- [セキュリティガイド](../security/security_guide.md)
 - [ロールバック手順](../infrastructure/rollback_procedures.md)
 
 ---

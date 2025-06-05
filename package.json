@@ -21,8 +21,11 @@
     "test:e2e:projects": "cypress run --spec 'cypress/e2e/projects.cy.ts'",
     "test:e2e:api": "cypress run --spec 'cypress/e2e/api-settings.cy.ts'",
     "test:e2e:cache": "cypress run --spec 'cypress/e2e/cache.cy.ts'",
+    "test:e2e:accessibility": "cypress run --spec 'cypress/e2e/accessibility.cy.ts'",
+    "test:e2e:performance": "cypress run --spec 'cypress/e2e/performance.cy.ts'",
     "test:e2e:chrome": "cypress run --browser chrome",
     "test:e2e:firefox": "cypress run --browser firefox",
+    "test:e2e:comprehensive": "cypress run --spec 'cypress/e2e/**/*.cy.ts' --browser chrome",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
     "cypress:verify": "cypress verify"

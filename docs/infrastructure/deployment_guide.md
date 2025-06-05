@@ -15,16 +15,23 @@
 
 ### 環境変数の準備
 
+⚠️ **セキュリティ重要**: 以下の機密情報は絶対にコードにハードコーディングしないでください。
+
 詳細は `docs/configuration/environment_variables.md` を参照してください。
 
 ```bash
-# 必須環境変数の例
-ANTHROPIC_API_KEY=your-claude-api-key
-OPENAI_API_KEY=your-openai-api-key
-DATABASE_PASSWORD=secure-password
-JWT_SECRET=your-jwt-secret
+# 必須環境変数の例（実際の値に置き換えてください）
+ANTHROPIC_API_KEY=sk-ant-your-actual-key-here
+OPENAI_API_KEY=sk-your-actual-openai-key-here
+DATABASE_PASSWORD=your-secure-database-password
+JWT_SECRET=your-strong-jwt-secret-minimum-32-chars
 NODE_ENV=production
 ```
+
+🔒 **セキュリティベストプラクティス**:
+- 本番環境では環境変数管理サービス（AWS Secrets Manager、Google Secret Manager等）を使用
+- `.env`ファイルは`.gitignore`に必ず追加
+- パスワードは最低16文字、JWT秘密鍵は最低32文字を推奨
 
 ## デプロイメント方法
 
@@ -34,7 +41,7 @@ NODE_ENV=production
 
 ```bash
 # リポジトリのクローン・更新
-git clone https://github.com/your-org/conea-integration.git
+git clone https://github.com/gentacupoftea/conea-integration.git
 cd conea-integration
 git pull origin main
 
@@ -62,7 +69,7 @@ curl http://localhost:3000/health
 curl http://localhost:3000/api/status
 
 # データベース接続確認
-docker-compose exec backend npm run db:ping
+docker-compose exec conea-multillm curl -f http://localhost:3000/health
 
 # Redis接続確認
 docker-compose exec redis redis-cli ping
@@ -187,6 +194,35 @@ pm2 startup
 - **データベース接続**: `GET /api/db/health`
 - **Redis接続**: `GET /api/cache/health`
 
+### 自動監視設定
+
+`deploy-improved.sh`スクリプトは本番環境で自動的に以下の監視を設定します：
+
+```bash
+# 継続的ヘルスチェック監視
+HEALTH_CHECK_INTERVAL=60 # 60秒間隔
+SLACK_WEBHOOK_URL=your-slack-webhook ./deploy-improved.sh production
+
+# 監視プロセスの確認
+ps aux | grep health-monitor
+cat logs/health-monitor.log
+
+# 監視停止
+kill $(cat logs/health-monitor.pid)
+```
+
+### アラート設定
+
+Slack/Teams通知を有効にするには、環境変数を設定：
+
+```bash
+# Slack通知の設定
+export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+
+# Teams通知の設定（オプション）
+export TEAMS_WEBHOOK_URL="https://outlook.office.com/webhook/YOUR/TEAMS/WEBHOOK"
+```
+
 ### ログ管理
 
 ```bash
@@ -194,7 +230,7 @@ pm2 startup
 docker-compose logs -f [サービス名]
 
 # 特定サービスのログ
-docker-compose logs -f backend
+docker-compose logs -f conea-multillm
 docker-compose logs -f nginx
 
 # ログファイルの保存場所
@@ -227,7 +263,7 @@ Prometheusメトリクスは以下のエンドポイントで確認できます�
 
 ```bash
 # 接続確認
-docker-compose exec backend npm run db:ping
+docker-compose exec postgres pg_isready -U conea -d conea
 
 # データベースコンテナの状態確認
 docker-compose ps postgres
@@ -278,6 +314,49 @@ docker stats
 # 1. 不要なコンテナの停止
 # 2. docker-compose.ymlのメモリ制限調整
 # 3. スワップファイルの設定
+```
+
+#### 5. 環境変数読み込みエラー
+
+```bash
+# 環境変数の確認
+docker-compose config
+
+# .envファイルの形式確認
+cat .env | grep -v '^#' | grep -v '^$'
+
+# 解決策
+# 1. .envファイルの存在確認
+# 2. 変数名の重複チェック
+# 3. 特殊文字のエスケープ確認
+```
+
+#### 6. SSL証明書エラー（本番環境）
+
+```bash
+# 証明書の有効性確認
+openssl x509 -in ssl/certificate.crt -text -noout -dates
+
+# 解決策
+# 1. 証明書の期限確認
+# 2. 中間証明書の配置確認
+# 3. Let's Encrypt自動更新の設定
+certbot renew --dry-run
+```
+
+#### 7. デプロイスクリプト実行エラー
+
+```bash
+# スクリプトの実行権限確認
+ls -la deploy-improved.sh
+
+# 解決策
+# 1. 実行権限の付与
+chmod +x deploy-improved.sh
+# 2. 必要なコマンドの確認
+./deploy-improved.sh --help
+# 3. ドライランでの事前確認
+./deploy-improved.sh production --dry-run
 ```
 
 ### ログ分析のためのコマンド
@@ -383,10 +462,9 @@ cp docker-compose.yml backup/docker-compose.yml.$(date +%Y%m%d)
 
 ## 関連ドキュメント
 
-- [環境変数設定ガイド](./environment_variables.md)
+- [環境変数設定ガイド](../configuration/environment_variables.md)
 - [ロールバック手順](./rollback_procedures.md)
 - [リリースチェックリスト](../developer-guide/release_checklist.md)
-- [セキュリティガイド](../security/security_guide.md)
 
 ---
 

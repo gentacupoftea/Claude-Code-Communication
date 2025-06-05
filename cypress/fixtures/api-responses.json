@@ -1,0 +1,82 @@
+{
+  "standardHeaders": {
+    "Content-Type": "application/json",
+    "X-API-Version": "1.0",
+    "X-Rate-Limit-Remaining": "100",
+    "X-Request-ID": "req-{{timestamp}}"
+  },
+  "errorFormats": {
+    "validation": {
+      "error": "validation_error",
+      "message": "{{field}} validation failed",
+      "details": {
+        "field": "{{field}}",
+        "code": "{{errorCode}}",
+        "expected": "{{expectedFormat}}"
+      }
+    },
+    "authentication": {
+      "error": "authentication_failed",
+      "message": "Invalid credentials provided",
+      "code": 401
+    },
+    "authorization": {
+      "error": "insufficient_permissions",
+      "message": "Access denied for this resource",
+      "code": 403
+    },
+    "notFound": {
+      "error": "resource_not_found",
+      "message": "The requested resource was not found",
+      "code": 404
+    },
+    "rateLimit": {
+      "error": "rate_limit_exceeded",
+      "message": "Rate limit exceeded. Please try again later.",
+      "code": 429,
+      "retryAfter": 60
+    },
+    "serverError": {
+      "error": "internal_server_error",
+      "message": "An unexpected error occurred",
+      "code": 500
+    }
+  },
+  "successFormats": {
+    "created": {
+      "status": "created",
+      "message": "Resource created successfully",
+      "data": "{{resourceData}}"
+    },
+    "updated": {
+      "status": "updated",
+      "message": "Resource updated successfully",
+      "data": "{{resourceData}}"
+    },
+    "deleted": {
+      "status": "deleted",
+      "message": "Resource deleted successfully"
+    },
+    "retrieved": {
+      "status": "success",
+      "data": "{{resourceData}}"
+    }
+  },
+  "commonResponses": {
+    "health": {
+      "status": "healthy",
+      "timestamp": "{{timestamp}}",
+      "version": "1.0.0",
+      "services": {
+        "database": "up",
+        "cache": "up",
+        "external_apis": "up"
+      }
+    },
+    "maintenance": {
+      "status": "maintenance",
+      "message": "System is under maintenance",
+      "estimatedDowntime": "15 minutes"
+    }
+  }
+}
