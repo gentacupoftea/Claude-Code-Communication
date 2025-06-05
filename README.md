@@ -242,6 +242,94 @@ GitHub Actionsによる自動デプロイ:
 3. **ベンチマーク** - 性能テスト実行
 4. **デプロイ** - ステージング/本番環境へのデプロイ
 
+## 🎨 UIコンポーネント
+
+### Button コンポーネント
+
+再利用可能なボタンコンポーネント。4種類のバリアント、3種類のサイズ、ローディング状態をサポート。
+
+```tsx
+import Button from '@/src/components/common/Button';
+import { ChevronRight, Plus } from 'lucide-react';
+
+// 基本的な使用法
+<Button>クリック</Button>
+
+// バリアント
+<Button variant="primary">プライマリ</Button>
+<Button variant="secondary">セカンダリ</Button>
+<Button variant="outline">アウトライン</Button>
+<Button variant="ghost">ゴースト</Button>
+
+// サイズ
+<Button size="sm">小</Button>
+<Button size="md">中</Button>
+<Button size="lg">大</Button>
+
+// ローディング状態
+<Button loading>処理中...</Button>
+
+// アイコン付き
+<Button leftIcon={<Plus />}>追加</Button>
+<Button rightIcon={<ChevronRight />}>次へ</Button>
+
+// 全幅
+<Button fullWidth>全幅ボタン</Button>
+```
+
+### Input コンポーネント
+
+アクセシブルで再利用可能な入力フィールドコンポーネント。
+
+```tsx
+import Input from '@/src/components/common/Input';
+import { Mail, Search } from 'lucide-react';
+
+// 基本的な使用法
+<Input placeholder="テキストを入力" />
+
+// ラベル付き
+<Input label="メールアドレス" type="email" />
+
+// エラー表示
+<Input 
+  label="パスワード" 
+  type="password" 
+  error="パスワードは8文字以上で入力してください" 
+/>
+
+// アイコン付き
+<Input 
+  leftIcon={<Mail />}
+  placeholder="email@example.com"
+/>
+
+<Input 
+  rightIcon={<Search />}
+  placeholder="検索..."
+/>
+
+// 全幅
+<Input fullWidth label="フルネーム" />
+```
+
+#### Props
+
+**Button**
+- `variant`: `'primary' | 'secondary' | 'outline' | 'ghost'` (デフォルト: 'primary')
+- `size`: `'sm' | 'md' | 'lg'` (デフォルト: 'md')
+- `loading`: `boolean` (デフォルト: false)
+- `leftIcon`: `React.ReactNode`
+- `rightIcon`: `React.ReactNode`
+- `fullWidth`: `boolean` (デフォルト: false)
+
+**Input**
+- `label`: `string`
+- `error`: `string`
+- `leftIcon`: `React.ReactNode`
+- `rightIcon`: `React.ReactNode`
+- `fullWidth`: `boolean` (デフォルト: false)
+
 ## 📝 ログとトラブルシューティング
 
 ### ログ確認
