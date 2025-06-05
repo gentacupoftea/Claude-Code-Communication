@@ -52,7 +52,7 @@ export class ChartProcessor {
         // Replace with error message
         processedText = processedText.replace(
           cmd.command,
-          `\`\`\`\nChart generation failed: ${error.message}\n\`\`\``
+          `\`\`\`\nChart generation failed: ${error instanceof Error ? error.message : String(error)}\n\`\`\``
         );
       }
     }
@@ -66,7 +66,7 @@ export class ChartProcessor {
    * @returns Example chart code as a string
    */
   generateExampleChartCode(chartType: string = 'bar'): string {
-    const examples = {
+    const examples: Record<string, string> = {
       bar: `\`\`\`chart
 {
   "type": "bar",
