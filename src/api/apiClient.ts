@@ -46,7 +46,7 @@ class ApiClient {
   // リクエストインターセプター設定
   private setupRequestInterceptor(): void {
     this.instance.interceptors.request.use(
-      async (config) => {
+      async (config: AxiosRequestConfig) => {
         if (config.headers && config.headers['x-skip-auth'] === 'true') {
           delete config.headers['x-skip-auth'];
           return config;
@@ -63,7 +63,7 @@ class ApiClient {
         
         return config;
       },
-      (error) => {
+      (error: any) => {
         return Promise.reject(error);
       }
     );
@@ -72,7 +72,7 @@ class ApiClient {
   // レスポンスインターセプター設定
   private setupResponseInterceptor(): void {
     this.instance.interceptors.response.use(
-      (response) => {
+      (response: AxiosResponse) => {
         return response;
       },
       async (error: AxiosError) => {

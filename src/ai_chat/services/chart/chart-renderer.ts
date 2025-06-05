@@ -62,7 +62,7 @@ export class ChartRenderer {
       return chartImage;
     } catch (error) {
       console.error('Chart rendering failed:', error);
-      throw new Error(`Failed to render chart: ${error.message}`);
+      throw new Error(`Failed to render chart: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   
