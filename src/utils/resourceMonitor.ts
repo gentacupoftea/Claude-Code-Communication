@@ -428,7 +428,7 @@ export class ResourceMonitor extends EventEmitter {
         });
       }
     } catch (error) {
-      logger.error('GC実行中にエラーが発生しました:', error);
+      logger.error('GC実行中にエラーが発生しました:', error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -449,7 +449,7 @@ export class ResourceMonitor extends EventEmitter {
    */
   public updateThresholds(thresholds: Partial<MonitoringThresholds>): void {
     this.thresholds = { ...this.thresholds, ...thresholds };
-    logger.info('監視閾値を更新しました', this.thresholds);
+    logger.info('監視閾値を更新しました', { thresholds: this.thresholds });
   }
 }
 
