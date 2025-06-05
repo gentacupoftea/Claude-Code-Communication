@@ -3,7 +3,7 @@
  * API呼び出しを行うための基本クラスと関数
  */
 
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { API_CONFIG } from './config';
 import { ApiResponse, ApiRequestOptions, ErrorCode } from './types';
 import { getAccessToken, refreshAccessToken, clearAuthTokens } from './authService';
@@ -46,7 +46,7 @@ class ApiClient {
   // リクエストインターセプター設定
   private setupRequestInterceptor(): void {
     this.instance.interceptors.request.use(
-      async (config: AxiosRequestConfig) => {
+      async (config: InternalAxiosRequestConfig) => {
         if (config.headers && config.headers['x-skip-auth'] === 'true') {
           delete config.headers['x-skip-auth'];
           return config;
