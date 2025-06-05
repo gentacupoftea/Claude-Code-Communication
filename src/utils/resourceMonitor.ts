@@ -8,10 +8,7 @@
 import { EventEmitter } from 'events';
 import { logger } from './logger';
 
-// Global型の拡張
-declare global {
-  var gc: (() => void) | undefined;
-}
+// Global型の拡張は既に下部で定義済み
 
 /**
  * メモリ使用量レポートインターフェース

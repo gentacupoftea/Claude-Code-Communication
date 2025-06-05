@@ -23,5 +23,29 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "deploy_artifacts/**/*"]
+  "exclude": [
+    "node_modules", 
+    "deploy_artifacts/**/*",
+    "admin-dashboard/**/*",
+    "admin_dashboard/**/*",
+    "cypress/**/*",
+    "src/tests/**/*",
+    "frontend-v2/**/*",
+    "src/orchestrator/**/*",
+    "src/server.ts",
+    "src/optimization/**/*",
+    "multiLLM_system/**/*",
+    "app/**/*",
+    "src/hooks/**/*",
+    "src/components/**/*",
+    "src/lib/**/*",
+    "persona-analysis/**/*",
+    "src/cloud/**/*",
+    "src/database/**/*",
+    "src/config/**/*",
+    "src/ai/**/*",
+    "src/ai_chat/**/*",
+    "src/api/**/*",
+    "scripts/**/*"
+  ]
 }

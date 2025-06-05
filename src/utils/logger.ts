@@ -27,29 +27,29 @@ const createSimpleLogger = () => {
   };
 
   return {
-    error: (message: string) => {
+    error: (message: string, meta?: any) => {
       if (shouldLog('error')) {
-        console.error(`[ERROR] ${new Date().toISOString()} - ${message}`);
+        console.error(`[ERROR] ${new Date().toISOString()} - ${message}`, meta || '');
       }
     },
-    warn: (message: string) => {
+    warn: (message: string, meta?: any) => {
       if (shouldLog('warn')) {
-        console.warn(`[WARN] ${new Date().toISOString()} - ${message}`);
+        console.warn(`[WARN] ${new Date().toISOString()} - ${message}`, meta || '');
       }
     },
-    info: (message: string) => {
+    info: (message: string, meta?: any) => {
       if (shouldLog('info')) {
-        console.info(`[INFO] ${new Date().toISOString()} - ${message}`);
+        console.info(`[INFO] ${new Date().toISOString()} - ${message}`, meta || '');
       }
     },
-    debug: (message: string) => {
+    debug: (message: string, meta?: any) => {
       if (shouldLog('debug')) {
-        console.debug(`[DEBUG] ${new Date().toISOString()} - ${message}`);
+        console.debug(`[DEBUG] ${new Date().toISOString()} - ${message}`, meta || '');
       }
     },
-    http: (message: string) => {
+    http: (message: string, meta?: any) => {
       if (shouldLog('http')) {
-        console.log(`[HTTP] ${new Date().toISOString()} - ${message}`);
+        console.log(`[HTTP] ${new Date().toISOString()} - ${message}`, meta || '');
       }
     }
   };

@@ -99,7 +99,7 @@ export class ResultsComparator {
     );
     
     improved.results.forEach((improvedResult: TestResult) => {
-      const baselineResult = baselineResults.get(improvedResult.questionId);
+      const baselineResult = baselineResults.get(improvedResult.questionId) as TestResult;
       if (baselineResult && improvedResult.scores?.overall && baselineResult.scores?.overall && 
           improvedResult.scores.overall < baselineResult.scores.overall) {
         const decrease = baselineResult.scores.overall - improvedResult.scores.overall;
