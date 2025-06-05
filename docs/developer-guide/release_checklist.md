@@ -22,7 +22,8 @@
   ```bash
   npm audit
   npm audit fix
-  pip audit  # Python依存関係
+  # Python依存関係の脆弱性チェック (pip 21.2+が必要)
+  pip audit || echo "pip audit未対応: safety check実行を推奨"
   ```
 
 - [ ] **開発環境でのローカルビルド成功**
@@ -36,7 +37,11 @@
   ```bash
   docker-compose up -d
   docker-compose ps
-  ./scripts/smoke-test.sh
+  # TODO: smoke-test.sh スクリプト作成後に有効化
+  # ./scripts/smoke-test.sh
+  
+  # 現在の基本ヘルスチェック
+  curl -f http://localhost:3000/health || echo "アプリケーションの起動を確認してください"
   ```
 
 ### 2. コード品質確認
@@ -55,7 +60,7 @@
 
 - [ ] **単体テストカバレッジ80%以上**
   ```bash
-  npm test -- --coverage
+  npm run test:coverage
   # Lines: 80%+, Functions: 80%+, Branches: 80%+
   ```
 
@@ -81,20 +86,32 @@
 
 - [ ] **マイグレーションスクリプト確認**
   ```bash
-  npm run db:migration:status
-  npm run db:migration:validate
+  # TODO: データベースマイグレーション機能が実装されたら有効化
+  # npm run db:migration:status
+  # npm run db:migration:validate
+  
+  # 現在はDockerコンテナのデータベース状態を直接確認
+  docker-compose exec postgres psql -U postgres -l
   ```
 
 - [ ] **バックアップ作成**
   ```bash
-  ./scripts/backup-database.sh
-  # バックアップファイル作成日時確認
+  # TODO: backup-database.sh スクリプト作成後に有効化
+  # ./scripts/backup-database.sh
+  
+  # 現在の手動バックアップ方法
+  mkdir -p backups/
+  docker-compose exec postgres pg_dump -U postgres conea_db > "backups/backup_$(date +%Y%m%d_%H%M%S).sql" 2>/dev/null || echo "データベースバックアップを手動で実施してください"
   ```
 
 - [ ] **テストデータベースでのマイグレーション成功**
   ```bash
-  npm run db:migrate:test
-  npm run db:rollback:test
+  # TODO: データベーステスト機能が実装されたら有効化
+  # npm run db:migrate:test
+  # npm run db:rollback:test
+  
+  # 現在はテスト環境でのコンテナ起動確認
+  docker-compose -f docker-compose.test.yml up -d postgres || echo "テスト用compose設定を準備してください"
   ```
 
 - [ ] **インデックス最適化確認**

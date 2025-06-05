@@ -34,7 +34,7 @@ NODE_ENV=production
 
 ```bash
 # リポジトリのクローン・更新
-git clone https://github.com/your-org/conea-integration.git
+git clone https://github.com/gentacupoftea/conea-integration.git
 cd conea-integration
 git pull origin main
 
@@ -383,10 +383,9 @@ cp docker-compose.yml backup/docker-compose.yml.$(date +%Y%m%d)
 
 ## 関連ドキュメント
 
-- [環境変数設定ガイド](./environment_variables.md)
+- [環境変数設定ガイド](../configuration/environment_variables.md)
 - [ロールバック手順](./rollback_procedures.md)
 - [リリースチェックリスト](../developer-guide/release_checklist.md)
-- [セキュリティガイド](../security/security_guide.md)
 
 ---
 

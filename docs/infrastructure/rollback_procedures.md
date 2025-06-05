@@ -160,15 +160,19 @@ echo "Emergency backup created: $BACKUP_FILE"
 #### 2.3 マイグレーションロールバック
 
 ```bash
+# TODO: マイグレーション機能実装後に有効化
 # 利用可能なマイグレーション確認
-npm run db:migration:status
+# npm run db:migration:status
 
 # 特定バージョンまでロールバック
-TARGET_VERSION="20231201_120000"
-npm run db:migration:down --to=$TARGET_VERSION
+# TARGET_VERSION="20231201_120000"
+# npm run db:migration:down --to=$TARGET_VERSION
 
 # または段階的ロールバック
-npm run db:migration:down --steps=3
+# npm run db:migration:down --steps=3
+
+# 現在は手動でのデータベース状態確認
+docker-compose exec postgres psql -U postgres -c "\d" -d conea_db 2>/dev/null || echo "データベース接続を確認してください"
 ```
 
 #### 2.4 スキーマ復元（重度な場合）
