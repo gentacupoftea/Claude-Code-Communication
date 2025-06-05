@@ -46,7 +46,9 @@ export class TokenCache {
     // キャッシュに追加（容量を超える場合は最も古いエントリを削除）
     if (this.cache.size >= this.maxSize) {
       const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
+      if (oldestKey !== undefined) {
+        this.cache.delete(oldestKey);
+      }
     }
     
     this.cache.set(key, count);

@@ -198,17 +198,20 @@ export const BackendSyncPanel: React.FC = () => {
               </div>
 
               <div className="space-y-3">
-                {Object.entries(healthStatus.services).map(([serviceName, service]) => (
-                  <div key={serviceName} className="flex items-center justify-between">
-                    <span className="text-sm text-white capitalize">{serviceName}</span>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs text-gray-400">{service.responseTime}ms</span>
-                      <div className={`w-2 h-2 rounded-full ${
-                        service.status === 'up' ? 'bg-green-500' : 'bg-red-500'
-                      }`} />
+                {Object.entries(healthStatus.services).map(([serviceName, service]) => {
+                  const serviceData = service as { status: string; responseTime: number };
+                  return (
+                    <div key={serviceName} className="flex items-center justify-between">
+                      <span className="text-sm text-white capitalize">{serviceName}</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-gray-400">{serviceData.responseTime}ms</span>
+                        <div className={`w-2 h-2 rounded-full ${
+                          serviceData.status === 'up' ? 'bg-green-500' : 'bg-red-500'
+                        }`} />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

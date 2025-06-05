@@ -27,11 +27,22 @@ export class AIChatController {
       this.providerManager.getActiveProvider()
     );
     
-    // Add initial system message
-    await this.contextManager.addMessage({
-      role: 'system',
-      content: 'You are a helpful assistant integrated with Conea, a modern e-commerce analytics platform focused on Shopify integrations. Provide concise, accurate responses and help users understand their business data. You have the ability to generate charts when requested using specific syntax.'
-    });
+    // Initialize with system message asynchronously
+    this.initializeSystemMessage();
+  }
+
+  /**
+   * Initialize system message asynchronously
+   */
+  private async initializeSystemMessage(): Promise<void> {
+    try {
+      await this.contextManager.addMessage({
+        role: 'system',
+        content: 'You are a helpful assistant integrated with Conea, a modern e-commerce analytics platform focused on Shopify integrations. Provide concise, accurate responses and help users understand their business data. You have the ability to generate charts when requested using specific syntax.'
+      });
+    } catch (error) {
+      console.error('Failed to initialize system message:', error instanceof Error ? error.message : String(error));
+    }
   }
   
   /**
@@ -105,7 +116,7 @@ export class AIChatController {
       });
     } catch (error) {
       console.error('Chat error:', error);
-      res.status(500).json({ error: `Failed to process message: ${error.message}` });
+      res.status(500).json({ error: `Failed to process message: ${error instanceof Error ? error.message : String(error)}` });
     }
   }
   

@@ -42,7 +42,7 @@ export class ConfigManager extends EventEmitter {
   private configSources: Map<string, ConfigSource> = new Map();
   private schemas: Map<string, ConfigSchema> = new Map();
   private cache: Map<string, { value: any; expires: number }> = new Map();
-  private reloadTimer?: NodeJS.Timer;
+  private reloadTimer?: NodeJS.Timeout;
 
   constructor(options: ConfigManagerOptions) {
     super();

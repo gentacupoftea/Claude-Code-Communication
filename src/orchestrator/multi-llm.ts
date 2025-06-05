@@ -299,7 +299,7 @@ ARIMAモデルとXGBoostのアンサンブルを使用し、以下の結果を�
             results.set(query.id, response);
           } catch (error) {
             console.error(`Error processing query ${query.id}:`, error);
-            results.set(query.id, `Error: ${error.message}`);
+            results.set(query.id, `Error: ${error instanceof Error ? error.message : String(error)}`);
           }
         })
       );

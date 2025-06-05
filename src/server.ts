@@ -136,7 +136,7 @@ app.post('/api/query', async (req, res) => {
     res.status(500).json({
       error: 'Internal server error',
       code: 'QUERY_FAILED',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'An error occurred processing your request'
+      message: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : 'An error occurred processing your request'
     });
   }
 });
@@ -200,7 +200,7 @@ app.post('/api/batch-query', async (req, res) => {
     res.status(500).json({
       error: 'Internal server error',
       code: 'BATCH_QUERY_FAILED',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'An error occurred processing your batch request'
+      message: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : 'An error occurred processing your batch request'
     });
   }
 });
