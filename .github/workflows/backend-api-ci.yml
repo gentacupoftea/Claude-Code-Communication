@@ -6,11 +6,7 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/backend-api-ci.yml'
-  pull_request:
-    branches: [ main, develop ]
-    paths:
-      - 'backend/**'
-      - '.github/workflows/backend-api-ci.yml'
+  # PR時は軽量なpr-checks.ymlが実行されるため、フル実行は省略
 
 env:
   NODE_VERSION: '18'
