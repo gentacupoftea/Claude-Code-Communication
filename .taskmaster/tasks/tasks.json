@@ -411,7 +411,7 @@
           "title": "src/analytics/api/analytics_routes_improved.py: 適切な認証情報設定の実装 (TODO解消)",
           "description": "",
           "details": "<info added on 2025-06-04T16:40:59.138Z>\n## 現状\n- dashboard_routes.py内の認証・認可メカニズムが未実装\n- APIエンドポイントがパブリックアクセス可能な状態\n- 実装予定箇所にはTODOコメントのみ存在\n\n## 影響度\n- 高（リリースブロッカー）\n\n## 対応内容\n1. 親タスク18（特にサブタスク18.8）で実装される認証サービスと連携\n   - JWT検証機能の統合\n   - APIキー検証の実装\n   - 認証ミドルウェアの適用\n2. ダッシュボードAPIエンドポイント群への適切なアクセス制御実装\n   - エンドポイント単位での認証要件定義\n   - 権限レベルに応じたアクセス制御\n\n## 注意事項\n- MVPリリースまでの必須対応項目（最優先：1-2週）\n- サブタスク18.8の実装完了が前提条件\n</info added on 2025-06-04T16:40:59.138Z>",
-          "status": "pending",
+          "status": "done",
           "dependencies": [
             "18.8"
           ],
@@ -422,7 +422,7 @@
           "title": "src/api/dashboard_routes.py: DB接続設定と認証連携の実装 (TODO解消)",
           "description": "",
           "details": "<info added on 2025-06-04T16:41:21.719Z>\n## 現状\n- analytics_routes_improved.py内でDB接続設定がハードコードまたはダミーデータが使用されている\n- 認証連携が未実装の状態\n- コード内にTODOコメントが残っている\n\n## 対応内容\n1. DB接続設定の改善\n   - 環境変数や設定ファイルから安全にDB接続情報を読み込む実装に変更\n   - 機密情報のハードコーディングを排除\n\n2. 認証連携の実装\n   - 親タスク18（特にサブタスク18.8）で実装される認証サービスと連携\n   - APIエンドポイントへの適切なアクセス制御を実装\n   - 認証トークン検証ロジックの追加\n\n3. データ永続化の確認と実装\n   - ダッシュボード設定などの永続化が必要なデータの特定\n   - 適切なDBスキーマ設計と永続化ロジックの実装\n\n## 優先度\n- MVPリリースまでの必須対応項目（最優先：1-2週）\n- サブタスク18.8の実装完了が前提条件\n</info added on 2025-06-04T16:41:21.719Z>\n<info added on 2025-06-04T16:47:52.434Z>\n4. DB永続化ロジックのテスト実施\n   - 実装したダッシュボード設定等のDB永続化ロジックについて単体テストを実施\n   - 認証サービスとの連携を含めた結合テストの実施\n   - エッジケース（接続エラー、タイムアウト等）の処理確認\n   - パフォーマンステストによるクエリ最適化の検証\n</info added on 2025-06-04T16:47:52.434Z>",
-          "status": "pending",
+          "status": "done",
           "dependencies": [
             "18.8"
           ],
@@ -844,7 +844,7 @@
       "description": "ステージング環境でのUAT実施、発見された不具合や改善要望への対応、最終的な品質検証。(既存タスクID 6の情報を統合)",
       "details": "",
       "testStrategy": "",
-      "status": "pending",
+      "status": "done",
       "dependencies": [],
       "priority": "high",
       "subtasks": [
@@ -853,7 +853,7 @@
           "title": "依存ライブラリの脆弱性スキャンとアップデート対応",
           "description": "",
           "details": "",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 18
         },
@@ -862,7 +862,7 @@
           "title": "OWASP Top10 等の主要な脆弱性観点でのセルフチェック",
           "description": "",
           "details": "",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 18
         },
@@ -871,7 +871,7 @@
           "title": "認証・認可フローの再レビューと潜在リスク洗い出し",
           "description": "",
           "details": "",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 18
         },
@@ -880,7 +880,7 @@
           "title": "データ入力バリデーション、出力エンコーディングの網羅的確認",
           "description": "",
           "details": "",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 18
         },
@@ -889,7 +889,7 @@
           "title": "機密情報（APIキー、パスワード等）管理方法の最終確認",
           "description": "",
           "details": "",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 18
         },
@@ -898,7 +898,7 @@
           "title": "セキュリティ診断ツール（SAST/DAST）の実行と結果分析（可能な範囲で）",
           "description": "",
           "details": "",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 18
         },
@@ -907,7 +907,7 @@
           "title": "発見された脆弱性への対応と再テスト",
           "description": "",
           "details": "",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 18
         },
@@ -916,7 +916,7 @@
           "title": "src/google_analytics/dependencies.py: JWT検証、APIキー検証、レート制限の実装 (TODO解消)",
           "description": "",
           "details": "<info added on 2025-06-04T16:40:27.578Z>\n# セキュリティ脆弱性対応: JWT/APIキー検証およびレート制限の実装\n\n## 現状\n- JWT/APIキー検証、レート制限ともにTODOコメントのみのダミー実装\n- 影響度: 高 (リリースブロッカー)\n\n## 実装要件\n1. **JWT検証**\n   - PyJWTライブラリを使用\n   - トークンの発行・検証ロジックを実装\n   - 認証ミドルウェアでの利用を想定\n\n2. **APIキー検証**\n   - APIキーをデータベースで安全に管理（ハッシュ化推奨）\n   - リクエストヘッダー等から受け取ったキーを検証するロジック実装\n\n3. **レート制限**\n   - FastAPI-Limiterなどのライブラリを導入\n   - IPアドレスやAPIキー単位でのレート制限実装\n\n## 優先度\n- MVPリリースまでの必須対応項目\n- 最優先（1-2週）で完了させること\n</info added on 2025-06-04T16:40:27.578Z>",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 18
         },
@@ -925,7 +925,7 @@
           "title": "src/auth/security_service.py: メールサービス連携実装 (TODO解消)",
           "description": "",
           "details": "<info added on 2025-06-04T16:40:42.116Z>\n## 調査レポート概要\n\n**現状:**\n- security_service.pyの主要機能(パスワードハッシュ化等)は実装済み\n- メール送信機能はコンソール出力のダミー実装のまま\n\n**影響度:** 中 (パスワードリセット等の重要機能に影響)\n\n**推奨アクション:**\n- SendGrid等の実メールサービスAPIと連携\n- メール送信機能を正式に実装する\n  - アカウント確認メール\n  - パスワードリセットメール\n  - その他通知メール\n\n**優先度:** MVPリリースまでの必須対応項目 - 中優先（3-4週）\n\n**実装ステップ:**\n1. メールサービスプロバイダー選定（SendGrid推奨）\n2. APIキー取得と環境設定\n3. メールテンプレート作成\n4. security_service.pyのダミー実装を実APIに置き換え\n5. 単体テスト実施\n</info added on 2025-06-04T16:40:42.116Z>",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 18
         },
@@ -934,7 +934,7 @@
           "title": "backend/src/agents/AutoFixer.js: 暗号化アルゴリズムをSHA-256以上に修正 (TODO URGENT解消)",
           "description": "",
           "details": "<info added on 2025-06-04T16:42:33.126Z>\n## セキュリティ脆弱性対応: MD5ハッシュアルゴリズム置換\n\n### 現状\n- `backend/src/agents/AutoFixer.js` 内でセキュリティ強度の低いMD5ハッシュアルゴリズムが使用されている\n- コード内にTODO URGENTコメントあり\n\n### 影響度\n- 高 (リリースブロッカー)\n- MVPリリースまでの必須対応項目（最優先：1-2週）\n\n### 対応内容\n1. MD5が使用されている箇所を特定\n2. SHA-256以上の強力なハッシュアルゴリズムに置き換え\n3. 関連するテストケースの修正・追加\n\n### 完了条件\n- コード内のMD5使用箇所がすべてSHA-256以上に置換されている\n- テストが追加・修正され、正常に通過している\n- コードレビューでセキュリティチームの承認を得ている\n</info added on 2025-06-04T16:42:33.126Z>",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 18
         },
@@ -943,7 +943,7 @@
           "title": "backend/src/agents/AutoFixer.js: パストラバーサル脆弱性対応 (パス検証とサニタイズ) (TODO URGENT解消)",
           "description": "",
           "details": "<info added on 2025-06-04T16:42:51.548Z>\n## 脆弱性概要\n`backend/src/agents/AutoFixer.js` で外部から受け取ったファイルパスを検証・サニタイズせずに使用している箇所があり、パストラバーサル脆弱性が存在する可能性があります。この問題は現在コード内に TODO URGENT コメントとして記録されています。\n\n## 影響度\n高（リリースブロッカー）\n\n## 対応内容\n1. ファイルパス検証機能の実装\n   - 外部から受け取ったファイルパスが、期待されるベースディレクトリ内に解決されることを厳格に検証する\n   - path.resolve()と組み合わせて、最終的な絶対パスが許可されたディレクトリ内にあることを確認\n\n2. パスのサニタイズ処理\n   - パス文字列から `../` などの不正なシーケンスを除去する処理を実装\n   - または不審なパスパターンを検出した場合はリクエストを拒否する\n\n3. 許可リストベースの制御\n   - 可能であれば、アクセスを許可するファイル/ディレクトリの許可リストを実装\n\n## 優先度\nMVPリリースまでの必須対応項目（最優先：1-2週）\n</info added on 2025-06-04T16:42:51.548Z>",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 18
         },
@@ -952,7 +952,7 @@
           "title": "backend/src/agents/AutoFixer.js: コマンドインジェクション脆弱性対応 (spawnの安全な使用) (TODO URGENT解消)",
           "description": "",
           "details": "<info added on 2025-06-04T16:43:06.956Z>\n## 脆弱性概要\n`backend/src/agents/AutoFixer.js` で外部コマンド実行（`child_process.spawn`等）を行う際、外部からの入力を適切にエスケープ・検証せずにコマンド文字列に含めている箇所があり、コマンドインジェクションの脆弱性が存在する可能性があります。\n\n## 影響度\n高 (リリースブロッカー)\n\n## 対応内容\n1. `spawn` の安全な使用: `child_process.spawn` を使用する際は、コマンドと引数を明確に分離して配列で渡し、`shell: true` オプションの使用を避ける。\n2. 入力検証・サニタイズ: 外部からの入力をコマンド引数として使用する場合は、厳格な検証（許可文字、フォーマット等）とサニタイズを行う。\n3. 代替手段の検討: 可能であれば、外部コマンド実行を避けられる安全な代替手段を検討する。\n\n## 優先度\nMVPリリースまでの必須対応項目 - 最優先（1-2週）\n</info added on 2025-06-04T16:43:06.956Z>",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 18
         },
@@ -961,7 +961,7 @@
           "title": "認証ミDLウェアの設計と実装 (FastAPI向け)",
           "description": "レポートの「MVPリリースまでの必須対応項目 - 最優先」に基づき、JWT/APIキー検証を行う認証ミドルウェアをFastAPI向けに設計・実装する。",
           "details": "サブタスク18.8で実装されるJWT検証・APIキー検証ロジックを利用し、FastAPIのミドルウェアとしてリクエストの認証処理を一元的に行うコンポーネントを開発する。認証失敗時の適切なエラーレスポンスも定義する。このタスクは【MVPリリースまでの必須対応項目 - 最優先（1-2週）】に該当。",
-          "status": "pending",
+          "status": "done",
           "dependencies": [
             "18.8"
           ],
@@ -972,7 +972,7 @@
           "title": "APIレート制限機能の実装 (FastAPI-Limiter等)",
           "description": "レポートの「MVPリリースまでの必須対応項目 - 高優先」に基づき、APIの不正利用や過度な負荷を防ぐため、レート制限機能を実装する。",
           "details": "FastAPI-Limiter等のライブラリを利用し、IPアドレス単位および/または認証済みユーザー(APIキー等)単位でのリクエスト頻度制限を実装する。制限を超えた場合に適切なエラーレスポンスを返すようにする。このタスクは【MVPリリースまでの必須対応項目 - 高優先（2-3週）】に該当。",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 18
         }

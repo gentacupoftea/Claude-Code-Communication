@@ -1,6 +1,10 @@
 import time
 import json
-from typing import Any, Dict, Optional
+import asyncio
+import hashlib
+import logging
+from typing import Any, Dict, Optional, List, Union
+from datetime import datetime, timedelta
 
 
 class CacheManager:
@@ -170,3 +174,55 @@ class CacheManager:
         if namespace:
             return f"{namespace}:{key}"
         return key
+    
+    # Async methods for better Shopify API integration
+    async def aget(self, key: str, namespace: str = "") -> Any:
+        """Async version of get method"""
+        return self.get(key, namespace)
+    
+    async def aset(self, key: str, value: Any, ttl: Optional[int] = None, namespace: str = "") -> bool:
+        """Async version of set method"""
+        return self.set(key, value, ttl, namespace)
+    
+    async def adelete(self, key: str, namespace: str = "") -> bool:
+        """Async version of delete method"""
+        full_key = self._get_full_key(key, namespace)
+        try:
+            result = self.redis_client.delete(full_key)
+            return result > 0
+        except Exception as e:
+            logging.error(f"Cache delete error: {e}")
+            return False
+    
+    async def adelete_pattern(self, pattern: str, namespace: str = "") -> int:
+        """Async version of delete pattern method"""
+        ns_prefix = f"{namespace}:" if namespace else ""
+        redis_pattern = f"{ns_prefix}{pattern}"
+        
+        count = 0
+        try:
+            for key in self.redis_client.scan_iter(redis_pattern):
+                if self.redis_client.delete(key):
+                    count += 1
+        except Exception as e:
+            logging.error(f"Cache delete pattern error: {e}")
+        
+        return count
+    
+    def build_cache_key(self, *parts: Union[str, int, dict]) -> str:
+        """Build a consistent cache key from multiple parts"""
+        key_parts = []
+        
+        for part in parts:
+            if isinstance(part, dict):
+                # Sort dict keys for consistent hashing
+                sorted_items = sorted(part.items())
+                part_str = json.dumps(sorted_items, sort_keys=True)
+                # Hash long strings to keep keys reasonable
+                if len(part_str) > 100:
+                    part_str = hashlib.md5(part_str.encode()).hexdigest()
+                key_parts.append(part_str)
+            else:
+                key_parts.append(str(part))
+        
+        return ':'.join(key_parts)

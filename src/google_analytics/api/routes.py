@@ -18,7 +18,8 @@ from ..schemas.property import PropertiesListResponse
 from ..schemas.reports import ReportRow
 from ..service import GoogleAnalyticsService
 from ..cache import AnalyticsCache
-from ..models import GoogleAnalyticsConnection
+from ..models import GoogleAnalyticsConnection, GAReport, GAReportData, GAReportStorage
+from ..database import SessionLocal, get_db
 from ..config import GoogleAnalyticsConfig, RedisConfig
 from ..utils.errors import (
     GoogleAnalyticsError,
@@ -83,7 +84,35 @@ async def connect_google_analytics(
             created_at=datetime.utcnow()
         )
         
-        # TODO: Store connection in database
+        # Store connection in database
+        db = SessionLocal()
+        try:
+            db_connection = GoogleAnalyticsConnection(
+                connection_id=connection_id,
+                user_id=request.metadata.get('user_id', 'anonymous'),
+                connection_name=request.metadata.get('name', f'GA Connection {connection_id[:8]}'),
+                description=request.metadata.get('description', 'Google Analytics connection'),
+                property_ids=[prop.name for prop in properties],
+                default_property_id=properties[0].name if properties else None,
+                settings=request.metadata or {}
+            )
+            
+            # Store encrypted service account JSON
+            db_connection.set_service_account_json(request.service_account_json)
+            db_connection.mark_as_validated(True)
+            
+            db.add(db_connection)
+            db.commit()
+            db.refresh(db_connection)
+            
+            logger.info(f\"Stored GA connection {connection_id} in database\")
+            
+        except Exception as e:
+            db.rollback()
+            logger.error(f\"Failed to store GA connection: {e}\")
+            # Continue without database storage for now
+        finally:
+            db.close()
         
         return GoogleAnalyticsConnectionResponse(
             connection_id=connection_id,
@@ -124,8 +153,41 @@ async def list_properties(
 ) -> PropertiesListResponse:
     """List all accessible Google Analytics properties."""
     try:
-        # TODO: Load connection from database by connection_id
-        # For now, assume service is already initialized
+        # Load connection from database by connection_id
+        db = SessionLocal()
+        try:
+            db_connection = db.query(GoogleAnalyticsConnection).filter(
+                GoogleAnalyticsConnection.connection_id == connection_id
+            ).first()
+            
+            if not db_connection:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f\"Connection {connection_id} not found\"
+                )
+            
+            # Initialize service with stored credentials
+            service_account_json = db_connection.get_service_account_json()
+            if service_account_json:
+                ga_service.initialize_service(service_account_json)
+                db_connection.update_last_used()
+                db.commit()
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=\"No credentials found for connection\"
+                )
+                
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f\"Failed to load connection {connection_id}: {e}\")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=\"Failed to load connection\"
+            )
+        finally:
+            db.close()
         
         properties = ga_service.list_properties()
         
@@ -188,7 +250,39 @@ async def create_standard_report(
         if cached_report:
             return StandardReportResponse(**cached_report)
         
-        # TODO: Load connection from database by connection_id
+        # Load connection from database by connection_id
+        db = SessionLocal()
+        db_connection = None
+        try:
+            db_connection = db.query(GoogleAnalyticsConnection).filter(
+                GoogleAnalyticsConnection.connection_id == connection_id
+            ).first()
+            
+            if not db_connection:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f\"Connection {connection_id} not found\"
+                )
+            
+            # Initialize service with stored credentials
+            service_account_json = db_connection.get_service_account_json()
+            if service_account_json:
+                ga_service.initialize_service(service_account_json)
+                db_connection.update_last_used()
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=\"No credentials found for connection\"
+                )
+                
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f\"Failed to load connection {connection_id}: {e}\")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=\"Failed to load connection\"
+            )
         
         # Build report request
         report_request = ga_service.build_standard_report_request(
@@ -227,6 +321,54 @@ async def create_standard_report(
             },
             created_at=datetime.utcnow().isoformat()
         )
+        
+        # Store report in database for persistence
+        try:
+            # Create report record
+            db_report = GAReport(
+                report_id=report_id,
+                connection_id=connection_id,
+                user_id=db_connection.user_id if db_connection else 'anonymous',
+                report_name=f\"Standard Report - {request.property_id}\",
+                report_type=\"standard\",
+                property_id=request.property_id,
+                date_range=request.date_range.dict(),
+                dimensions=[d.dict() for d in request.dimensions],
+                metrics=[m.dict() for m in request.metrics],
+                status=\"completed\",
+                row_count=len(rows)
+            )
+            
+            # Calculate data size
+            data_size = GAReportStorage.estimate_storage_size([row.dict() for row in rows])
+            db_report.data_size_bytes = data_size
+            should_compress = GAReportStorage.should_compress(data_size)
+            
+            db.add(db_report)
+            db.flush()  # Get the report ID
+            
+            # Store report data rows
+            for idx, row in enumerate(rows):
+                report_data = GAReportData(
+                    report_id=db_report.id,
+                    row_index=idx
+                )
+                report_data.set_data(
+                    dimensions=row.dimensions, 
+                    metrics=row.metrics,
+                    compress=should_compress
+                )
+                db.add(report_data)
+            
+            db.commit()
+            logger.info(f\"Stored report {report_id} with {len(rows)} rows in database\")
+            
+        except Exception as e:
+            db.rollback()
+            logger.error(f\"Failed to store report in database: {e}\")
+            # Continue without database storage
+        finally:
+            db.close()
         
         # Cache the report
         cache.set_report(
@@ -372,12 +514,55 @@ async def get_report(
 ) -> StandardReportResponse:
     """Get previously generated report by ID."""
     try:
-        # TODO: Implement report storage and retrieval
-        # For now, return not found
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Report not found"
-        )
+        # Retrieve report from database
+        db = SessionLocal()
+        try:
+            # Get report metadata
+            db_report = db.query(GAReport).filter(
+                GAReport.report_id == report_id
+            ).first()
+            
+            if not db_report:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Report {report_id} not found"
+                )
+            
+            # Get report data
+            report_data_rows = db.query(GAReportData).filter(
+                GAReportData.report_id == db_report.id
+            ).order_by(GAReportData.row_index).all()
+            
+            # Convert to response format
+            rows = []
+            for data_row in report_data_rows:
+                row_data = data_row.get_data()
+                rows.append(ReportRow(
+                    dimensions=row_data['dimensions'],
+                    metrics=row_data['metrics']
+                ))
+            
+            # Build response
+            response = StandardReportResponse(
+                report_id=report_id,
+                property_id=db_report.property_id,
+                date_range=db_report.date_range,
+                rows=rows,
+                row_count=len(rows),
+                metadata={
+                    "cache_hit": False,
+                    "total_rows": db_report.row_count,
+                    "stored_in_db": True,
+                    "data_size_bytes": db_report.data_size_bytes,
+                    "report_status": db_report.status
+                },
+                created_at=db_report.created_at.isoformat() if db_report.created_at else None
+            )
+            
+            return response
+            
+        finally:
+            db.close()
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

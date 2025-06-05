@@ -20,8 +20,7 @@ from .models import (
     ShopifyStoreConnection, ShopifyAPIResponse, PaginatedResponse,
     SyncStatus, WebhookEvent
 )
-# TODO: Implement cache_manager
-# from ..cache.cache_manager import CacheManager
+from ..cache.cache_manager import CacheManager
 from ..utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -60,13 +59,13 @@ class ShopifyClient:
     def __init__(
         self,
         store_connection: ShopifyStoreConnection,
-        cache_manager: Optional[Any] = None,  # TODO: Type properly when CacheManager is implemented
+        cache_manager: Optional[CacheManager] = None,
         max_retries: int = 3,
         timeout: int = 30,
         rate_limit_buffer: float = 0.5
     ):
         self.store_connection = store_connection
-        self.cache_manager = cache_manager  # TODO: or default cache implementation
+        self.cache_manager = cache_manager or CacheManager(None)  # Use default if not provided
         self.max_retries = max_retries
         self.timeout = ClientTimeout(total=timeout)
         self.rate_limit_buffer = rate_limit_buffer
@@ -160,9 +159,14 @@ class ShopifyClient:
                 await asyncio.sleep(delay)
 
     @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=4, max=10),
-        retry=retry_if_exception_type((aiohttp.ClientError, ShopifyRateLimitError))
+        stop=stop_after_attempt(5),  # Increased retry attempts
+        wait=wait_exponential(multiplier=2, min=1, max=60),  # More aggressive backoff
+        retry=retry_if_exception_type((
+            aiohttp.ClientError, 
+            ShopifyRateLimitError,
+            aiohttp.ServerTimeoutError,
+            aiohttp.ClientConnectorError
+        ))
     )
     async def _make_request(
         self,
@@ -199,6 +203,8 @@ class ShopifyClient:
                 # Handle various response codes
                 if response.status == 429:
                     retry_after = int(response.headers.get('Retry-After', 2))
+                    logger.warning(f"Rate limit exceeded. Waiting {retry_after} seconds before retry.")
+                    await asyncio.sleep(retry_after)
                     raise ShopifyRateLimitError(retry_after)
                 elif response.status == 401:
                     raise ShopifyAuthError("Authentication failed. Check access token.")
@@ -251,10 +257,12 @@ class ShopifyClient:
             fields: Specific fields to return
             **filters: Additional filters (status, vendor, product_type, etc.)
         """
-        cache_key = f"products:{self.store_connection.store_id}:{limit}:{page_info}:{hash(str(filters))}"
+        cache_key = self.cache_manager.build_cache_key(
+            "products", self.store_connection.store_id, limit, page_info, filters
+        )
         
         # Check cache first
-        if cached := await self.cache_manager.get(cache_key):
+        if cached := await self.cache_manager.aget(cache_key):
             logger.debug("Returning cached products")
             return PaginatedResponse.parse_obj(cached)
         
@@ -290,15 +298,17 @@ class ShopifyClient:
         )
         
         # Cache result for 5 minutes
-        await self.cache_manager.set(cache_key, result.dict(), expire=300)
+        await self.cache_manager.aset(cache_key, result.dict(), ttl=300)
         
         return result
 
     async def get_product(self, product_id: int, fields: Optional[List[str]] = None) -> ShopifyProduct:
         """Get a single product by ID"""
-        cache_key = f"product:{self.store_connection.store_id}:{product_id}"
+        cache_key = self.cache_manager.build_cache_key(
+            "product", self.store_connection.store_id, product_id
+        )
         
-        if cached := await self.cache_manager.get(cache_key):
+        if cached := await self.cache_manager.aget(cache_key):
             return ShopifyProduct.parse_obj(cached)
         
         params = {}
@@ -314,7 +324,7 @@ class ShopifyClient:
         product = ShopifyProduct.parse_obj(product_data)
         
         # Cache for 10 minutes
-        await self.cache_manager.set(cache_key, product.dict(), expire=600)
+        await self.cache_manager.aset(cache_key, product.dict(), ttl=600)
         
         return product
 
@@ -347,8 +357,10 @@ class ShopifyClient:
         updated_product = ShopifyProduct.parse_obj(response_data['product'])
         
         # Update cache
-        cache_key = f"product:{self.store_connection.store_id}:{product_id}"
-        await self.cache_manager.set(cache_key, updated_product.dict(), expire=600)
+        cache_key = self.cache_manager.build_cache_key(
+            "product", self.store_connection.store_id, product_id
+        )
+        await self.cache_manager.aset(cache_key, updated_product.dict(), ttl=600)
         
         # Invalidate products list cache
         await self._invalidate_products_cache()
@@ -362,8 +374,10 @@ class ShopifyClient:
             await self._make_request('DELETE', f'/products/{product_id}.json')
             
             # Remove from cache
-            cache_key = f"product:{self.store_connection.store_id}:{product_id}"
-            await self.cache_manager.delete(cache_key)
+            cache_key = self.cache_manager.build_cache_key(
+                "product", self.store_connection.store_id, product_id
+            )
+            await self.cache_manager.adelete(cache_key)
             
             # Invalidate products list cache
             await self._invalidate_products_cache()
@@ -421,9 +435,11 @@ class ShopifyClient:
 
     async def get_order(self, order_id: int) -> ShopifyOrder:
         """Get a single order by ID"""
-        cache_key = f"order:{self.store_connection.store_id}:{order_id}"
+        cache_key = self.cache_manager.build_cache_key(
+            "order", self.store_connection.store_id, order_id
+        )
         
-        if cached := await self.cache_manager.get(cache_key):
+        if cached := await self.cache_manager.aget(cache_key):
             return ShopifyOrder.parse_obj(cached)
         
         response_data, _ = await self._make_request('GET', f'/orders/{order_id}.json')
@@ -435,7 +451,7 @@ class ShopifyClient:
         order = ShopifyOrder.parse_obj(order_data)
         
         # Cache for 5 minutes (orders change frequently)
-        await self.cache_manager.set(cache_key, order.dict(), expire=300)
+        await self.cache_manager.aset(cache_key, order.dict(), ttl=300)
         
         return order
 
@@ -476,9 +492,11 @@ class ShopifyClient:
 
     async def get_customer(self, customer_id: int) -> ShopifyCustomer:
         """Get a single customer by ID"""
-        cache_key = f"customer:{self.store_connection.store_id}:{customer_id}"
+        cache_key = self.cache_manager.build_cache_key(
+            "customer", self.store_connection.store_id, customer_id
+        )
         
-        if cached := await self.cache_manager.get(cache_key):
+        if cached := await self.cache_manager.aget(cache_key):
             return ShopifyCustomer.parse_obj(cached)
         
         response_data, _ = await self._make_request('GET', f'/customers/{customer_id}.json')
@@ -490,7 +508,7 @@ class ShopifyClient:
         customer = ShopifyCustomer.parse_obj(customer_data)
         
         # Cache for 15 minutes
-        await self.cache_manager.set(cache_key, customer.dict(), expire=900)
+        await self.cache_manager.aset(cache_key, customer.dict(), ttl=900)
         
         return customer
 
@@ -656,12 +674,12 @@ class ShopifyClient:
     async def _invalidate_products_cache(self):
         """Invalidate products-related cache entries"""
         pattern = f"products:{self.store_connection.store_id}:*"
-        await self.cache_manager.delete_pattern(pattern)
+        await self.cache_manager.adelete_pattern(pattern)
 
     async def _invalidate_orders_cache(self):
         """Invalidate orders-related cache entries"""
         pattern = f"orders:{self.store_connection.store_id}:*"
-        await self.cache_manager.delete_pattern(pattern)
+        await self.cache_manager.adelete_pattern(pattern)
 
     async def clear_cache(self):
         """Clear all cache for this store"""
@@ -675,7 +693,7 @@ class ShopifyClient:
         ]
         
         for pattern in patterns:
-            await self.cache_manager.delete_pattern(pattern)
+            await self.cache_manager.adelete_pattern(pattern)
 
     # ================================
     # Health & Status

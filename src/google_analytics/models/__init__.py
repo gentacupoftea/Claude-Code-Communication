@@ -14,6 +14,8 @@ from .analytics import (
     ReportStatus,
     MetricType,
 )
+from .connection import GoogleAnalyticsConnection
+from .reports import GAReport, GAReportData, GAReportStorage
 
 __all__ = [
     'Base',
@@ -28,4 +30,8 @@ __all__ = [
     'ReportSchedule',
     'ReportStatus',
     'MetricType',
+    'GoogleAnalyticsConnection',
+    'GAReport',
+    'GAReportData', 
+    'GAReportStorage',
 ]

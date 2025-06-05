@@ -59,7 +59,7 @@
 ### Details:
 
 
-## 9. src/analytics/api/analytics_routes_improved.py: 適切な認証情報設定の実装 (TODO解消) [pending]
+## 9. src/analytics/api/analytics_routes_improved.py: 適切な認証情報設定の実装 (TODO解消) [done]
 ### Dependencies: 18.8
 ### Description: 
 ### Details:
@@ -86,7 +86,7 @@
 - サブタスク18.8の実装完了が前提条件
 </info added on 2025-06-04T16:40:59.138Z>
 
-## 10. src/api/dashboard_routes.py: DB接続設定と認証連携の実装 (TODO解消) [pending]
+## 10. src/api/dashboard_routes.py: DB接続設定と認証連携の実装 (TODO解消) [done]
 ### Dependencies: 18.8
 ### Description: 
 ### Details:

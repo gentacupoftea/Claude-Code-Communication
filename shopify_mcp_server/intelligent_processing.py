@@ -8,7 +8,21 @@ AIへのレスポンスを最適化する中間処理レイヤーを提供しま
 import re
 import json
 import logging
+import asyncio
+from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Union
+import sys
+import os
+
+# Add the src directory to the path for imports
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+try:
+    from shopify.client import ShopifyClient
+    from shopify.models import ShopifyStoreConnection
+    from cache.cache_manager import CacheManager
+except ImportError as e:
+    logging.warning(f"Could not import Shopify modules: {e}. Will use mock data only.")
 
 # ロガーのセットアップ
 logger = logging.getLogger(__name__)
@@ -164,10 +178,42 @@ class DataProcessor:
             data_sources: 利用可能なデータソース設定
         """
         self.data_sources = data_sources or {}
+        self.shopify_client = None
+        self.cache_manager = None
+        self._initialized = False
+        
+    async def initialize(self):
+        """非同期初期化"""
+        if self._initialized:
+            return
+            
+        try:
+            # キャッシュマネージャーの初期化
+            self.cache_manager = CacheManager()
+            await self.cache_manager.initialize()
+            
+            # Shopifyクライアントの初期化（設定がある場合）
+            shopify_config = self.data_sources.get('shopify')
+            if shopify_config:
+                store_connection = ShopifyStoreConnection(
+                    store_id=shopify_config.get('store_id'),
+                    shop_domain=shopify_config.get('shop_domain'),
+                    access_token=shopify_config.get('access_token')
+                )
+                self.shopify_client = ShopifyClient(
+                    store_connection=store_connection,
+                    cache_manager=self.cache_manager
+                )
+                logger.info("Shopify client initialized")
+            
+            self._initialized = True
+            
+        except Exception as e:
+            logger.warning(f"Failed to initialize data processor: {e}. Using mock data only.")
     
-    def process(self, intent: Dict[str, Any], platforms: List[str] = None) -> Dict[str, Any]:
+    async def process(self, intent: Dict[str, Any], platforms: List[str] = None) -> Dict[str, Any]:
         """
-        データを処理する
+        データを処理する（非同期版）
         
         Args:
             intent: 抽出された意図
@@ -176,37 +222,177 @@ class DataProcessor:
         Returns:
             処理されたデータ
         """
+        # 初期化確認
+        if not self._initialized:
+            await self.initialize()
+            
         # 使用するプラットフォームの決定
         platforms = platforms or intent.get("platforms", ["all"])
         
-        # データ取得と処理のプレースホルダー
-        # 実装予定: 実際のデータソースとの連携
+        # データ取得と処理
         processed_data = {
             "metadata": {
                 "intent": intent,
-                "timestamp": "2025-05-24T12:00:00Z",
+                "timestamp": datetime.utcnow().isoformat(),
                 "platforms": platforms,
                 "data_points": 0
             },
             "data": {},
-            "summary": {}
+            "summary": {},
+            "source": "real_data" if self.shopify_client else "mock_data"
         }
         
-        # プラットフォームごとのデータ取得（モック）
+        # プラットフォームごとのデータ取得
         for platform in platforms:
             if platform == "all":
                 # すべてのプラットフォームのデータを統合
-                processed_data["data"] = self._get_mock_data_all_platforms(intent)
+                if self.shopify_client:
+                    processed_data["data"] = await self._get_real_data_all_platforms(intent)
+                else:
+                    processed_data["data"] = self._get_mock_data_all_platforms(intent)
                 break
             else:
                 # 特定のプラットフォームのデータ
-                platform_data = self._get_mock_data_for_platform(platform, intent)
+                if platform == "shopify" and self.shopify_client:
+                    platform_data = await self._get_real_shopify_data(intent)
+                else:
+                    platform_data = self._get_mock_data_for_platform(platform, intent)
                 processed_data["data"][platform] = platform_data
         
         # データポイント数の更新
         processed_data["metadata"]["data_points"] = self._count_data_points(processed_data["data"])
         
         return processed_data
+    
+    async def _get_real_data_all_platforms(self, intent: Dict[str, Any]) -> Dict[str, Any]:
+        """全プラットフォームの実データを取得"""
+        try:
+            data = {}
+            
+            # Shopifyデータの取得
+            if self.shopify_client:
+                data["shopify"] = await self._get_real_shopify_data(intent)
+            
+            # 他のプラットフォームはモックデータで補完
+            # 楽天、Amazon等の実装は後で追加
+            data["rakuten"] = self._get_mock_data_for_platform("rakuten", intent)
+            data["amazon"] = self._get_mock_data_for_platform("amazon", intent)
+            
+            return data
+            
+        except Exception as e:
+            logger.error(f"Error fetching real data: {e}")
+            # エラー時はモックデータにフォールバック
+            return self._get_mock_data_all_platforms(intent)
+    
+    async def _get_real_shopify_data(self, intent: Dict[str, Any]) -> Dict[str, Any]:
+        """Shopifyから実データを取得"""
+        if not self.shopify_client:
+            return self._get_mock_data_for_platform("shopify", intent)
+            
+        try:
+            data = {
+                "platform": "shopify",
+                "timestamp": datetime.utcnow().isoformat(),
+                "products": [],
+                "orders": [],
+                "customers": [],
+                "summary": {}
+            }
+            
+            # 意図に基づいてデータ取得
+            analysis_type = intent.get("analysis_type", "sales")
+            time_period = intent.get("time_period", "today")
+            
+            # 商品データの取得
+            if analysis_type in ["sales", "inventory", "products"]:
+                products_response = await self.shopify_client.get_products(limit=50)
+                for product in products_response.items:
+                    data["products"].append({
+                        "id": product.id,
+                        "title": product.title,
+                        "vendor": product.vendor,
+                        "product_type": product.product_type,
+                        "created_at": product.created_at,
+                        "updated_at": product.updated_at,
+                        "published_at": product.published_at,
+                        "variants": len(product.variants) if product.variants else 0,
+                        "tags": product.tags
+                    })
+            
+            # 注文データの取得
+            if analysis_type in ["sales", "revenue", "orders"]:
+                # 時間範囲の設定
+                end_date = datetime.utcnow()
+                if time_period == "today":
+                    start_date = end_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                elif time_period == "yesterday":
+                    start_date = end_date - timedelta(days=1)
+                    start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                    end_date = start_date + timedelta(days=1)
+                elif time_period == "last_week":
+                    start_date = end_date - timedelta(days=7)
+                else:
+                    start_date = end_date - timedelta(days=30)  # デフォルト30日
+                
+                orders_response = await self.shopify_client.get_orders(
+                    limit=100,
+                    created_at_min=start_date,
+                    created_at_max=end_date,
+                    status="any"
+                )
+                
+                total_sales = 0
+                order_count = 0
+                
+                for order in orders_response.items:
+                    order_data = {
+                        "id": order.id,
+                        "order_number": order.order_number,
+                        "created_at": order.created_at,
+                        "total_price": float(order.total_price),
+                        "currency": order.currency,
+                        "financial_status": order.financial_status,
+                        "fulfillment_status": order.fulfillment_status,
+                        "customer_id": order.customer.id if order.customer else None,
+                        "line_items_count": len(order.line_items) if order.line_items else 0
+                    }
+                    data["orders"].append(order_data)
+                    total_sales += float(order.total_price)
+                    order_count += 1
+                
+                # サマリー情報の計算
+                data["summary"] = {
+                    "total_sales": total_sales,
+                    "order_count": order_count,
+                    "average_order_value": total_sales / order_count if order_count > 0 else 0,
+                    "period": time_period,
+                    "start_date": start_date.isoformat(),
+                    "end_date": end_date.isoformat()
+                }
+            
+            # 顧客データの取得
+            if analysis_type in ["customer", "customers"]:
+                customers_response = await self.shopify_client.get_customers(limit=50)
+                for customer in customers_response.items:
+                    data["customers"].append({
+                        "id": customer.id,
+                        "email": customer.email,
+                        "first_name": customer.first_name,
+                        "last_name": customer.last_name,
+                        "created_at": customer.created_at,
+                        "updated_at": customer.updated_at,
+                        "orders_count": customer.orders_count,
+                        "total_spent": float(customer.total_spent) if customer.total_spent else 0
+                    })
+            
+            logger.info(f"Successfully fetched Shopify data: {len(data['products'])} products, {len(data['orders'])} orders, {len(data['customers'])} customers")
+            return data
+            
+        except Exception as e:
+            logger.error(f"Error fetching Shopify data: {e}")
+            # エラー時はモックデータにフォールバック
+            return self._get_mock_data_for_platform("shopify", intent)
     
     def _get_mock_data_for_platform(self, platform: str, intent: Dict[str, Any]) -> Dict[str, Any]:
         """特定のプラットフォーム用のモックデータを生成（開発用）"""

@@ -1,6 +1,6 @@
 # Task ID: 18
 # Title: [MVPリリースまで] UAT実施とフィードバック対応
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: high
 # Description: ステージング環境でのUAT実施、発見された不具合や改善要望への対応、最終的な品質検証。(既存タスクID 6の情報を統合)
@@ -11,49 +11,49 @@
 
 
 # Subtasks:
-## 1. 依存ライブラリの脆弱性スキャンとアップデート対応 [pending]
+## 1. 依存ライブラリの脆弱性スキャンとアップデート対応 [done]
 ### Dependencies: None
 ### Description: 
 ### Details:
 
 
-## 2. OWASP Top10 等の主要な脆弱性観点でのセルフチェック [pending]
+## 2. OWASP Top10 等の主要な脆弱性観点でのセルフチェック [done]
 ### Dependencies: None
 ### Description: 
 ### Details:
 
 
-## 3. 認証・認可フローの再レビューと潜在リスク洗い出し [pending]
+## 3. 認証・認可フローの再レビューと潜在リスク洗い出し [done]
 ### Dependencies: None
 ### Description: 
 ### Details:
 
 
-## 4. データ入力バリデーション、出力エンコーディングの網羅的確認 [pending]
+## 4. データ入力バリデーション、出力エンコーディングの網羅的確認 [done]
 ### Dependencies: None
 ### Description: 
 ### Details:
 
 
-## 5. 機密情報（APIキー、パスワード等）管理方法の最終確認 [pending]
+## 5. 機密情報（APIキー、パスワード等）管理方法の最終確認 [done]
 ### Dependencies: None
 ### Description: 
 ### Details:
 
 
-## 6. セキュリティ診断ツール（SAST/DAST）の実行と結果分析（可能な範囲で） [pending]
+## 6. セキュリティ診断ツール（SAST/DAST）の実行と結果分析（可能な範囲で） [done]
 ### Dependencies: None
 ### Description: 
 ### Details:
 
 
-## 7. 発見された脆弱性への対応と再テスト [pending]
+## 7. 発見された脆弱性への対応と再テスト [done]
 ### Dependencies: None
 ### Description: 
 ### Details:
 
 
-## 8. src/google_analytics/dependencies.py: JWT検証、APIキー検証、レート制限の実装 (TODO解消) [pending]
+## 8. src/google_analytics/dependencies.py: JWT検証、APIキー検証、レート制限の実装 (TODO解消) [done]
 ### Dependencies: None
 ### Description: 
 ### Details:
@@ -83,7 +83,7 @@
 - 最優先（1-2週）で完了させること
 </info added on 2025-06-04T16:40:27.578Z>
 
-## 9. src/auth/security_service.py: メールサービス連携実装 (TODO解消) [pending]
+## 9. src/auth/security_service.py: メールサービス連携実装 (TODO解消) [done]
 ### Dependencies: None
 ### Description: 
 ### Details:
@@ -113,7 +113,7 @@
 5. 単体テスト実施
 </info added on 2025-06-04T16:40:42.116Z>
 
-## 10. backend/src/agents/AutoFixer.js: 暗号化アルゴリズムをSHA-256以上に修正 (TODO URGENT解消) [pending]
+## 10. backend/src/agents/AutoFixer.js: 暗号化アルゴリズムをSHA-256以上に修正 (TODO URGENT解消) [done]
 ### Dependencies: None
 ### Description: 
 ### Details:
@@ -139,7 +139,7 @@
 - コードレビューでセキュリティチームの承認を得ている
 </info added on 2025-06-04T16:42:33.126Z>
 
-## 11. backend/src/agents/AutoFixer.js: パストラバーサル脆弱性対応 (パス検証とサニタイズ) (TODO URGENT解消) [pending]
+## 11. backend/src/agents/AutoFixer.js: パストラバーサル脆弱性対応 (パス検証とサニタイズ) (TODO URGENT解消) [done]
 ### Dependencies: None
 ### Description: 
 ### Details:
@@ -166,7 +166,7 @@
 MVPリリースまでの必須対応項目（最優先：1-2週）
 </info added on 2025-06-04T16:42:51.548Z>
 
-## 12. backend/src/agents/AutoFixer.js: コマンドインジェクション脆弱性対応 (spawnの安全な使用) (TODO URGENT解消) [pending]
+## 12. backend/src/agents/AutoFixer.js: コマンドインジェクション脆弱性対応 (spawnの安全な使用) (TODO URGENT解消) [done]
 ### Dependencies: None
 ### Description: 
 ### Details:
@@ -186,13 +186,13 @@ MVPリリースまでの必須対応項目（最優先：1-2週）
 MVPリリースまでの必須対応項目 - 最優先（1-2週）
 </info added on 2025-06-04T16:43:06.956Z>
 
-## 13. 認証ミDLウェアの設計と実装 (FastAPI向け) [pending]
+## 13. 認証ミDLウェアの設計と実装 (FastAPI向け) [done]
 ### Dependencies: 18.8
 ### Description: レポートの「MVPリリースまでの必須対応項目 - 最優先」に基づき、JWT/APIキー検証を行う認証ミドルウェアをFastAPI向けに設計・実装する。
 ### Details:
 サブタスク18.8で実装されるJWT検証・APIキー検証ロジックを利用し、FastAPIのミドルウェアとしてリクエストの認証処理を一元的に行うコンポーネントを開発する。認証失敗時の適切なエラーレスポンスも定義する。このタスクは【MVPリリースまでの必須対応項目 - 最優先（1-2週）】に該当。
 
-## 14. APIレート制限機能の実装 (FastAPI-Limiter等) [pending]
+## 14. APIレート制限機能の実装 (FastAPI-Limiter等) [done]
 ### Dependencies: None
 ### Description: レポートの「MVPリリースまでの必須対応項目 - 高優先」に基づき、APIの不正利用や過度な負荷を防ぐため、レート制限機能を実装する。
 ### Details:
