@@ -48,13 +48,13 @@ SESSION_TIMEOUT=3600
 #### PostgreSQL
 
 ```bash
-# 開発環境
-DATABASE_URL=postgresql://postgres:password@localhost:5432/conea_dev
+# 開発環境 (docker-compose.ymlに合わせて修正)
+DATABASE_URL=postgresql://conea:conea123@localhost:5432/conea
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
-DATABASE_NAME=conea_dev
-DATABASE_USER=postgres
-DATABASE_PASSWORD=password
+DATABASE_NAME=conea
+DATABASE_USER=conea
+DATABASE_PASSWORD=conea123
 
 # 本番環境（例）
 DATABASE_URL=postgresql://user:pass@db.example.com:5432/conea_prod

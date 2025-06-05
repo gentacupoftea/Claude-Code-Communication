@@ -116,6 +116,12 @@ check_prerequisites() {
         exit 1
     fi
     
+    # Check service name consistency with docker-compose.yml
+    if ! grep -q "conea-multillm:" docker-compose.yml; then
+        log_warning "Expected service 'conea-multillm' not found in docker-compose.yml"
+        log_warning "Deployment may need manual adjustment"
+    fi
+    
     # Check environment file
     local env_file=".env"
     if [[ "$ENVIRONMENT" == "production" ]]; then
@@ -146,12 +152,39 @@ create_backup() {
     log_info "💾 現在の設定をバックアップ中..."
     
     # Create backup directory
-    mkdir -p "$BACKUP_DIR"
+    if ! mkdir -p "$BACKUP_DIR"; then
+        log_error "バックアップディレクトリの作成に失敗しました: $BACKUP_DIR"
+        return 1
+    fi
     
-    # Backup configuration files
-    cp .env "$BACKUP_DIR/.env.backup" 2>/dev/null || true
-    cp docker-compose.yml "$BACKUP_DIR/docker-compose.yml.backup" 2>/dev/null || true
-    cp package.json "$BACKUP_DIR/package.json.backup" 2>/dev/null || true
+    # Backup configuration files with error checking
+    local backup_failed=false
+    
+    if [[ -f ".env" ]]; then
+        cp .env "$BACKUP_DIR/.env.backup" || {
+            log_warning ".envファイルのバックアップに失敗"
+            backup_failed=true
+        }
+    fi
+    
+    if [[ -f "docker-compose.yml" ]]; then
+        cp docker-compose.yml "$BACKUP_DIR/docker-compose.yml.backup" || {
+            log_warning "docker-compose.ymlのバックアップに失敗"
+            backup_failed=true
+        }
+    fi
+    
+    if [[ -f "package.json" ]]; then
+        cp package.json "$BACKUP_DIR/package.json.backup" || {
+            log_warning "package.jsonのバックアップに失敗"
+            backup_failed=true
+        }
+    fi
+    
+    if [[ "$backup_failed" == true ]] && [[ "$FORCE_DEPLOY" != true ]]; then
+        log_error "設定ファイルのバックアップに失敗しました。--force オプションで続行可能"
+        return 1
+    fi
     
     # Backup database if running
     if docker-compose ps postgres | grep -q "Up"; then
@@ -364,7 +397,91 @@ verify_deployment() {
     log_info "📊 サービス状態:"
     docker-compose ps
     
+    # Setup post-deployment monitoring
+    setup_monitoring
+    
     log_success "✅ デプロイメント検証完了"
+}
+
+setup_monitoring() {
+    log_info "📊 デプロイ後監視を設定中..."
+    
+    # Check if monitoring services are running
+    if docker-compose ps prometheus | grep -q "Up"; then
+        log_success "✅ Prometheus監視が有効"
+    else
+        log_warning "⚠️  Prometheus監視が無効 - 手動で確認してください"
+    fi
+    
+    if docker-compose ps grafana | grep -q "Up"; then
+        log_success "✅ Grafana ダッシュボードが有効"
+    else
+        log_warning "⚠️  Grafana ダッシュボードが無効 - 手動で確認してください"
+    fi
+    
+    # Setup basic alerting check
+    if [[ "$ENVIRONMENT" == "production" ]]; then
+        log_info "🚨 本番環境アラート設定を確認中..."
+        
+        # Check if alert manager is configured
+        if [[ -f "monitoring/alert-policies.yaml" ]]; then
+            log_success "✅ アラートポリシー設定済み"
+        else
+            log_warning "⚠️  アラートポリシーが未設定 - monitoring/alert-policies.yaml を確認"
+        fi
+        
+        # Setup health check monitoring
+        create_health_monitor
+    fi
+}
+
+create_health_monitor() {
+    log_info "🏥 ヘルスチェック監視を設定中..."
+    
+    # Create health monitoring script
+    local monitor_script="scripts/health-monitor.sh"
+    
+    if [[ ! -d "scripts" ]]; then
+        mkdir -p scripts
+    fi
+    
+    cat > "$monitor_script" << 'EOF'
+#!/bin/bash
+# Health monitoring script for Conea AI Platform
+
+HEALTH_URL="${1:-http://localhost:3000/health}"
+SLACK_WEBHOOK="${SLACK_WEBHOOK_URL}"
+CHECK_INTERVAL="${HEALTH_CHECK_INTERVAL:-60}"
+
+while true; do
+    if ! curl -sf "$HEALTH_URL" >/dev/null 2>&1; then
+        echo "$(date): Health check failed for $HEALTH_URL"
+        
+        # Send alert if webhook is configured
+        if [[ -n "$SLACK_WEBHOOK" ]]; then
+            curl -X POST -H 'Content-type: application/json' \
+                --data '{"text":"🚨 ALERT: Health check failed for '"$HEALTH_URL"'"}' \
+                "$SLACK_WEBHOOK"
+        fi
+        
+        # Log to system
+        logger "Conea Health Check Failed: $HEALTH_URL"
+    fi
+    
+    sleep "$CHECK_INTERVAL"
+done
+EOF
+    
+    chmod +x "$monitor_script"
+    
+    if [[ "$DRY_RUN" != true ]]; then
+        # Start health monitor in background
+        nohup "$monitor_script" > logs/health-monitor.log 2>&1 &
+        echo $! > logs/health-monitor.pid
+        log_success "✅ ヘルスチェック監視を開始しました (PID: $!)"
+    else
+        log_info "📋 [DRY RUN] ヘルスチェック監視スクリプトを作成: $monitor_script"
+    fi
 }
 
 cleanup_old_resources() {

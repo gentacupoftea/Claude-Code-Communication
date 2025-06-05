@@ -1,9 +1,11 @@
 // Cypress E2E support file
 // Import commands.ts using ES2015 syntax:
 import './commands'
+import './error-simulation'
 
 // Alternatively you can use CommonJS syntax:
 // require('./commands')
+// require('./error-simulation')
 
 // Global configuration
 Cypress.on('uncaught:exception', (err, runnable) => {
