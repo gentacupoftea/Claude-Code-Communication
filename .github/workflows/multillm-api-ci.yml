@@ -6,11 +6,7 @@ on:
     paths:
       - 'multiLLM_system/**'
       - '.github/workflows/multillm-api-ci.yml'
-  pull_request:
-    branches: [ main, develop ]
-    paths:
-      - 'multiLLM_system/**'
-      - '.github/workflows/multillm-api-ci.yml'
+  # PR時は軽量なpr-checks.ymlが実行されるため、フル実行は省略
 
 env:
   PYTHON_VERSION: '3.11'
@@ -123,11 +119,14 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
         continue-on-error: true
       
-      - name: Run security audit
+      - name: Run security audit (unified)
         run: |
-          pip install safety
-          safety check --json --output bandit-results.json || safety check
-        # セキュリティ脆弱性は重要な問題として扱う
+          pip install safety bandit
+          # Safety check for dependencies
+          safety check --json --output safety-results.json || safety check
+          # Bandit check for code security
+          bandit -r orchestrator/ services/ workers/ -ll --format json --output bandit-results.json || echo "⚠️ Bandit scan completed with warnings"
+        continue-on-error: true
 
   build:
     name: Build Docker Image

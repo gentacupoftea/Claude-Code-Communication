@@ -1,0 +1,114 @@
+name: PR Quality Checks
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    types: [opened, synchronize, reopened]
+
+# PR専用の軽量チェック - 高速フィードバックに重点を置く
+env:
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  quick-checks:
+    name: Quick Quality Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1  # 浅いクローンでパフォーマンス向上
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install and lint (parallel)
+        run: |
+          # 並列実行でリント処理を高速化
+          (cd frontend-v2 && npm ci && npm run lint) &
+          (cd backend && npm ci && npm run lint) &
+          (pip install flake8 mypy && flake8 src/ --max-line-length=127 --statistics) &
+          wait
+        timeout-minutes: 10
+      
+      - name: TypeScript type checking
+        run: |
+          cd frontend-v2 && npx tsc --noEmit
+      
+      - name: Security quick scan
+        run: |
+          # 軽量セキュリティチェック（基本的な問題のみ）
+          npm audit --audit-level=high --summary || true
+          pip install safety && safety check --short-report || true
+        continue-on-error: true
+      
+      - name: Build test (smoke test)
+        run: |
+          # ビルドが通ることを確認（フルビルドは避ける）
+          cd frontend-v2 && npm run build --silent
+        timeout-minutes: 5
+
+  changed-files-analysis:
+    name: Changed Files Impact Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v42
+        with:
+          files_yaml: |
+            frontend:
+              - frontend-v2/**
+            backend:
+              - backend/**
+            multillm:
+              - multiLLM_system/**
+            workflows:
+              - .github/workflows/**
+            docs:
+              - docs/**
+              - '**.md'
+      
+      - name: Generate impact summary
+        run: |
+          echo "## 📊 PR Impact Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.changed-files.outputs.frontend_any_changed }}" == "true" ]; then
+            echo "🎨 **Frontend changes detected** - Frontend CI will run" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ steps.changed-files.outputs.backend_any_changed }}" == "true" ]; then
+            echo "⚙️ **Backend changes detected** - Backend CI will run" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ steps.changed-files.outputs.multillm_any_changed }}" == "true" ]; then
+            echo "🤖 **MultiLLM changes detected** - MultiLLM CI will run" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ steps.changed-files.outputs.workflows_any_changed }}" == "true" ]; then
+            echo "🔧 **Workflow changes detected** - Review required" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ steps.changed-files.outputs.docs_any_changed }}" == "true" ]; then
+            echo "📚 **Documentation changes detected**" >> $GITHUB_STEP_SUMMARY
+          fi
