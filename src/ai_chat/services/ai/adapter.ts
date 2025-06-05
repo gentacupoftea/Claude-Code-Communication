@@ -70,7 +70,7 @@ export class OpenAIAdapter implements AIProvider {
       };
     } catch (error) {
       console.error('OpenAI API error:', error);
-      throw new Error(`OpenAI API request failed: ${error.message}`);
+      throw new Error(`OpenAI API request failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   
@@ -142,7 +142,7 @@ export class ClaudeAdapter implements AIProvider {
       };
     } catch (error) {
       console.error('Claude API error:', error);
-      throw new Error(`Claude API request failed: ${error.message}`);
+      throw new Error(`Claude API request failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   
@@ -211,7 +211,7 @@ export class GeminiAdapter implements AIProvider {
       };
     } catch (error) {
       console.error('Gemini API error:', error);
-      throw new Error(`Gemini API request failed: ${error.message}`);
+      throw new Error(`Gemini API request failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   
