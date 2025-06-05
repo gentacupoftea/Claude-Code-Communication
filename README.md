@@ -362,6 +362,119 @@ docker-compose logs postgres
    - Dockerのメモリ制限を確認
    - 不要なコンテナを停止
 
+## 🎨 UIコンポーネント
+
+### 共通コンポーネント
+
+プロジェクトでは統一されたデザインシステムに基づく共通コンポーネントを提供しています。
+
+#### Button コンポーネント
+
+```tsx
+import { Button } from '@/src/components/common';
+import { ChevronRight, Plus } from 'lucide-react';
+
+// 基本的な使用方法
+<Button>Click me</Button>
+
+// バリアント
+<Button variant="primary">Primary Button</Button>
+<Button variant="secondary">Secondary Button</Button>
+<Button variant="outline">Outline Button</Button>
+<Button variant="ghost">Ghost Button</Button>
+
+// サイズ
+<Button size="sm">Small</Button>
+<Button size="md">Medium (デフォルト)</Button>
+<Button size="lg">Large</Button>
+
+// アイコン付きボタン
+<Button leftIcon={<Plus />}>Add Item</Button>
+<Button rightIcon={<ChevronRight />}>Next</Button>
+
+// ローディング状態
+<Button loading>Processing...</Button>
+
+// フルワイズボタン
+<Button fullWidth>Full Width Button</Button>
+```
+
+#### Input コンポーネント
+
+```tsx
+import { Input } from '@/src/components/common';
+import { Mail, Search, Eye } from 'lucide-react';
+
+// 基本的な使用方法
+<Input placeholder="Enter text" />
+
+// ラベル付き
+<Input label="Email Address" type="email" />
+
+// アイコン付き
+<Input 
+  label="Email"
+  leftIcon={<Mail />}
+  placeholder="your@email.com"
+/>
+
+// エラー状態
+<Input 
+  label="Password"
+  type="password"
+  error="Password is required"
+/>
+
+// フルワイズ入力フィールド
+<Input fullWidth label="Full Width Input" />
+
+// カスタムID
+<Input id="custom-input" label="Custom Input" />
+```
+
+#### Props インターフェース
+
+**Button Props:**
+```typescript
+interface ButtonProps {
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  loading?: boolean;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+  fullWidth?: boolean;
+  children: React.ReactNode;
+  // HTMLButtonElement の全属性も利用可能
+}
+```
+
+**Input Props:**
+```typescript
+interface InputProps {
+  label?: string;
+  error?: string;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+  fullWidth?: boolean;
+  // HTMLInputElement の全属性も利用可能
+}
+```
+
+#### アクセシビリティ機能
+
+- **キーボードナビゲーション**: 全コンポーネントでTab、Enter、Spaceキーをサポート
+- **フォーカス管理**: 明確なフォーカスリング表示
+- **ARIA属性**: 適切なrole、aria-label、aria-describedby属性を自動設定
+- **スクリーンリーダー対応**: エラーメッセージの自動読み上げ
+- **コントラスト**: WCAG AAレベルのコントラスト比を確保
+
+#### レスポンシブ対応
+
+全コンポーネントがモバイル、タブレット、デスクトップに対応:
+- **ブレークポイント**: 640px (sm), 768px (md), 1024px (lg), 1280px (xl)
+- **柔軟なサイジング**: 画面サイズに応じた適切なサイズ調整
+- **タッチフレンドリー**: モバイルデバイスでの操作を考慮したタップ領域
+
 ## 📚 ドキュメント
 
 - [システム最適化レポート](MULTILLLM_OPTIMIZATION_REPORT.md)

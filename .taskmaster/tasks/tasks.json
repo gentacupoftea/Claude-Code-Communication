@@ -640,7 +640,7 @@
       "description": "フロントエンド(ESLint等)、E2Eテスト(Playwright等)、Windows環境互換性確保を含めたテスト環境の全面的な見直しと自動テストカバレッジの向上。(既存タスクID 9の一部を統合)",
       "details": "",
       "testStrategy": "",
-      "status": "pending",
+      "status": "done",
       "dependencies": [],
       "priority": "high",
       "subtasks": [
@@ -649,7 +649,7 @@
           "title": "テスト戦略ドキュメント（ユニット、結合、E2E、UAT）の作成",
           "description": "",
           "details": "",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 16
         },
@@ -658,7 +658,7 @@
           "title": "主要機能に対するテストケース洗い出しと優先度付け",
           "description": "",
           "details": "",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 16
         },
@@ -667,7 +667,7 @@
           "title": "テストデータ作成方針と準備",
           "description": "",
           "details": "",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 16
         },
@@ -676,7 +676,7 @@
           "title": "テスト環境（開発、ステージング）の整備と確認",
           "description": "",
           "details": "",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 16
         },
@@ -685,7 +685,7 @@
           "title": "ユニットテストカバレッジ目標設定と現状把握",
           "description": "",
           "details": "<info added on 2025-06-04T16:45:06.975Z>\n# フロントエンドユニットテスト強化計画\n\n## 現状と課題\n- `frontend-v2`のユニットテストカバレッジが低い状態\n- Jest等のテストフレームワークの活用が不十分\n\n## 対応内容\n1. 主要コンポーネント・ページに対するユニットテスト実装\n   - Jestを活用したテストケース作成\n   - 優先度の高いコンポーネントから順次対応\n   - カバレッジ目標: MVPリリースまでに50%以上\n\n2. CIパイプラインへの統合\n   - テスト自動実行の仕組み構築\n   - テスト結果レポートの可視化\n   - カバレッジレポート生成と閾値設定\n\n## スケジュール\n- 優先度: 中\n- 対応期間: 3-4週間（MVPリリースまでの必須対応項目）\n\n## 成果物\n- ユニットテストコード\n- カバレッジレポート\n- CI設定ファイル更新\n</info added on 2025-06-04T16:45:06.975Z>",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 16
         },
@@ -694,7 +694,7 @@
           "title": "重要機能パスのE2Eテストシナリオ作成と自動化検討",
           "description": "",
           "details": "<info added on 2025-06-04T16:45:18.441Z>\n## E2Eテスト拡充計画\n\n### 現状\n- フロントエンド(`frontend-v2`)のE2Eテストカバレッジが低い状態\n- Playwright等のE2Eテストツールの活用が不十分\n\n### 対応内容\n1. `frontend-v2`の主要なユーザーストーリーをカバーするE2Eテストの作成\n   - ログインフロー\n   - 主要機能操作\n   - エラーケース\n   - レスポンシブデザインの検証\n\n2. 作成したE2EテストをCIパイプラインに組み込み\n   - GitHub Actionsでの自動実行設定\n   - テスト失敗時の通知設定\n   - テスト結果レポートの自動生成\n\n### 優先度\n- MVPリリースまでの必須対応項目（中優先度）\n- 想定完了期間: 3-4週間\n</info added on 2025-06-04T16:45:18.441Z>",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 16
         },
@@ -703,7 +703,7 @@
           "title": "初期UAT（ユーザー受け入れテスト）計画と参加者調整",
           "description": "",
           "details": "",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 16
         },
@@ -712,7 +712,7 @@
           "title": "テスト結果の記録・報告フォーマット準備",
           "description": "",
           "details": "",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 16
         },
@@ -721,7 +721,7 @@
           "title": "バグトラッキングシステム連携と運用フロー確認",
           "description": "",
           "details": "",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 16
         }

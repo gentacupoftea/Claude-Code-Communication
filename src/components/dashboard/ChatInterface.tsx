@@ -276,26 +276,26 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               exit={{ opacity: 0, y: -20 }}
               className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`flex items-start space-x-3 max-w-[80%] ${
+              <div className={`flex items-start space-x-2 sm:space-x-3 max-w-[90%] sm:max-w-[80%] ${
                 message.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''
               }`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                   message.sender === 'user' 
                     ? 'bg-[#3498DB]' 
                     : 'bg-[#1ABC9C]'
                 }`}>
                   {message.sender === 'user' ? (
-                    <User className="w-4 h-4 text-white" />
+                    <User className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                   ) : (
-                    <Bot className="w-4 h-4 text-white" />
+                    <Bot className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                   )}
                 </div>
-                <div className={`p-3 rounded-lg ${
+                <div className={`p-2 sm:p-3 rounded-lg ${
                   message.sender === 'user'
                     ? 'bg-[#3498DB] text-white'
                     : 'bg-white/10 text-white backdrop-blur-lg'
                 }`}>
-                  <p className="text-sm">{message.text}</p>
+                  <p className="text-sm sm:text-base">{message.text}</p>
                   <p className="text-xs opacity-70 mt-1">
                     {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>

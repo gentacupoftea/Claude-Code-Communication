@@ -32,13 +32,15 @@ export default function LandingPage() {
           >
             <Link 
               href="/login" 
-              className="relative z-50 hover:text-[#1ABC9C] transition-colors cursor-pointer"
+              className="relative z-50 hover:text-[#1ABC9C] transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1ABC9C] focus:ring-offset-2 focus:ring-offset-gray-900 rounded px-2 py-1"
+              aria-label="ログインページへ移動"
             >
               ログイン
             </Link>
             <Link
               href="/signup"
-              className="relative z-50 bg-[#1ABC9C] px-6 py-2 rounded-full hover:bg-[#16A085] transition-colors cursor-pointer"
+              className="relative z-50 bg-[#1ABC9C] px-6 py-2 rounded-full hover:bg-[#16A085] transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1ABC9C] focus:ring-offset-2 focus:ring-offset-gray-900"
+              aria-label="無料でサービスを開始"
             >
               無料で始める
             </Link>
@@ -47,13 +49,13 @@ export default function LandingPage() {
       </header>
 
       {/* ヒーローセクション */}
-      <section className="relative z-10 px-4 py-20 md:px-8">
+      <section className="relative z-10 px-4 py-16 sm:py-20 md:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-5xl md:text-7xl font-bold mb-6"
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6"
           >
             AI技術で
             <span className="block bg-gradient-to-r from-[#1ABC9C] to-[#3498DB] bg-clip-text text-transparent">
@@ -65,7 +67,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-xl md:text-2xl mb-12 text-gray-300 max-w-3xl mx-auto"
+            className="text-lg sm:text-xl md:text-2xl mb-8 sm:mb-12 text-gray-300 max-w-3xl mx-auto px-4"
           >
             最先端のAIソリューションで、業務効率化と革新的な顧客体験を実現します
           </motion.p>
@@ -74,18 +76,20 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
+            className="flex flex-col sm:flex-row gap-4 justify-center px-4"
           >
             <Link
               href="/signup"
-              className="relative z-50 bg-[#1ABC9C] px-8 py-4 rounded-full text-lg font-semibold hover:bg-[#16A085] transition-all transform hover:scale-105 inline-flex items-center justify-center cursor-pointer"
+              className="relative z-50 bg-[#1ABC9C] px-6 sm:px-8 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold hover:bg-[#16A085] transition-all transform hover:scale-105 inline-flex items-center justify-center cursor-pointer w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-[#1ABC9C] focus:ring-offset-2 focus:ring-offset-gray-900"
+              aria-label="無料で今すぐサービスを開始"
             >
               無料で始める
-              <ChevronRight className="ml-2 w-5 h-5" />
+              <ChevronRight className="ml-2 w-5 h-5" aria-hidden="true" />
             </Link>
             <Link
               href="#features"
-              className="relative z-50 border border-[#1ABC9C] px-8 py-4 rounded-full text-lg font-semibold hover:bg-[#1ABC9C]/10 transition-all inline-flex items-center justify-center cursor-pointer"
+              className="relative z-50 border border-[#1ABC9C] px-6 sm:px-8 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold hover:bg-[#1ABC9C]/10 transition-all inline-flex items-center justify-center cursor-pointer w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-[#1ABC9C] focus:ring-offset-2 focus:ring-offset-gray-900"
+              aria-label="サービスの特徴を詳しく見る"
             >
               詳しく見る
             </Link>
@@ -94,13 +98,13 @@ export default function LandingPage() {
       </section>
 
       {/* 特徴セクション */}
-      <section id="features" className="relative z-10 px-4 py-20 md:px-8">
+      <section id="features" className="relative z-10 px-4 py-16 sm:py-20 md:px-8">
         <div className="max-w-7xl mx-auto">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-bold text-center mb-16"
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-12 sm:mb-16"
           >
             強力な機能で
             <span className="bg-gradient-to-r from-[#1ABC9C] to-[#3498DB] bg-clip-text text-transparent">
@@ -108,7 +112,7 @@ export default function LandingPage() {
             </span>
           </motion.h2>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
@@ -119,8 +123,8 @@ export default function LandingPage() {
               >
                 <GlassmorphicCard>
                   <div className="flex items-center mb-4">
-                    <div className="p-3 bg-[#1ABC9C]/20 rounded-lg">
-                      <feature.icon className="w-6 h-6 text-[#1ABC9C]" />
+                    <div className="p-3 bg-[#1ABC9C]/20 rounded-lg" role="img" aria-label={`${feature.title}のアイコン`}>
+                      <feature.icon className="w-6 h-6 text-[#1ABC9C]" aria-hidden="true" />
                     </div>
                     <h3 className="text-xl font-semibold ml-4">{feature.title}</h3>
                   </div>
@@ -133,13 +137,13 @@ export default function LandingPage() {
       </section>
 
       {/* 料金プランセクション */}
-      <section className="relative z-10 px-4 py-20 md:px-8">
+      <section className="relative z-10 px-4 py-16 sm:py-20 md:px-8">
         <div className="max-w-7xl mx-auto">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-bold text-center mb-16"
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-12 sm:mb-16"
           >
             シンプルで透明な
             <span className="bg-gradient-to-r from-[#1ABC9C] to-[#3498DB] bg-clip-text text-transparent">
@@ -147,7 +151,7 @@ export default function LandingPage() {
             </span>
           </motion.h2>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
             {/* Starter Plan */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -165,7 +169,7 @@ export default function LandingPage() {
                   <p className="text-gray-300 mb-8">
                     AIの力で、あなたのECビジネスを次のレベルへ。凄腕のデータアナリストをたった$89で。
                   </p>
-                  <ul className="space-y-3 mb-8">
+                  <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8">
                     <li className="flex items-center">
                       <ChevronRight className="w-5 h-5 text-[#1ABC9C] mr-2" />
                       基本的なAI分析機能
@@ -217,7 +221,7 @@ export default function LandingPage() {
                   <p className="text-gray-300 mb-8">
                     複数のAIが、あなたのビジネス成長を加速。売上予測から在庫最適化まで、すべて自動化。
                   </p>
-                  <ul className="space-y-3 mb-8">
+                  <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8">
                     <li className="flex items-center">
                       <ChevronRight className="w-5 h-5 text-[#1ABC9C] mr-2" />
                       高度なAI予測分析
@@ -268,7 +272,7 @@ export default function LandingPage() {
                   <p className="text-gray-300 mb-8">
                     独自のRAGシステムとMultiAI統合で、競合を圧倒する分析力を。
                   </p>
-                  <ul className="space-y-3 mb-8">
+                  <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8">
                     <li className="flex items-center">
                       <ChevronRight className="w-5 h-5 text-[#1ABC9C] mr-2" />
                       独自RAGシステム構築
@@ -306,19 +310,19 @@ export default function LandingPage() {
       </section>
 
       {/* CTA セクション */}
-      <section className="relative z-10 px-4 py-20 md:px-8">
+      <section className="relative z-10 px-4 py-16 sm:py-20 md:px-8">
         <div className="max-w-4xl mx-auto text-center">
           <GlassmorphicCard>
-            <Sparkles className="w-12 h-12 text-[#1ABC9C] mx-auto mb-6" />
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            <Sparkles className="w-10 h-10 sm:w-12 sm:h-12 text-[#1ABC9C] mx-auto mb-4 sm:mb-6" />
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6">
               今すぐAIの力を体験しよう
             </h2>
-            <p className="text-xl text-gray-300 mb-8">
+            <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8 px-4">
               クレジットカード不要で、すぐに始められます
             </p>
             <Link
               href="/signup"
-              className="relative z-50 bg-[#1ABC9C] px-8 py-4 rounded-full text-lg font-semibold hover:bg-[#16A085] transition-all transform hover:scale-105 inline-flex items-center cursor-pointer"
+              className="relative z-50 bg-[#1ABC9C] px-6 sm:px-8 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold hover:bg-[#16A085] transition-all transform hover:scale-105 inline-flex items-center cursor-pointer"
             >
               無料トライアルを開始
               <ChevronRight className="ml-2 w-5 h-5" />

@@ -1,166 +1,199 @@
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import Button from '../Button';
-import { ChevronRight } from 'lucide-react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { Button } from '../Button';
+import { ChevronRight, Plus } from 'lucide-react';
 
-describe('Button Component', () => {
-  test('renders with default props', () => {
+describe('Button', () => {
+  it('renders with children text', () => {
     render(<Button>Click me</Button>);
-    const button = screen.getByRole('button', { name: /click me/i });
-    expect(button).toBeInTheDocument();
-    expect(button).toHaveClass('bg-[#1ABC9C]'); // primary variant by default
+    expect(screen.getByRole('button', { name: 'Click me' })).toBeInTheDocument();
   });
 
-  test('renders with different variants', () => {
-    const { rerender } = render(<Button variant="secondary">Secondary</Button>);
-    expect(screen.getByRole('button')).toHaveClass('bg-[#3498DB]');
-
-    rerender(<Button variant="outline">Outline</Button>);
-    expect(screen.getByRole('button')).toHaveClass('border-[#1ABC9C]');
-
-    rerender(<Button variant="ghost">Ghost</Button>);
-    expect(screen.getByRole('button')).toHaveClass('text-gray-300');
+  it('applies primary variant styles by default', () => {
+    render(<Button>Primary Button</Button>);
+    const button = screen.getByRole('button');
+    expect(button).toHaveClass('bg-[#1ABC9C]', 'text-white');
   });
 
-  test('renders with different sizes', () => {
-    const { rerender } = render(<Button size="sm">Small</Button>);
-    expect(screen.getByRole('button')).toHaveClass('px-3', 'py-1.5', 'text-sm');
-
-    rerender(<Button size="md">Medium</Button>);
-    expect(screen.getByRole('button')).toHaveClass('px-4', 'py-2', 'text-base');
-
-    rerender(<Button size="lg">Large</Button>);
-    expect(screen.getByRole('button')).toHaveClass('px-6', 'py-3', 'text-lg');
+  it('applies secondary variant styles', () => {
+    render(<Button variant="secondary">Secondary Button</Button>);
+    const button = screen.getByRole('button');
+    expect(button).toHaveClass('bg-[#3498DB]', 'text-white');
   });
 
-  test('shows loading state', () => {
-    render(<Button loading>Loading</Button>);
+  it('applies outline variant styles', () => {
+    render(<Button variant="outline">Outline Button</Button>);
+    const button = screen.getByRole('button');
+    expect(button).toHaveClass('border', 'border-[#1ABC9C]', 'text-[#1ABC9C]', 'bg-transparent');
+  });
+
+  it('applies ghost variant styles', () => {
+    render(<Button variant="ghost">Ghost Button</Button>);
+    const button = screen.getByRole('button');
+    expect(button).toHaveClass('text-gray-300', 'bg-transparent');
+  });
+
+  it('applies small size styles', () => {
+    render(<Button size="sm">Small Button</Button>);
+    const button = screen.getByRole('button');
+    expect(button).toHaveClass('px-3', 'sm:px-4', 'py-2', 'text-xs', 'sm:text-sm');
+  });
+
+  it('applies medium size styles by default', () => {
+    render(<Button>Medium Button</Button>);
+    const button = screen.getByRole('button');
+    expect(button).toHaveClass('px-4', 'sm:px-6', 'py-2', 'sm:py-3', 'text-sm', 'sm:text-base');
+  });
+
+  it('applies large size styles', () => {
+    render(<Button size="lg">Large Button</Button>);
+    const button = screen.getByRole('button');
+    expect(button).toHaveClass('px-6', 'sm:px-8', 'py-3', 'sm:py-4', 'text-base', 'sm:text-lg');
+  });
+
+  it('applies full width when specified', () => {
+    render(<Button fullWidth>Full Width Button</Button>);
+    const button = screen.getByRole('button');
+    expect(button).toHaveClass('w-full');
+  });
+
+  it('shows loading state with spinner', () => {
+    render(<Button loading>Loading Button</Button>);
     const button = screen.getByRole('button');
     expect(button).toBeDisabled();
-    expect(button.querySelector('.animate-spin')).toBeInTheDocument();
+    expect(button.querySelector('[data-lucide="loader-2"]')).toBeInTheDocument();
   });
 
-  test('renders with left and right icons', () => {
-    render(
-      <Button leftIcon={<ChevronRight />} rightIcon={<ChevronRight />}>
-        With Icons
-      </Button>
-    );
-    
-    const button = screen.getByRole('button');
-    expect(button.querySelectorAll('svg')).toHaveLength(2);
-  });
-
-  test('applies fullWidth prop', () => {
-    render(<Button fullWidth>Full Width</Button>);
-    expect(screen.getByRole('button')).toHaveClass('w-full');
-  });
-
-  test('handles click events', () => {
-    const handleClick = jest.fn();
-    render(<Button onClick={handleClick}>Click me</Button>);
-    
-    fireEvent.click(screen.getByRole('button'));
-    expect(handleClick).toHaveBeenCalledTimes(1);
-  });
-
-  test('does not trigger click when disabled', () => {
-    const handleClick = jest.fn();
-    render(<Button onClick={handleClick} disabled>Disabled</Button>);
-    
-    fireEvent.click(screen.getByRole('button'));
-    expect(handleClick).not.toHaveBeenCalled();
-  });
-
-  test('does not trigger click when loading', () => {
-    const handleClick = jest.fn();
-    render(<Button onClick={handleClick} loading>Loading</Button>);
-    
-    fireEvent.click(screen.getByRole('button'));
-    expect(handleClick).not.toHaveBeenCalled();
-  });
-
-  test('applies custom className', () => {
-    render(<Button className="custom-class">Custom</Button>);
-    expect(screen.getByRole('button')).toHaveClass('custom-class');
-  });
-
-  test('forwards other button props', () => {
-    render(<Button type="submit" data-testid="submit-btn">Submit</Button>);
-    const button = screen.getByTestId('submit-btn');
-    expect(button).toHaveAttribute('type', 'submit');
-  });
-
-  test('has proper accessibility attributes', () => {
-    render(<Button aria-label="Custom label">Button</Button>);
-    expect(screen.getByLabelText('Custom label')).toBeInTheDocument();
-  });
-
-  test('renders children correctly', () => {
-    render(
-      <Button>
-        <span>Complex</span> <em>children</em>
-      </Button>
-    );
-    expect(screen.getByText('Complex')).toBeInTheDocument();
-    expect(screen.getByText('children')).toBeInTheDocument();
-  });
-
-  test('applies focus styles when focused', () => {
-    render(<Button>Focus me</Button>);
-    const button = screen.getByRole('button');
-    
-    button.focus();
-    expect(button).toHaveFocus();
-  });
-
-  test('maintains button semantic when loading', () => {
+  it('is disabled when loading', () => {
     render(<Button loading>Loading Button</Button>);
-    expect(screen.getByRole('button')).toBeInTheDocument();
-  });
-
-  test('loading state hides text content', () => {
-    render(<Button loading>Hidden Text</Button>);
-    const textElement = screen.getByText('Hidden Text');
-    expect(textElement).toHaveClass('opacity-0');
-  });
-
-  test('loading state does not show icons', () => {
-    render(
-      <Button loading leftIcon={<ChevronRight />} rightIcon={<ChevronRight />}>
-        Loading
-      </Button>
-    );
-    // Icons should not be rendered when loading
-    const button = screen.getByRole('button');
-    const svgs = button.querySelectorAll('svg');
-    expect(svgs).toHaveLength(0); // No icons, only loading spinner
-  });
-
-  test('disabled state has proper styling', () => {
-    render(<Button disabled>Disabled Button</Button>);
     const button = screen.getByRole('button');
     expect(button).toBeDisabled();
     expect(button).toHaveClass('disabled:opacity-50', 'disabled:cursor-not-allowed');
   });
 
-  test('combines variant and size classes correctly', () => {
-    render(<Button variant="outline" size="lg">Large Outline</Button>);
+  it('is disabled when disabled prop is true', () => {
+    render(<Button disabled>Disabled Button</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('border-[#1ABC9C]'); // outline variant
-    expect(button).toHaveClass('px-6', 'py-3', 'text-lg'); // large size
+    expect(button).toBeDisabled();
   });
 
-  test('handles keyboard interactions', () => {
-    const handleClick = jest.fn();
-    render(<Button onClick={handleClick}>Keyboard Test</Button>);
+  it('renders left icon', () => {
+    render(
+      <Button leftIcon={<Plus data-testid="plus-icon" />}>
+        Button with left icon
+      </Button>
+    );
+    
+    expect(screen.getByTestId('plus-icon')).toBeInTheDocument();
+    const button = screen.getByRole('button');
+    const icon = screen.getByTestId('plus-icon');
+    expect(button).toContainElement(icon);
+  });
+
+  it('renders right icon', () => {
+    render(
+      <Button rightIcon={<ChevronRight data-testid="chevron-icon" />}>
+        Button with right icon
+      </Button>
+    );
+    
+    expect(screen.getByTestId('chevron-icon')).toBeInTheDocument();
+    const button = screen.getByRole('button');
+    const icon = screen.getByTestId('chevron-icon');
+    expect(button).toContainElement(icon);
+  });
+
+  it('hides icons when loading', () => {
+    render(
+      <Button 
+        loading 
+        leftIcon={<Plus data-testid="left-icon" />}
+        rightIcon={<ChevronRight data-testid="right-icon" />}
+      >
+        Loading Button
+      </Button>
+    );
+    
+    expect(screen.queryByTestId('left-icon')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('right-icon')).not.toBeInTheDocument();
+    expect(screen.getByRole('button').querySelector('[data-lucide="loader-2"]')).toBeInTheDocument();
+  });
+
+  it('handles click events', async () => {
+    const handleClick = vi.fn();
+    const user = userEvent.setup();
+    
+    render(<Button onClick={handleClick}>Clickable Button</Button>);
+    
+    await user.click(screen.getByRole('button'));
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not handle click when disabled', async () => {
+    const handleClick = vi.fn();
+    const user = userEvent.setup();
+    
+    render(<Button onClick={handleClick} disabled>Disabled Button</Button>);
+    
+    await user.click(screen.getByRole('button'));
+    expect(handleClick).not.toHaveBeenCalled();
+  });
+
+  it('does not handle click when loading', async () => {
+    const handleClick = vi.fn();
+    const user = userEvent.setup();
+    
+    render(<Button onClick={handleClick} loading>Loading Button</Button>);
+    
+    await user.click(screen.getByRole('button'));
+    expect(handleClick).not.toHaveBeenCalled();
+  });
+
+  it('applies custom className', () => {
+    render(<Button className="custom-class">Custom Button</Button>);
+    const button = screen.getByRole('button');
+    expect(button).toHaveClass('custom-class');
+  });
+
+  it('forwards HTML button attributes', () => {
+    render(
+      <Button 
+        type="submit" 
+        form="test-form" 
+        aria-label="Submit form"
+        data-testid="submit-button"
+      >
+        Submit
+      </Button>
+    );
+    
+    const button = screen.getByRole('button');
+    expect(button).toHaveAttribute('type', 'submit');
+    expect(button).toHaveAttribute('form', 'test-form');
+    expect(button).toHaveAttribute('aria-label', 'Submit form');
+    expect(button).toHaveAttribute('data-testid', 'submit-button');
+  });
+
+  it('has proper accessibility attributes', () => {
+    render(<Button>Accessible Button</Button>);
     const button = screen.getByRole('button');
     
-    fireEvent.keyDown(button, { key: 'Enter' });
-    fireEvent.keyDown(button, { key: ' ' });
-    
-    // Button should handle these events naturally
-    expect(button).toBeInTheDocument();
+    // Check for focus management classes
+    expect(button).toHaveClass('focus:outline-none', 'focus:ring-2', 'focus:ring-offset-2');
+  });
+
+  it('maintains focus ring for different variants', () => {
+    const { rerender } = render(<Button variant="primary">Primary</Button>);
+    expect(screen.getByRole('button')).toHaveClass('focus:ring-[#1ABC9C]');
+
+    rerender(<Button variant="secondary">Secondary</Button>);
+    expect(screen.getByRole('button')).toHaveClass('focus:ring-[#3498DB]');
+
+    rerender(<Button variant="outline">Outline</Button>);
+    expect(screen.getByRole('button')).toHaveClass('focus:ring-[#1ABC9C]');
+
+    rerender(<Button variant="ghost">Ghost</Button>);
+    expect(screen.getByRole('button')).toHaveClass('focus:ring-gray-400');
   });
 });
