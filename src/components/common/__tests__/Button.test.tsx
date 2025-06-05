@@ -111,7 +111,7 @@ describe('Button Component', () => {
     render(<Button>Focus me</Button>);
     const button = screen.getByRole('button');
     
-    fireEvent.focus(button);
+    button.focus();
     expect(button).toHaveFocus();
   });
 

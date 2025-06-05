@@ -61,8 +61,8 @@ describe('Input Component', () => {
 
   test('applies fullWidth prop', () => {
     render(<Input fullWidth />);
-    const container = screen.getByRole('textbox').closest('div');
-    expect(container).toHaveClass('w-full');
+    const wrapper = screen.getByRole('textbox').parentElement?.parentElement;
+    expect(wrapper).toHaveClass('w-full');
   });
 
   test('applies custom className', () => {
@@ -108,11 +108,12 @@ describe('Input Component', () => {
   });
 
   test('generates unique id when not provided', () => {
-    const { rerender } = render(<Input label="First Input" />);
+    const { unmount } = render(<Input label="First Input" />);
     const firstInput = screen.getByLabelText('First Input');
     const firstId = firstInput.getAttribute('id');
     
-    rerender(<Input label="Second Input" />);
+    unmount();
+    render(<Input label="Second Input" />);
     const secondInput = screen.getByLabelText('Second Input');
     const secondId = secondInput.getAttribute('id');
     
@@ -156,8 +157,8 @@ describe('Input Component', () => {
 
   test('container sizing with fullWidth false', () => {
     render(<Input fullWidth={false} />);
-    const container = screen.getByRole('textbox').closest('div');
-    expect(container).toHaveClass('max-w-md');
+    const wrapper = screen.getByRole('textbox').parentElement?.parentElement;
+    expect(wrapper).toHaveClass('max-w-md');
   });
 
   test('maintains input value', () => {
@@ -203,7 +204,7 @@ describe('Input Component', () => {
       />
     );
     
-    const input = screen.getByRole('textbox');
+    const input = screen.getByDisplayValue('') as HTMLInputElement;
     expect(input).toHaveAttribute('type', 'password');
     expect(input).toHaveAttribute('autoComplete', 'current-password');
     expect(input).toHaveAttribute('name', 'password');
