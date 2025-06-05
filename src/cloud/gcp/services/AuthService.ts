@@ -151,7 +151,7 @@ export class AuthService {
 
   private setupRoutes(): void {
     // Health check
-    this.app.get('/health', (req, res) => {
+    this.app.get('/health', (req: any, res: any) => {
       res.json({ status: 'healthy', service: 'auth' });
     });
 

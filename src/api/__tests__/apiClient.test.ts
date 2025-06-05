@@ -25,17 +25,20 @@ describe('apiClient', () => {
     sessionStorage.clear();
   });
 
-  describe('auth module', () => {
+  describe('auth endpoints', () => {
     it('should handle login correctly', async () => {
       mockAxios.post.mockResolvedValueOnce({ data: mockAuthResponse });
       
-      const result = await apiClient.auth.login('test-shop.myshopify.com');
+      const result = await apiClient.post('/auth/token', {
+        shop: 'test-shop.myshopify.com'
+      });
       
       expect(mockAxios.post).toHaveBeenCalledWith(
         '/auth/token',
         expect.objectContaining({
           shop: 'test-shop.myshopify.com'
-        })
+        }),
+        expect.any(Object)
       );
       
       expect(result).toEqual(mockAuthResponse);
@@ -45,13 +48,16 @@ describe('apiClient', () => {
       const refreshedToken = { ...mockAuthResponse, accessToken: 'new-token' };
       mockAxios.post.mockResolvedValueOnce({ data: refreshedToken });
       
-      const result = await apiClient.auth.refresh('old-refresh-token');
+      const result = await apiClient.post('/auth/refresh', {
+        refreshToken: 'old-refresh-token'
+      });
       
       expect(mockAxios.post).toHaveBeenCalledWith(
         '/auth/refresh',
         expect.objectContaining({
           refreshToken: 'old-refresh-token'
-        })
+        }),
+        expect.any(Object)
       );
       
       expect(result).toEqual(refreshedToken);
@@ -60,31 +66,32 @@ describe('apiClient', () => {
     it('should handle logout correctly', async () => {
       mockAxios.post.mockResolvedValueOnce({ data: { success: true } });
       
-      await apiClient.auth.logout();
+      const result = await apiClient.post('/auth/logout', {});
       
-      expect(mockAxios.post).toHaveBeenCalledWith('/auth/logout');
+      expect(mockAxios.post).toHaveBeenCalledWith('/auth/logout', {}, expect.any(Object));
+      expect(result).toEqual({ success: true });
     });
   });
 
-  describe('dashboard module', () => {
+  describe('dashboard endpoints', () => {
     it('should fetch dashboard summary correctly', async () => {
       mockAxios.get.mockResolvedValueOnce({ data: mockDashboardData });
       
-      const result = await apiClient.dashboard.getSummary();
+      const result = await apiClient.get('/dashboard/summary');
       
-      expect(mockAxios.get).toHaveBeenCalledWith('/dashboard/summary');
+      expect(mockAxios.get).toHaveBeenCalledWith('/dashboard/summary', expect.any(Object));
       expect(result).toEqual(mockDashboardData);
     });
   });
 
-  describe('products module', () => {
+  describe('products endpoints', () => {
     it('should fetch products correctly', async () => {
       const mockProducts = [{ id: '1', title: 'Test Product' }];
       mockAxios.get.mockResolvedValueOnce({ data: mockProducts });
       
-      const result = await apiClient.products.getAll();
+      const result = await apiClient.get('/products');
       
-      expect(mockAxios.get).toHaveBeenCalledWith('/products');
+      expect(mockAxios.get).toHaveBeenCalledWith('/products', expect.any(Object));
       expect(result).toEqual(mockProducts);
     });
     
@@ -92,9 +99,9 @@ describe('apiClient', () => {
       const mockProduct = { id: '1', title: 'Test Product' };
       mockAxios.get.mockResolvedValueOnce({ data: mockProduct });
       
-      const result = await apiClient.products.getById('1');
+      const result = await apiClient.get('/products/1');
       
-      expect(mockAxios.get).toHaveBeenCalledWith('/products/1');
+      expect(mockAxios.get).toHaveBeenCalledWith('/products/1', expect.any(Object));
       expect(result).toEqual(mockProduct);
     });
     
@@ -103,9 +110,9 @@ describe('apiClient', () => {
       const createdProduct = { id: '2', ...newProduct };
       mockAxios.post.mockResolvedValueOnce({ data: createdProduct });
       
-      const result = await apiClient.products.create(newProduct);
+      const result = await apiClient.post('/products', newProduct);
       
-      expect(mockAxios.post).toHaveBeenCalledWith('/products', newProduct);
+      expect(mockAxios.post).toHaveBeenCalledWith('/products', newProduct, expect.any(Object));
       expect(result).toEqual(createdProduct);
     });
     
@@ -114,18 +121,18 @@ describe('apiClient', () => {
       const updatedProduct = { id: '1', title: 'Updated Product', price: 19.99 };
       mockAxios.put.mockResolvedValueOnce({ data: updatedProduct });
       
-      const result = await apiClient.products.update('1', updatedData);
+      const result = await apiClient.put('/products/1', updatedData);
       
-      expect(mockAxios.put).toHaveBeenCalledWith('/products/1', updatedData);
+      expect(mockAxios.put).toHaveBeenCalledWith('/products/1', updatedData, expect.any(Object));
       expect(result).toEqual(updatedProduct);
     });
     
     it('should delete a product correctly', async () => {
       mockAxios.delete.mockResolvedValueOnce({ data: { success: true } });
       
-      await apiClient.products.delete('1');
+      const result = await apiClient.delete('/products/1');
       
-      expect(mockAxios.delete).toHaveBeenCalledWith('/products/1');
+      expect(mockAxios.delete).toHaveBeenCalledWith('/products/1', expect.any(Object));
     });
   });
 
@@ -139,8 +146,8 @@ describe('apiClient', () => {
       
       localStorage.setItem('auth_token', JSON.stringify(mockToken));
       
-      // Initialize a new instance to trigger interceptor setup
-      const instance = apiClient.createInstance();
+      // The interceptors are set up on initialization
+      // We can directly use the mocked interceptors
       
       // Extract the interceptor function
       const requestInterceptor = mockAxios.interceptors.request.use.mock.calls[0][0];
@@ -156,8 +163,8 @@ describe('apiClient', () => {
     });
     
     it('should handle request errors in interceptor', async () => {
-      // Initialize a new instance
-      const instance = apiClient.createInstance();
+      // The interceptors are set up on initialization
+      // We can directly use the mocked interceptors
       
       // Extract the error handler from the interceptor
       const errorHandler = mockAxios.interceptors.request.use.mock.calls[0][1];
@@ -170,8 +177,8 @@ describe('apiClient', () => {
     });
     
     it('should handle response errors in interceptor', async () => {
-      // Initialize a new instance
-      const instance = apiClient.createInstance();
+      // The interceptors are set up on initialization
+      // We can directly use the mocked interceptors
       
       // Extract the error handler from the interceptor
       const errorHandler = mockAxios.interceptors.response.use.mock.calls[0][1];

@@ -100,7 +100,7 @@ export class ShopifyService {
 
   private setupRoutes(): void {
     // Health check
-    this.app.get('/health', (req, res) => {
+    this.app.get('/health', (req: any, res: any) => {
       res.json({ status: 'healthy', service: 'shopify' });
     });
 
@@ -170,7 +170,7 @@ export class ShopifyService {
       this.shopify.webhooks.addHandler(topic, {
         deliveryMethod: 'http',
         callbackUrl: `${this.config.hostName}${this.config.webhookPath}/${topic.toLowerCase()}`,
-        callback: async (topic, shopDomain, body) => {
+        callback: async (topic: any, shopDomain: any, body: any) => {
           await this.processWebhook(topic, shopDomain, body);
         }
       });

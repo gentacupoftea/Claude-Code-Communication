@@ -123,7 +123,7 @@ export class ExportService {
     this.app.use(express.json());
 
     // Health check
-    this.app.get('/health', (req, res) => {
+    this.app.get('/health', (req: any, res: any) => {
       res.json({ status: 'healthy', service: 'export' });
     });
 
@@ -725,9 +725,9 @@ export class ExportService {
       });
 
       // Auto-fit columns
-      worksheet.columns.forEach(column => {
+      worksheet.columns.forEach((column: any) => {
         let maxLength = 0;
-        column.eachCell!({ includeEmpty: true }, cell => {
+        column.eachCell!({ includeEmpty: true }, (cell: any) => {
           const length = cell.value ? cell.value.toString().length : 0;
           maxLength = Math.max(maxLength, length);
         });
@@ -766,7 +766,7 @@ export class ExportService {
       const doc = new PDFDocument();
       const chunks: Buffer[] = [];
 
-      doc.on('data', chunk => chunks.push(chunk));
+      doc.on('data', (chunk: any) => chunks.push(chunk));
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
