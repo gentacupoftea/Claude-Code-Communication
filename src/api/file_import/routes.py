@@ -5,13 +5,14 @@ CSV/Excelファイルのアップロードとデータ取り込み機能を提�
 
 import logging
 from typing import Dict, List, Any, Optional
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, BackgroundTasks, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 import asyncio
 
 from ...file_import.file_upload import FileUploadHandler, FastAPIFileUploadAdapter, UploadResult
 from ...auth.dependencies import get_current_user  # 認証依存関数（既存）
+from ...middleware.upload_rate_limit import rate_limit_upload
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,9 @@ async def get_upload_handler() -> FileUploadHandler:
 
 
 @router.post("/upload", response_model=FileUploadResponse)
+@rate_limit_upload
 async def upload_file(
+    request: Request,
     file: UploadFile = File(...),
     user = Depends(get_current_user),
     handler: FileUploadHandler = Depends(get_upload_handler)

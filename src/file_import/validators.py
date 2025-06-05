@@ -150,8 +150,8 @@ class FileValidator:
                 errors.extend(mime_check['errors'])
             warnings.extend(mime_check['warnings'])
             
-            # ファイル署名チェック
-            signature_check = self._validate_file_signature(content)
+            # ファイル署名チェック（ファイル名情報を渡す）
+            signature_check = self._validate_file_signature_with_context(content, filename)
             if not signature_check['is_valid']:
                 errors.extend(signature_check['errors'])
             warnings.extend(signature_check['warnings'])
@@ -162,6 +162,13 @@ class FileValidator:
                 if not content_check['is_valid']:
                     errors.extend(content_check['errors'])
                 warnings.extend(content_check['warnings'])
+            
+            # Excelマクロチェック（.xlsmファイルの場合）
+            if filename.lower().endswith('.xlsm'):
+                macro_check = self._check_excel_macros(content)
+                if not macro_check['is_valid']:
+                    errors.extend(macro_check['errors'])
+                warnings.extend(macro_check['warnings'])
             
             is_valid = len(errors) == 0
             
@@ -354,15 +361,29 @@ class FileValidator:
         elif header.startswith(b'\x7fELF'):
             errors.append("Executable file detected (ELF format)")
         
-        # Office文書の特別なチェック
+        # ZIP形式の詳細チェック（Office文書とZIPファイルを区別）
         if header.startswith(b'PK\x03\x04'):
-            # ZIP形式（Office文書も含む）
-            # より詳細なチェックが必要な場合はここで実装
-            pass
+            # ZIPベースのファイルをより詳細に検査
+            is_office = self._is_office_document(content)
+            if is_office:
+                # Officeドキュメントは許可
+                warnings.append("Office document detected (ZIP-based format)")
+            else:
+                # 通常のZIPファイルは危険な可能性があるため、エラーとする
+                # ただし、ファイル拡張子が許可されたものであれば警告のみ
+                import magic
+                try:
+                    mime_type = magic.from_buffer(content, mime=True)
+                    if mime_type in self.allowed_mime_types:
+                        warnings.append("ZIP-based file detected but MIME type is allowed")
+                    else:
+                        errors.append("ZIP archive detected - not allowed for security reasons")
+                except Exception:
+                    errors.append("ZIP archive detected - not allowed for security reasons")
         
-        # その他の危険な署名
+        # その他の危険な署名（PK\x03\x04は除外済み）
         for dangerous_sig in self.DANGEROUS_SIGNATURES:
-            if header.startswith(dangerous_sig) and dangerous_sig != b'PK\x03\x04':
+            if dangerous_sig != b'PK\x03\x04' and header.startswith(dangerous_sig):
                 errors.append(f"Dangerous file signature detected")
                 break
         
@@ -371,6 +392,89 @@ class FileValidator:
             'errors': errors,
             'warnings': warnings
         }
+    
+    def _validate_file_signature_with_context(self, content: bytes, filename: str) -> Dict[str, Any]:
+        """
+        ファイル署名をファイル名のコンテキストと共に検証
+        
+        Args:
+            content: ファイル内容
+            filename: ファイル名
+            
+        Returns:
+            Dict: 検証結果
+        """
+        # 拡張子を取得
+        extension = Path(filename).suffix.lower()
+        
+        # 基本的な署名検証を実行
+        signature_result = self._validate_file_signature(content)
+        
+        # ZIP署名の特別処理
+        if len(content) >= 4 and content[:4] == b'PK\x03\x04':
+            # Excel/Word/PowerPointファイルの拡張子の場合は、エラーを除去
+            office_extensions = {'.xlsx', '.xlsm', '.docx', '.docm', '.pptx', '.pptm'}
+            if extension in office_extensions:
+                # エラーをフィルタリング（ZIP関連のエラーを除去）
+                signature_result['errors'] = [
+                    error for error in signature_result['errors']
+                    if 'ZIP' not in error
+                ]
+                signature_result['is_valid'] = len(signature_result['errors']) == 0
+        
+        return signature_result
+    
+    def _is_office_document(self, content: bytes) -> bool:
+        """
+        ZIPベースのファイルがOfficeドキュメントかどうかを判定
+        
+        Args:
+            content: ファイル内容
+            
+        Returns:
+            bool: Officeドキュメントの場合True
+        """
+        try:
+            import zipfile
+            import io
+            
+            # ZIPファイルとして読み込み
+            with zipfile.ZipFile(io.BytesIO(content), 'r') as zf:
+                filelist = zf.namelist()
+                
+                # Office文書の特徴的なファイル/フォルダをチェック
+                office_indicators = [
+                    # Excel
+                    'xl/workbook.xml',
+                    'xl/worksheets/',
+                    # Word
+                    'word/document.xml',
+                    'word/_rels/',
+                    # PowerPoint
+                    'ppt/presentation.xml',
+                    'ppt/slides/',
+                    # 共通
+                    '[Content_Types].xml',
+                    '_rels/.rels',
+                    'docProps/core.xml'
+                ]
+                
+                for indicator in office_indicators:
+                    if any(f.startswith(indicator) for f in filelist):
+                        return True
+                
+                # OpenDocument形式をチェック
+                if 'mimetype' in filelist:
+                    mimetype = zf.read('mimetype').decode('utf-8').strip()
+                    if mimetype.startswith('application/vnd.oasis.opendocument'):
+                        return True
+                        
+            return False
+            
+        except Exception as e:
+            logger.debug(f"Failed to analyze ZIP structure: {e}")
+            # ZIP構造の解析に失敗した場合は、安全のためFalseを返す
+            return False
     
     def _scan_file_content(self, content: bytes) -> Dict[str, Any]:
         """
