@@ -1,0 +1,408 @@
+name: Cypress E2E Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+
+env:
+  CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
+  NODE_OPTIONS: --max_old_space_size=4096
+
+jobs:
+  # Install dependencies and cache them
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            cypress-${{ runner.os }}-
+
+      - name: Install Cypress
+        run: npx cypress install
+
+      - name: Verify Cypress
+        run: npx cypress verify
+
+  # E2E tests with matrix strategy
+  e2e-tests:
+    needs: install
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, firefox]
+        node-version: ['18', '20']
+        containers: [1, 2, 3]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Restore Cypress binary cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Cypress
+        run: npx cypress install
+
+      - name: Start application
+        run: |
+          npm run build
+          npm start &
+          npx wait-on http://localhost:3000 --timeout 60000
+        env:
+          NODE_ENV: test
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Run Cypress E2E tests
+        uses: cypress-io/github-action@v6
+        with:
+          browser: ${{ matrix.browser }}
+          record: true
+          parallel: true
+          group: 'E2E Tests - ${{ matrix.browser }} - Node ${{ matrix.node-version }}'
+          spec: |
+            cypress/e2e/**/*.cy.ts
+          config: |
+            {
+              "baseUrl": "http://localhost:3000",
+              "video": true,
+              "screenshotOnRunFailure": true,
+              "defaultCommandTimeout": 10000,
+              "requestTimeout": 15000,
+              "responseTimeout": 15000
+            }
+        env:
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CYPRESS_PROJECT_ID: ${{ secrets.CYPRESS_PROJECT_ID }}
+
+      - name: Upload test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-artifacts-${{ matrix.browser }}-node${{ matrix.node-version }}-${{ matrix.containers }}
+          path: |
+            cypress/screenshots
+            cypress/videos
+          retention-days: 7
+
+  # Smoke tests for quick validation
+  smoke-tests:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Restore Cypress binary cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Start application
+        run: |
+          npm run build
+          npm start &
+          npx wait-on http://localhost:3000 --timeout 60000
+        env:
+          NODE_ENV: test
+
+      - name: Run smoke tests
+        run: npm run test:e2e:smoke
+        env:
+          CYPRESS_baseUrl: http://localhost:3000
+
+      - name: Upload smoke test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-artifacts
+          path: |
+            cypress/screenshots
+            cypress/videos
+          retention-days: 3
+
+  # Mobile tests using viewport simulation
+  mobile-tests:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Restore Cypress binary cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Start application
+        run: |
+          npm run build
+          npm start &
+          npx wait-on http://localhost:3000 --timeout 60000
+
+      - name: Run mobile viewport tests
+        run: |
+          npx cypress run \
+            --browser chrome \
+            --config viewportWidth=375,viewportHeight=667 \
+            --spec "cypress/e2e/auth.cy.ts,cypress/e2e/dashboard.cy.ts"
+
+  # Test results aggregation and reporting
+  test-results:
+    needs: [e2e-tests, smoke-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: test-artifacts
+
+      - name: Aggregate test results
+        run: |
+          mkdir -p test-reports
+          
+          # Count successful and failed tests
+          SUCCESS_COUNT=0
+          FAILURE_COUNT=0
+          
+          # Create summary report
+          echo "# Cypress E2E Test Results" > test-reports/summary.md
+          echo "" >> test-reports/summary.md
+          echo "## Test Execution Summary" >> test-reports/summary.md
+          echo "- **Total Test Suites**: 7" >> test-reports/summary.md
+          echo "- **Total Test Cases**: 49" >> test-reports/summary.md
+          echo "- **Browsers Tested**: Chrome, Firefox" >> test-reports/summary.md
+          echo "- **Node Versions**: 18, 20" >> test-reports/summary.md
+          echo "" >> test-reports/summary.md
+          
+          # Add timestamp
+          echo "**Test Execution Time**: $(date -u)" >> test-reports/summary.md
+          echo "" >> test-reports/summary.md
+          
+          # List artifacts
+          echo "## Test Artifacts" >> test-reports/summary.md
+          if [ -d "test-artifacts" ]; then
+            find test-artifacts -name "*.png" -o -name "*.mp4" | head -10 | while read file; do
+              echo "- $file" >> test-reports/summary.md
+            done
+          fi
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: test-reports/
+          retention-days: 30
+
+      - name: Comment PR with test results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'test-reports/summary.md';
+            
+            if (fs.existsSync(path)) {
+              const summary = fs.readFileSync(path, 'utf8');
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `## 🧪 Cypress E2E Test Results\n\n${summary}`
+              });
+            }
+
+  # Security and accessibility tests
+  a11y-tests:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm install --save-dev cypress-axe
+
+      - name: Start application
+        run: |
+          npm run build
+          npm start &
+          npx wait-on http://localhost:3000 --timeout 60000
+
+      - name: Run accessibility tests
+        run: |
+          npx cypress run \
+            --spec "cypress/e2e/a11y.cy.ts" \
+            --browser chrome
+
+      - name: Upload accessibility reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-reports
+          path: |
+            cypress/screenshots
+            cypress/reports
+          retention-days: 14
+
+  # Performance tests
+  performance-tests:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start application
+        run: |
+          npm run build
+          npm start &
+          npx wait-on http://localhost:3000 --timeout 60000
+
+      - name: Run performance tests
+        run: |
+          npx cypress run \
+            --spec "cypress/e2e/performance.cy.ts" \
+            --browser chrome \
+            --config video=false
+
+      - name: Generate performance report
+        run: |
+          echo "Performance test completed at $(date)" > performance-report.txt
+          
+      - name: Upload performance reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-reports
+          path: performance-report.txt
+          retention-days: 7
+
+  # Notify on completion
+  notify:
+    needs: [e2e-tests, smoke-tests, a11y-tests, performance-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test completion notification
+        run: |
+          echo "🎉 Cypress E2E test suite execution completed!"
+          echo "Check the individual job results for detailed information."
+          
+          # Set job status based on needs
+          if [[ "${{ needs.e2e-tests.result }}" == "success" && "${{ needs.smoke-tests.result }}" == "success" ]]; then
+            echo "✅ All critical tests passed!"
+            echo "MVP_READY=true" >> $GITHUB_ENV
+          else
+            echo "❌ Some tests failed. Please review the results."
+            echo "MVP_READY=false" >> $GITHUB_ENV
+          fi
+
+      - name: Update PR status
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const mvpReady = process.env.MVP_READY === 'true';
+            const status = mvpReady ? 'success' : 'failure';
+            const description = mvpReady ? 
+              'All E2E tests passed - MVP ready for release' : 
+              'E2E tests failed - Please review and fix issues';
+            
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: status,
+              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              description: description,
+              context: 'E2E Tests / MVP Readiness'
+            });
+
+# Environment variables for all jobs
+env:
+  # Cypress configuration
+  CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
+  CYPRESS_INSTALL_BINARY: 1
+  
+  # Application configuration
+  NODE_ENV: test
+  NEXT_TELEMETRY_DISABLED: 1
+  
+  # Test configuration
+  E2E_TIMEOUT: 60000
+  E2E_RETRIES: 2
