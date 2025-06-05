@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import Button from '../Button';
+import { Button } from '../Button';
 import { ChevronRight } from 'lucide-react';
 
 describe('Button Component', () => {
