@@ -1415,6 +1415,63 @@
       "dependencies": [],
       "priority": "low",
       "subtasks": []
+    },
+    {
+      "id": 41,
+      "title": "Claude Code GitHub Actions 導入によるエラー自動修正フロー構築",
+      "description": "Sentry/Datadog等のエラー検知からSlack通知、Claude Code GitHub Actionsによる自動エラー修正、PR作成、デプロイまでのフローを構築する。既存の課金形態で利用可能な方法を優先的に調査・導入する。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Claude Code GitHub Appのインストールと基本設定",
+          "description": "リポジトリへのClaude GitHub Appインストール、ANTHROPIC_API_KEYのシークレット設定、基本ワークフローファイルの配置、プロジェクト標準を定義するCLAUDE.mdの初期設定を行う。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 41
+        },
+        {
+          "id": 2,
+          "title": "エラー検知・通知システムの調査と設定",
+          "description": "Sentry/Datadogがエラー検知時にGitHub Issueを自動作成し、`@claude`メンションとエラー詳細を書き込めるかの実現性を調査・設定する。Slack通知との連携も考慮する。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 41
+        },
+        {
+          "id": 3,
+          "title": "エラー修正用GitHub Actionsワークフローの設計と実装",
+          "description": "GitHub IssueコメントをトリガーとしてClaude Codeアクションを起動し、エラー情報をプロンプトとして渡し、修正コードを含むPRを自動作成するワークフローを設計・実装する。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 41
+        },
+        {
+          "id": 4,
+          "title": "自動テストとレビュープロセスの定義",
+          "description": "Claude Codeによって自動作成されたPRに対して、既存のCIテストを自動実行する仕組みを整備する。また、自動修正されたコードのレビュールールや、自動マージの可否判断基準を策定する。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 41
+        },
+        {
+          "id": 5,
+          "title": "段階的導入と効果測定計画",
+          "description": "まずは特定のエラーパターンや影響範囲の小さい箇所から自動修正フローを試行し、徐々に対象を拡大する。修正成功率、対応時間短縮効果などのKPIを設定し、効果を測定・改善する計画を立てる。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 41
+        }
+      ]
     }
   ]
 }

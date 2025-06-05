@@ -56,9 +56,9 @@ export class RoutingOptimizer {
 
   private analyzeRoutingPerformance(benchmarkResults: any): any {
     const analysis = {
-      providerAccuracy: new Map<string, number>(),
-      categoryProviderFit: new Map<string, Map<string, number>>(),
-      difficultyProviderFit: new Map<string, Map<string, number>>(),
+      providerAccuracy: new Map<string, { sum: number; count: number }>(),
+      categoryProviderFit: new Map<string, Map<string, { sum: number; count: number }>>(),
+      difficultyProviderFit: new Map<string, Map<string, { sum: number; count: number }>>(),
       misroutedQuestions: [] as any[]
     };
 

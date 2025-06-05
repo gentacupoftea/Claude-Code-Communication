@@ -44,7 +44,7 @@ export class DataPipeline extends EventEmitter {
   private shopifyService: ShopifyService;
   private processingMetrics: ProcessingMetrics;
   private isRunning: boolean = false;
-  private updateTimer: NodeJS.Timer | null = null;
+  private updateTimer: NodeJS.Timeout | null = null;
   private dataCache: Map<string, any> = new Map();
 
   constructor(shopifyService: ShopifyService, config: Partial<PipelineConfig> = {}) {
@@ -290,7 +290,7 @@ export class DataPipeline extends EventEmitter {
     let labels: tf.Tensor | undefined;
     if (config.targetVariable) {
       const labelData = allData.map(record => 
-        this.extractFeature(record, config.targetVariable)
+        this.extractFeature(record, config.targetVariable!)
       );
       labels = tf.tensor1d(labelData);
     }
@@ -428,8 +428,8 @@ export class DataPipeline extends EventEmitter {
       category: product.product_type || 'uncategorized',
       vendor: product.vendor,
       price: parseFloat(product.variants[0]?.price || '0'),
-      inventory: product.variants.reduce((sum, v) => sum + (v.inventory_quantity || 0), 0),
-      tags: product.tags ? product.tags.split(',').map(t => t.trim()) : [],
+      inventory: product.variants.reduce((sum: number, v: any) => sum + (v.inventory_quantity || 0), 0),
+      tags: product.tags ? product.tags.split(',').map((t: string) => t.trim()) : [],
       createdAt: new Date(product.created_at),
       updatedAt: new Date(product.updated_at),
       // 追加の特徴量
@@ -475,7 +475,7 @@ export class DataPipeline extends EventEmitter {
       lastName: customer.last_name,
       ordersCount: customer.orders_count,
       totalSpent: parseFloat(customer.total_spent),
-      tags: customer.tags ? customer.tags.split(',').map(t => t.trim()) : [],
+      tags: customer.tags ? customer.tags.split(',').map((t: string) => t.trim()) : [],
       createdAt: new Date(customer.created_at),
       // 計算されたメトリクス
       averageOrderValue: customer.orders_count > 0 
@@ -513,7 +513,7 @@ export class DataPipeline extends EventEmitter {
 
   private calculateAverageItemPrice(order: Order): number {
     if (!order.line_items || order.line_items.length === 0) return 0;
-    const total = order.line_items.reduce((sum, item) => 
+    const total = order.line_items.reduce((sum: number, item: any) => 
       sum + parseFloat(item.price) * item.quantity, 0
     );
     return total / order.line_items.length;

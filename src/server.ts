@@ -1,6 +1,6 @@
 // Express サーバー実装
 
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -54,7 +54,7 @@ const responseEnhancer = new ResponseEnhancer();
 const evaluator = new ResponseEvaluator();
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -64,7 +64,7 @@ app.get('/health', (req, res) => {
 });
 
 // Main query endpoint
-app.post('/api/query', async (req, res) => {
+app.post('/api/query', async (req: Request, res: Response) => {
   try {
     const { question, context, options } = req.body;
 
@@ -142,7 +142,7 @@ app.post('/api/query', async (req, res) => {
 });
 
 // Batch query endpoint
-app.post('/api/batch-query', async (req, res) => {
+app.post('/api/batch-query', async (req: Request, res: Response) => {
   try {
     const { queries } = req.body;
 
@@ -206,7 +206,7 @@ app.post('/api/batch-query', async (req, res) => {
 });
 
 // Provider status endpoint
-app.get('/api/status', (req, res) => {
+app.get('/api/status', (req: Request, res: Response) => {
   res.json({
     providers: {
       claude: { available: !!process.env.ANTHROPIC_API_KEY },
@@ -229,7 +229,7 @@ app.get('/api/status', (req, res) => {
 
 // Metrics endpoint (if enabled)
 if (process.env.ENABLE_METRICS === 'true') {
-  app.get('/metrics', (req, res) => {
+  app.get('/metrics', (req: Request, res: Response) => {
     // Prometheus metrics format
     res.set('Content-Type', 'text/plain');
     res.send(`
@@ -254,7 +254,7 @@ conea_llm_requests_total{provider="gemini"} 0
 }
 
 // Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error('Unhandled error:', err);
   
   res.status(500).json({
@@ -265,7 +265,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
     error: 'Not found',
     code: 'ROUTE_NOT_FOUND',

@@ -1,9 +1,9 @@
 # Task ID: 41
-# Title: [MVP達成済] セキュリティ最終確認と関連TODO実装完了
-# Status: done
+# Title: Claude Code GitHub Actions 導入によるエラー自動修正フロー構築
+# Status: pending
 # Dependencies: None
 # Priority: high
-# Description: ステージング環境でのUAT実施、発見された不具合や改善要望への対応、最終的な品質検証、および関連するセキュリティTODO項目の実装が完了した。
+# Description: Sentry/Datadog等のエラー検知からSlack通知、Claude Code GitHub Actionsによる自動エラー修正、PR作成、デプロイまでのフローを構築する。既存の課金形態で利用可能な方法を優先的に調査・導入する。
 # Details:
 
 
@@ -11,99 +11,33 @@
 
 
 # Subtasks:
-## 1. 依存ライブラリの脆弱性スキャンとアップデート対応 [done]
+## 1. Claude Code GitHub Appのインストールと基本設定 [pending]
 ### Dependencies: None
-### Description: 
+### Description: リポジトリへのClaude GitHub Appインストール、ANTHROPIC_API_KEYのシークレット設定、基本ワークフローファイルの配置、プロジェクト標準を定義するCLAUDE.mdの初期設定を行う。
 ### Details:
 
 
-## 2. OWASP Top10 等の主要な脆弱性観点でのセルフチェック [done]
+## 2. エラー検知・通知システムの調査と設定 [pending]
 ### Dependencies: None
-### Description: 
+### Description: Sentry/Datadogがエラー検知時にGitHub Issueを自動作成し、`@claude`メンションとエラー詳細を書き込めるかの実現性を調査・設定する。Slack通知との連携も考慮する。
 ### Details:
 
 
-## 3. 認証・認可フローの再レビューと潜在リスク洗い出し [done]
+## 3. エラー修正用GitHub Actionsワークフローの設計と実装 [pending]
 ### Dependencies: None
-### Description: 
+### Description: GitHub IssueコメントをトリガーとしてClaude Codeアクションを起動し、エラー情報をプロンプトとして渡し、修正コードを含むPRを自動作成するワークフローを設計・実装する。
 ### Details:
 
 
-## 4. データ入力バリデーション、出力エンコーディングの網羅的確認 [done]
+## 4. 自動テストとレビュープロセスの定義 [pending]
 ### Dependencies: None
-### Description: 
+### Description: Claude Codeによって自動作成されたPRに対して、既存のCIテストを自動実行する仕組みを整備する。また、自動修正されたコードのレビュールールや、自動マージの可否判断基準を策定する。
 ### Details:
 
 
-## 5. 機密情報（APIキー、パスワード等）管理方法の最終確認 [done]
+## 5. 段階的導入と効果測定計画 [pending]
 ### Dependencies: None
-### Description: 
-### Details:
-
-
-## 6. セキュリティ診断ツール（SAST/DAST）の実行と結果分析（可能な範囲で） [done]
-### Dependencies: None
-### Description: 
-### Details:
-
-
-## 7. 発見された脆弱性への対応と再テスト [done]
-### Dependencies: None
-### Description: 
-### Details:
-
-
-## 8. src/google_analytics/dependencies.py: JWT検証、APIキー検証、レート制限の実装 (TODO解消) [done]
-### Dependencies: None
-### Description: 
-### Details:
-
-
-## 9. src/auth/security_service.py: メールサービス連携実装 (TODO解消) [done]
-### Dependencies: None
-### Description: 
-### Details:
-
-
-## 10. backend/src/agents/AutoFixer.js: 暗号化アルゴリズムをSHA-256以上に修正 (TODO URGENT解消) [done]
-### Dependencies: None
-### Description: 
-### Details:
-
-
-## 11. backend/src/agents/AutoFixer.js: パストラバーサル脆弱性対応 (パス検証とサニタイズ) (TODO URGENT解消) [done]
-### Dependencies: None
-### Description: 
-### Details:
-
-
-## 12. backend/src/agents/AutoFixer.js: コマンドインジェクション脆弱性対応 (spawnの安全な使用) (TODO URGENT解消) [done]
-### Dependencies: None
-### Description: 
-### Details:
-
-
-## 13. 認証ミDLウェアの設計と実装 (FastAPI向け) [done]
-### Dependencies: None
-### Description: 
-### Details:
-
-
-## 14. APIレート制限機能の実装 (FastAPI-Limiter等) [done]
-### Dependencies: None
-### Description: 
-### Details:
-
-
-## 15. セキュリティ対策実装状況の最終チェックとドキュメント更新 [pending]
-### Dependencies: None
-### Description: 
-### Details:
-
-
-## 16. セキュリティ関連実装のPRレビューとマージ（必要な場合） [pending]
-### Dependencies: None
-### Description: 
+### Description: まずは特定のエラーパターンや影響範囲の小さい箇所から自動修正フローを試行し、徐々に対象を拡大する。修正成功率、対応時間短縮効果などのKPIを設定し、効果を測定・改善する計画を立てる。
 ### Details:
 
 

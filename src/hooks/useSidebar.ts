@@ -429,11 +429,11 @@ export function useSidebar(): SidebarState & SidebarActions {
   }, []);
 
   const renameFolder = useCallback((folderId: string, newName: string) => {
-    setState(prev => ({
+    setState((prev: SidebarState) => ({
       ...prev,
-      sections: prev.sections.map(section => ({
+      sections: prev.sections.map((section: any) => ({
         ...section,
-        folders: section.folders.map(folder =>
+        folders: section.folders.map((folder: any) =>
           folder.id === folderId ? { ...folder, name: newName } : folder
         )
       }))

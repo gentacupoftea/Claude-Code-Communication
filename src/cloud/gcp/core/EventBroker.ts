@@ -574,7 +574,11 @@ export class EventBroker {
 
   // Metrics and Monitoring
   async getMetrics(): Promise<any> {
-    const metrics = {
+    const metrics: {
+      topics: Record<string, any>;
+      subscriptions: Record<string, any>;
+      tasks: Record<string, any>;
+    } = {
       topics: {},
       subscriptions: {},
       tasks: {}
