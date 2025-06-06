@@ -50,9 +50,40 @@ jobs:
             echo "Waiting for server... ($timeout seconds remaining)"
             sleep 1
           done
-          echo "Server is ready!"
+          echo "Server is responding!"
+          
+          # Wait for the login page to be fully loaded
+          echo "Waiting for app to be ready..."
+          timeout=30
+          while ! curl -s http://localhost:3000/login | grep -q "Conea AI"; do
+            timeout=$((timeout - 1))
+            if [ $timeout -eq 0 ]; then
+              echo "App failed to become ready"
+              exit 1
+            fi
+            echo "Waiting for app... ($timeout seconds remaining)"
+            sleep 1
+          done
+          echo "App is ready!"
+
+      - name: Test app accessibility
+        run: |
+          echo "Testing app endpoints..."
+          curl -I http://localhost:3000/
+          curl -I http://localhost:3000/login
+          echo "App is accessible!"
 
       - name: Run E2E tests
-        run: npm run cypress:run
+        run: npx cypress run --config baseUrl=http://localhost:3000
         env:
           CYPRESS_RECORD: false
+
+      - name: Upload test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-artifacts
+          path: |
+            cypress/screenshots
+            cypress/videos
+          retention-days: 7

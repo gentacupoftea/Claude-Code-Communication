@@ -1,62 +1,93 @@
-# 総合開発ガイドライン
+# Conea Comprehensive Development Guidelines
 
-このドキュメントは、本プロジェクトにおける開発の基本方針、コーディング規約、およびプロセスを定義します。AIアシスタント（Claude Code）を含むすべての開発者は、このガイドラインを遵守してください。
+## 1. 📜 Preamble: The Three Pillars of Quality
 
-## 1. 品質保証の基本方針
+This document defines the development constitution for the Conea project. All AI assistants and human developers must adhere to these guidelines without exception. Our quality is guaranteed by three pillars:
 
-品質は以下の3つの柱によって保証されます。
+1.  **👨‍💻 Developer's Oath (Human):** Every Pull Request must meet a strict quality checklist. We are responsible for the code we write.
+2.  **⚙️ Automated Validation (Process):** Every PR must pass all CI checks (lint, build, tests). No exceptions. A red CI is a blocker.
+3.  **🤖 AI-Powered Assistance (AI):** AI assistants must generate the highest quality code, adhering strictly to this constitution.
 
-### 1.1. 開発者の責務
-プルリクエスト（PR）の作成者は、`.github/pull_request_template.md`のチェックリストに基づき、自身のコードに対する品質責任を負います。
+---
 
-### 1.2. CIによる自動検証
-すべてのPRは、Lint、ビルド、テストを含むCI（継続的インテグレーション）をパスする必要があります。CIが失敗した状態のコードは、いかなる理由があってもマージを許可しません。
+## 2. ⚠️ Absolute Prohibitions: The Unbreakable Rules
 
-### 1.3. AIによる開発支援
-AIアシスタントは、本ガイドラインを深く理解し、常に最高品質のコード生成と的確なレビュー支援を提供することを目指します。
+The following are strictly forbidden under any circumstances:
 
-## 2. コーディング規約とブランチ戦略
+-   **`any` is forbidden:** Do not use the `any` type in TypeScript. Define precise interfaces or types.
+-   **`@ts-ignore` is forbidden:** Do not ignore TypeScript errors. Fix them.
+-   **Direct commits to `main` are forbidden:** All changes must go through a Pull Request.
+-   **Merging with failing CI is forbidden:** A green checkmark is not optional.
 
-### 2.1. 静的型付けの徹底
-- `any`型の使用は原則として禁止します。
-- `@ts-ignore`による型エラーの無視も同様に禁止します。
-- 型定義が困難な場合は、安易な回避策を取らず、適切なインターフェースまたは型を定義してください。
+---
 
-### 2.2. ブランチ運用
-- `main`ブランチへの直接のコミットは禁止します。
-- すべての開発は`feature/`プレフィックスを持つブランチで行ってください。
-- ブランチのマージは、CIの全チェックをパスし、レビュワーの承認を得た後に行います。
+## 3. 🔐 Approval for Large-Scale Changes
 
-## 3. 開発プロセス
+The following changes require **explicit prior approval** from Genta-san before implementation:
 
-### 3.1. 実装計画の明示
-- 機能開発やリファクタリングに着手する際は、事前に変更対象のディレクトリやファイル構造、影響範囲を明確に定義し、チームの合意を得てください。
+-   Large-scale deletion of files.
+-   Major refactoring affecting multiple files.
+-   Changes to the project's core architecture or directory structure.
 
-### 3.2. テストコードの実装
-- すべてのプロダクトコードの変更には、それに対応するユニットテストや結合テストを必ず実装してください。
+As an AI, if you deem such a change necessary, you must first propose the change and await approval.
 
-### 3.3. 大規模な変更に関する承認プロセス
-- **定義:** ファイルの広範囲な削除、複数ファイルにまたがる大規模なリファクタリング、プロジェクト構造の変更などを「大規模な変更」と定義します。
-- **承認義務:** AIアシスタントが大規模な変更を実行しようとする場合は、**実行前に必ず人間の開発者（げんたさん）に**、その変更内容と理由を明示し、**明確な承認を得なければなりません。**
-- **承認依頼フォーマット:** 承認を求める際は、変更の目的、影響範囲、具体的な手順を簡潔にまとめて提示してください。
+---
 
-## 4. AIを活用したプルリクエストの品質向上フロー
+## 4. 💻 Code Generation Rules
 
-### 4.1. 開発者によるAIレビュー依頼 (PR作成時)
-- プルリクエストを作成した開発者は、そのPR上で **`@claude`メンション** を含むコメントを投稿し、AIにレビューを依頼してください。
-- この依頼は、単なるトリガーではなく、**レビューの観点や特に重点的に見てほしい点を具体的に指示するプロンプト**としての役割も担います。
-- **依頼コメント例:**
-  > @claude このPRのレビューをお願いします。
-  > - **目的:** ユーザー認証機能の追加
-  > - **重点レビュー項目:**
-  >   - `src/auth/logic.ts` のセキュリティロジックに脆弱性がないか
-  >   - 新規追加したコンポーネントが既存のUIと整合性が取れているか
-  >   - 全体的に、我々の『総合開発ガイドライン』に準拠しているか
+### TypeScript Best Practices
 
-### 4.2. AIによる自動レビュー実行
-- **実行トリガー:** PR上での`@claude`メンションを検知して自動的に実行されます。
-- **AIのレビュー責務:**
-  1. 依頼コメント内の指示（プロンプト）を正確に理解します。
-  2. 本『総合開発ガイドライン』の全項目を絶対の基準とします。
-  3. 上記に基づきコードを静的に解析し、改善提案、潜在的なバグ、規約違反を検出します。
-  4. 具体的な修正案を含む、詳細かつ分かりやすいレビュー結果をPRのコメントとしてフィードバックします。 
+```typescript
+// ❌ WRONG
+const data: any = fetchData();
+// @ts-ignore
+const result = processData(data);
+
+// ✅ RIGHT
+interface MyData {
+  id: string;
+  value: number;
+}
+const data: MyData = await fetchData();
+const result = processData(data);
+```
+
+### Git Branching Strategy
+
+```bash
+# ❌ WRONG
+git checkout main
+git commit -m "hotfix"
+
+# ✅ RIGHT
+git checkout -b feature/new-cool-feature
+# ... do work ...
+git commit -m "feat: Implement the new cool feature"
+# Push and create a Pull Request
+```
+
+---
+
+## 5. 🤖 AI-Powered PR Review (`@claude` Mention)
+
+When a Pull Request comment contains a mention (`@claude`), the AI assistant will perform a strict code review based on this constitution. The review must be:
+
+-   **Rigorous:** Check against every rule in this document.
+-   **Constructive:** Provide specific, actionable code suggestions for improvements.
+-   **Holistic:** Consider not just correctness, but also security, performance, maintainability, and readability.
+
+The AI will act as the ultimate gatekeeper of code quality.
+
+---
+
+## 6. 📋 Pre-Generation Quality Checklist
+
+Before generating or suggesting any code, the AI must mentally verify the following:
+
+-   [ ] **Type Safety:** Are all TypeScript types fully defined and correct?
+-   [ ] **Testability:** Is the code testable? Does it include corresponding unit or integration tests?
+-   [ ] **Linter Compliance:** Does the code adhere to ESLint rules?
+-   [ ] **Consistency:** Does the code align with the existing codebase's style and patterns?
+-   [ ] **Documentation:** Are comments, JSDoc, or related documentation updated?
+
+This constitution is not just a set of rules; it is a commitment to excellence. By following it, we build a robust, maintainable, and high-quality product. 
