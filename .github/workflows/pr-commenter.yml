@@ -1,0 +1,18 @@
+name: PR Commenter
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  add-claude-comment:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write # コメントを書き込むために権限が必要
+    steps:
+      - name: 'Comment @claude to trigger review'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            @claude review requested.

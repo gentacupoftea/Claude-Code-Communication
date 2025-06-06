@@ -1,8 +1,11 @@
 name: 'PR Automation: Smart Review & Final Merge'
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+
+# 「@claude」というコメントがあり、かつPRに対するコメントの場合のみ実行
+if: github.event.issue.pull_request && contains(github.event.comment.body, '@claude')
 
 jobs:
   # === Job 1: AIレビューと内容判定（ゲートキーパー） ===
