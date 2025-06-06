@@ -55,7 +55,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6"
+            className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6"
           >
             AI技術で
             <span className="block bg-gradient-to-r from-[#1ABC9C] to-[#3498DB] bg-clip-text text-transparent">
@@ -67,7 +67,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-lg sm:text-xl md:text-2xl mb-8 sm:mb-12 text-gray-300 max-w-3xl mx-auto px-4"
+            className="text-base sm:text-xl md:text-2xl mb-8 sm:mb-12 text-gray-300 max-w-3xl mx-auto px-4"
           >
             最先端のAIソリューションで、業務効率化と革新的な顧客体験を実現します
           </motion.p>
@@ -104,7 +104,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-12 sm:mb-16"
+            className="text-2xl sm:text-4xl md:text-5xl font-bold text-center mb-12 sm:mb-16"
           >
             強力な機能で
             <span className="bg-gradient-to-r from-[#1ABC9C] to-[#3498DB] bg-clip-text text-transparent">
@@ -143,7 +143,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-12 sm:mb-16"
+            className="text-2xl sm:text-4xl md:text-5xl font-bold text-center mb-12 sm:mb-16"
           >
             シンプルで透明な
             <span className="bg-gradient-to-r from-[#1ABC9C] to-[#3498DB] bg-clip-text text-transparent">

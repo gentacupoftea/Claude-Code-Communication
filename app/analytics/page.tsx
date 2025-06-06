@@ -90,8 +90,8 @@ export default function AnalyticsPage() {
         {/* メインコンテンツ */}
         <div className="relative z-10 px-4 py-8 max-w-7xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">データ分析</h1>
-            <p className="text-gray-400">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">データ分析</h1>
+            <p className="text-gray-400 text-sm sm:text-base">
               AIプロジェクトのパフォーマンスと使用状況を分析
             </p>
           </div>
@@ -106,10 +106,10 @@ export default function AnalyticsPage() {
               <GlassmorphicCard>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-400 text-sm">総利用者数</p>
-                    <p className="text-2xl font-bold text-[#1ABC9C]">1,234</p>
+                    <p className="text-gray-400 text-xs sm:text-sm">総利用者数</p>
+                    <p className="text-xl sm:text-2xl font-bold text-[#1ABC9C]">1,234</p>
                   </div>
-                  <Users className="w-8 h-8 text-[#1ABC9C]" />
+                  <Users className="w-6 h-6 sm:w-8 sm:h-8 text-[#1ABC9C]" />
                 </div>
               </GlassmorphicCard>
             </motion.div>
@@ -122,10 +122,10 @@ export default function AnalyticsPage() {
               <GlassmorphicCard>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-400 text-sm">月間売上</p>
-                    <p className="text-2xl font-bold text-[#1ABC9C]">¥567,890</p>
+                    <p className="text-gray-400 text-xs sm:text-sm">月間売上</p>
+                    <p className="text-xl sm:text-2xl font-bold text-[#1ABC9C]">¥567,890</p>
                   </div>
-                  <DollarSign className="w-8 h-8 text-[#1ABC9C]" />
+                  <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-[#1ABC9C]" />
                 </div>
               </GlassmorphicCard>
             </motion.div>
@@ -138,10 +138,10 @@ export default function AnalyticsPage() {
               <GlassmorphicCard>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-400 text-sm">処理成功率</p>
-                    <p className="text-2xl font-bold text-[#1ABC9C]">98.5%</p>
+                    <p className="text-gray-400 text-xs sm:text-sm">処理成功率</p>
+                    <p className="text-xl sm:text-2xl font-bold text-[#1ABC9C]">98.5%</p>
                   </div>
-                  <TrendingUp className="w-8 h-8 text-[#1ABC9C]" />
+                  <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-[#1ABC9C]" />
                 </div>
               </GlassmorphicCard>
             </motion.div>
@@ -154,10 +154,10 @@ export default function AnalyticsPage() {
               <GlassmorphicCard>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-400 text-sm">アクティブ率</p>
-                    <p className="text-2xl font-bold text-[#1ABC9C]">87.2%</p>
+                    <p className="text-gray-400 text-xs sm:text-sm">アクティブ率</p>
+                    <p className="text-xl sm:text-2xl font-bold text-[#1ABC9C]">87.2%</p>
                   </div>
-                  <Activity className="w-8 h-8 text-[#1ABC9C]" />
+                  <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-[#1ABC9C]" />
                 </div>
               </GlassmorphicCard>
             </motion.div>

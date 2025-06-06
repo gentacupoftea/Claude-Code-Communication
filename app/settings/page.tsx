@@ -92,8 +92,8 @@ export default function SettingsPage() {
         {/* メインコンテンツ */}
         <div className="relative z-10 px-4 py-8 max-w-4xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">設定</h1>
-            <p className="text-gray-400">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">設定</h1>
+            <p className="text-gray-400 text-sm sm:text-base">
               アカウントとアプリケーションの設定を管理
             </p>
           </div>

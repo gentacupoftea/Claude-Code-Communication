@@ -60,7 +60,7 @@ export default function LoginPage() {
       >
         <GlassmorphicCard>
           <div className="text-center mb-8">
-            <Bot className="w-16 h-16 text-[#1ABC9C] mx-auto mb-4" />
+            <Bot className="w-12 h-12 sm:w-16 sm:h-16 text-[#1ABC9C] mx-auto mb-4" />
             <h1 className="text-2xl sm:text-3xl font-bold mb-2">
               おかえりなさい
             </h1>

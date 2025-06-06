@@ -132,9 +132,9 @@ export default function CreatePage() {
 
         {/* メインコンテンツ */}
         <div className="relative z-10 px-4 py-8 max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">新しいプロジェクトを作成</h1>
-            <p className="text-gray-400 text-lg">
+          <div className="text-center mb-8 sm:mb-12">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">新しいプロジェクトを作成</h1>
+            <p className="text-gray-400 text-sm sm:text-base md:text-lg">
               AIの力を活用して、革新的なソリューションを構築しましょう
             </p>
           </div>
@@ -152,15 +152,15 @@ export default function CreatePage() {
                 <GlassmorphicCard className="h-full hover:scale-105 transition-all duration-300">
                   <div className="flex items-center mb-4">
                     <div 
-                      className="p-3 rounded-lg mr-4"
+                      className="p-2 sm:p-3 rounded-lg mr-3 sm:mr-4"
                       style={{ backgroundColor: `${project.color}20` }}
                     >
                       <project.icon 
-                        className="w-8 h-8" 
+                        className="w-6 h-6 sm:w-8 sm:h-8" 
                         style={{ color: project.color }}
                       />
                     </div>
-                    <h3 className="text-2xl font-bold">{project.title}</h3>
+                    <h3 className="text-xl sm:text-2xl font-bold">{project.title}</h3>
                   </div>
                   
                   <p className="text-gray-300 mb-6 leading-relaxed">
