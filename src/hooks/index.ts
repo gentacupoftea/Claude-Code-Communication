@@ -2,4 +2,4 @@
  * カスタムフックのエクスポート
  */
 
-export { useAuth } from './useAuth';
+export { useAuth } from '../contexts/AuthContext';

@@ -1,4 +1,5 @@
 import * as express from 'express';
+import type { Request as ExpressRequest } from 'express';
 import { Auth } from 'google-auth-library';
 import * as admin from 'firebase-admin';
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
@@ -130,7 +131,7 @@ export class AuthService {
     this.app.use(express.urlencoded({ extended: true }));
 
     // CORS middleware
-    this.app.use((req: any, res: any, next: any) => {
+    this.app.use((req: unknown, res: unknown, next: unknown) => {
       res.header('Access-Control-Allow-Origin', '*');
       res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
       res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -138,7 +139,7 @@ export class AuthService {
     });
 
     // Request logging
-    this.app.use((req: any, res: any, next: any) => {
+    this.app.use((req: unknown, res: unknown, next: unknown) => {
       logger.info('Auth request', {
         method: req.method,
         path: req.path,
@@ -151,7 +152,7 @@ export class AuthService {
 
   private setupRoutes(): void {
     // Health check
-    this.app.get('/health', (req: any, res: any) => {
+    this.app.get('/health', (req: unknown, res: unknown) => {
       res.json({ status: 'healthy', service: 'auth' });
     });
 
@@ -191,7 +192,7 @@ export class AuthService {
   // OAuth2 handlers
   private async handleOAuthAuthorize(req: express.Request, res: express.Response): Promise<void> {
     try {
-      const { client_id, redirect_uri, response_type, scope, state } = req.query;
+      const { client_id, redirect_uri, _response_type, scope, state } = req.query;
 
       // Validate client_id
       const client = await this.validateClient(client_id as string);
@@ -206,7 +207,7 @@ export class AuthService {
         clientId: client_id,
         redirectUri: redirect_uri,
         scope,
-        userId: (req as any).user?.id
+        userId: (req as ExpressRequest & { user?: User }).user?.id
       }));
 
       // Redirect with code
@@ -269,7 +270,7 @@ export class AuthService {
 
   private async handleOAuthRevoke(req: express.Request, res: express.Response): Promise<void> {
     try {
-      const { token, token_type_hint } = req.body;
+      const { token, _token_type_hint } = req.body;
 
       // Revoke the token
       await this.revokeToken(token);
@@ -460,7 +461,7 @@ export class AuthService {
   // User management handlers
   private async handleGetCurrentUser(req: express.Request, res: express.Response): Promise<void> {
     try {
-      const userId = (req as any).user.id;
+      const userId = (req as ExpressRequest & { user: User }).user.id;
       const user = await this.getUserById(userId);
 
       if (!user) {
@@ -477,7 +478,7 @@ export class AuthService {
 
   private async handleUpdateProfile(req: express.Request, res: express.Response): Promise<void> {
     try {
-      const userId = (req as any).user.id;
+      const userId = (req as ExpressRequest & { user: User }).user.id;
       const updates = req.body;
 
       // Update user profile
@@ -501,7 +502,7 @@ export class AuthService {
       }
 
       // Verify token
-      const decoded = jwt.verify(token, this.config.jwtSecret) as any;
+      const decoded = jwt.verify(token, this.config.jwtSecret) as jwt.JwtPayload & { userId: string };
       
       // Check if token is revoked
       const isRevoked = await this.redis.get(`revoked:${token}`);
@@ -518,9 +519,9 @@ export class AuthService {
       }
 
       // Attach user to request
-      (req as any).user = user;
+      (req as ExpressRequest & { user: User }).user = user;
       next();
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.name === 'TokenExpiredError') {
         res.status(401).json({ error: 'Token expired' });
       } else if (error.name === 'JsonWebTokenError') {
@@ -533,7 +534,7 @@ export class AuthService {
 
   private requireRole(role: string) {
     return (req: express.Request, res: express.Response, next: express.NextFunction) => {
-      const user = (req as any).user;
+      const user = (req as ExpressRequest & { user: User }).user;
       
       if (!user || !user.roles.includes(role)) {
         res.status(403).json({ error: 'Insufficient permissions' });
@@ -559,7 +560,7 @@ export class AuthService {
     return user as User || null;
   }
 
-  private async createUser(data: any): Promise<User> {
+  private async createUser(data: unknown): Promise<User> {
     const passwordHash = await bcrypt.hash(data.password, 10);
     
     const user: User = {
@@ -629,7 +630,7 @@ export class AuthService {
     return session;
   }
 
-  private async generateTokens(userId: string, scope?: string): Promise<any> {
+  private async generateTokens(userId: string, scope?: string): Promise<unknown> {
     const user = await this.getUserById(userId);
     if (!user) {
       throw new Error('User not found');
@@ -665,9 +666,9 @@ export class AuthService {
     };
   }
 
-  private async validateRefreshToken(token: string): Promise<any> {
+  private async validateRefreshToken(token: string): Promise<unknown> {
     try {
-      const decoded = jwt.verify(token, this.config.jwtSecret) as any;
+      const decoded = jwt.verify(token, this.config.jwtSecret) as jwt.JwtPayload & { userId: string };
       
       if (decoded.type !== 'refresh') {
         return null;
@@ -680,14 +681,14 @@ export class AuthService {
       }
 
       return decoded;
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   }
 
   private async revokeToken(token: string): Promise<void> {
     try {
-      const decoded = jwt.decode(token) as any;
+      const decoded = jwt.decode(token) as jwt.JwtPayload;
       if (decoded) {
         const ttl = decoded.exp - Math.floor(Date.now() / 1000);
         if (ttl > 0) {
@@ -699,8 +700,8 @@ export class AuthService {
     }
   }
 
-  private sanitizeUser(user: User): any {
-    const { passwordHash, metadata, ...sanitized } = user;
+  private sanitizeUser(user: User): unknown {
+    const { _passwordHash, metadata, ...sanitized } = user;
     return {
       ...sanitized,
       metadata: {
@@ -730,18 +731,18 @@ export class AuthService {
     await this.dataLayer.firestoreSet('users', user.id, user);
   }
 
-  private async validateClient(clientId: string, clientSecret?: string): Promise<any> {
+  private async validateClient(_clientId: string, _clientSecret?: string): Promise<unknown> {
     // Implement OAuth client validation
     // This would typically check against registered OAuth clients
     return true;
   }
 
-  private async verifyMfaCode(user: User, code: string): Promise<boolean> {
+  private async verifyMfaCode(_user: User, _code: string): Promise<boolean> {
     // Implement MFA verification (TOTP, SMS, etc.)
     return true;
   }
 
-  private async updateUserProfile(userId: string, updates: any): Promise<User> {
+  private async updateUserProfile(userId: string, updates: unknown): Promise<User> {
     const user = await this.getUserById(userId);
     if (!user) {
       throw new Error('User not found');
@@ -826,7 +827,7 @@ export class AuthService {
   // MFA handlers
   private async handleEnableMFA(req: express.Request, res: express.Response): Promise<void> {
     try {
-      const userId = (req as any).user.id;
+      const userId = (req as ExpressRequest & { user: User }).user.id;
       const user = await this.getUserById(userId);
       
       if (!user) {
@@ -835,7 +836,7 @@ export class AuthService {
       }
 
       // Generate MFA secret
-      const speakeasy = require('speakeasy');
+      import speakeasy from 'speakeasy';
       const secret = speakeasy.generateSecret({
         name: `ShopifyMCP:${user.email}`,
         issuer: 'Shopify MCP Server'
@@ -856,7 +857,7 @@ export class AuthService {
 
   private async handleVerifyMFA(req: express.Request, res: express.Response): Promise<void> {
     try {
-      const userId = (req as any).user.id;
+      const userId = (req as ExpressRequest & { user: User }).user.id;
       const { code } = req.body;
       
       const user = await this.getUserById(userId);
@@ -865,7 +866,7 @@ export class AuthService {
         return;
       }
 
-      const speakeasy = require('speakeasy');
+      import speakeasy from 'speakeasy';
       const verified = speakeasy.totp.verify({
         secret: user.metadata.mfaSecret,
         encoding: 'base32',
@@ -891,7 +892,7 @@ export class AuthService {
   // API Key handlers
   private async handleListApiKeys(req: express.Request, res: express.Response): Promise<void> {
     try {
-      const userId = (req as any).user.id;
+      const userId = (req as ExpressRequest & { user: User }).user.id;
       
       const apiKeys = await this.dataLayer.firestoreQuery('api_keys', {
         where: [{ field: 'userId', operator: '==', value: userId }]
@@ -913,7 +914,7 @@ export class AuthService {
 
   private async handleCreateApiKey(req: express.Request, res: express.Response): Promise<void> {
     try {
-      const userId = (req as any).user.id;
+      const userId = (req as ExpressRequest & { user: User }).user.id;
       const { name, roles, permissions, expiresIn } = req.body;
 
       const apiKey: ApiKey = {
@@ -948,7 +949,7 @@ export class AuthService {
 
   private async handleDeleteApiKey(req: express.Request, res: express.Response): Promise<void> {
     try {
-      const userId = (req as any).user.id;
+      const userId = (req as ExpressRequest & { user: User }).user.id;
       const { id } = req.params;
 
       const apiKey = await this.dataLayer.firestoreGet('api_keys', id);

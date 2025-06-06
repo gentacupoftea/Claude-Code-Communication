@@ -24,7 +24,7 @@ export class UserPreference {
   defaultModel?: string;
 
   @Column({ type: 'json', nullable: true })
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
 
   @OneToOne(() => User, user => user.preferences)
   @JoinColumn()

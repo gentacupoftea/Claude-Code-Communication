@@ -39,14 +39,14 @@ export const LearningDataPanel: React.FC<LearningDataPanelProps> = ({ onDataUplo
     const loadLearningData = async () => {
       try {
         const data = await backendAPI.getLearningData();
-        const formattedData: LearningDataFile[] = data.map(item => ({
-          id: item.id,
-          name: item.fileName,
-          size: item.fileSize,
-          type: item.fileType,
-          uploadedAt: new Date(item.uploadedAt),
-          status: item.status,
-          records: item.records
+        const formattedData: LearningDataFile[] = (data as Record<string, unknown>[]).map((item: Record<string, unknown>) => ({
+          id: item.id as string,
+          name: item.fileName as string,
+          size: item.fileSize as number,
+          type: item.fileType as string,
+          uploadedAt: new Date(item.uploadedAt as string),
+          status: item.status as 'uploading' | 'processing' | 'completed' | 'error',
+          records: item.records as number
         }));
         setUploadedFiles(formattedData);
       } catch (error) {
@@ -105,7 +105,7 @@ export const LearningDataPanel: React.FC<LearningDataPanelProps> = ({ onDataUplo
         setUploadedFiles(prev => 
           prev.map(f => 
             f.id === fileData.id 
-              ? { ...f, status: 'completed', records: result.file.records }
+              ? { ...f, status: 'completed' as const, records: (result as unknown as { file: { records: number } }).file.records }
               : f
           )
         );

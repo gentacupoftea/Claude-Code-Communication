@@ -67,18 +67,19 @@ export const ModelComparison: React.FC<ModelComparisonProps> = ({
     }
   };
 
-  const getMetricValue = (response: any, metric: string) => {
+  const getMetricValue = (response: unknown, metric: string) => {
+    const typedResponse = response as { metadata?: { quality?: number; relevance?: number; creativity?: number; confidence?: number } };
     switch (metric) {
       case 'quality':
-        return response.metadata.quality || 0;
+        return typedResponse.metadata?.quality || 0;
       case 'relevance':
-        return response.metadata.relevance || 0;
+        return typedResponse.metadata?.relevance || 0;
       case 'creativity':
-        return response.metadata.creativity || 0;
+        return typedResponse.metadata?.creativity || 0;
       case 'speed':
-        return Math.max(0, 100 - (response.metadata.responseTime / 50)); // 速度スコア
+        return Math.max(0, 100 - ((typedResponse as { metadata?: { responseTime?: number } }).metadata?.responseTime || 0) / 50); // 速度スコア
       case 'cost':
-        return Math.max(0, 100 - (response.metadata.cost * 1000)); // コストスコア
+        return Math.max(0, 100 - ((typedResponse as { metadata?: { cost?: number } }).metadata?.cost || 0) * 1000); // コストスコア
       default:
         return 0;
     }

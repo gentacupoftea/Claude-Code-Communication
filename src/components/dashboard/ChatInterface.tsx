@@ -30,7 +30,7 @@ interface ChatInterfaceProps {
   onConfigChange?: (config: Partial<AgentConfig>) => void;
   enableFileUpload?: boolean;
   enableSearch?: boolean;
-  onGenerateWidget?: (widgetData: any) => void;
+  onGenerateWidget?: (widgetData: unknown) => void;
 }
 
 const defaultAgentConfig: AgentConfig = {
@@ -44,7 +44,7 @@ const defaultAgentConfig: AgentConfig = {
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
   agentConfig = defaultAgentConfig, 
-  onConfigChange,
+  onConfigChange: _onConfigChange,
   enableFileUpload = true,
   enableSearch = true,
   onGenerateWidget
@@ -82,7 +82,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         const multiLLMService = MultiLLMService.getInstance();
         const models = multiLLMService.getAvailableModels();
         setConnectionStatus(models.length > 0 ? 'connected' : 'disconnected');
-      } catch (error) {
+      } catch (_error) {
         setConnectionStatus('disconnected');
       }
     };
@@ -108,8 +108,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     };
 
     setMessages(prev => [...prev, userMessage]);
-    const currentInput = inputText;
-    const currentFiles = [...attachedFiles];
+    const _currentInput = inputText;
+    const _currentFiles = [...attachedFiles];
     setInputText('');
     setAttachedFiles([]);
     setIsLoading(true);
@@ -181,7 +181,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       const multiLLMService = MultiLLMService.getInstance();
       const models = multiLLMService.getAvailableModels();
       setConnectionStatus(models.length > 0 ? 'connected' : 'disconnected');
-    } catch (error) {
+    } catch (_error) {
       setConnectionStatus('disconnected');
     }
   };

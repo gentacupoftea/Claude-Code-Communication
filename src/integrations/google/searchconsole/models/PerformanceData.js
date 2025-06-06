@@ -6,10 +6,11 @@
  * @requires events
  */
 
-const { EventEmitter } = require('events');
-const logger = require('../../../utils/logger').child({ module: 'GSCPerformanceData' });
-const db = require('../../../db/connection');
-const cache = require('../../../utils/cache');
+import { EventEmitter  } from 'events';
+import { logger } from '../../../utils/logger';
+const _perfLogger = logger.child({ module: 'GSCPerformanceData' });
+import db from '../../../db/connection';
+import cache from '../../../utils/cache';
 
 /**
  * パフォーマンスデータを管理するクラス

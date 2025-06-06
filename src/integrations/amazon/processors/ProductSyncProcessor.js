@@ -3,13 +3,13 @@
  * アマゾン商品同期処理
  */
 
-const AmazonAPIClient = require('../client/AmazonAPIClient');
-const AmazonProduct = require('../models/AmazonProduct');
-const { logger } = require('../../../utils/logger');
-const { cache } = require('../../../utils/cache');
-const { queue } = require('../../../utils/queue');
-const BatchProcessor = require('../../../utils/BatchProcessor');
-const EventEmitter = require('events');
+import AmazonAPIClient from '../client/AmazonAPIClient';
+import AmazonProduct from '../models/AmazonProduct';
+import { logger  } from '../../../utils/logger';
+import { cache  } from '../../../utils/cache';
+import { queue  } from '../../../utils/queue';
+import BatchProcessor from '../../../utils/BatchProcessor';
+import EventEmitter from 'events';
 
 class ProductSyncProcessor extends EventEmitter {
   constructor(config) {
@@ -36,7 +36,7 @@ class ProductSyncProcessor extends EventEmitter {
    * @param {Object} options - Sync options
    * @returns {Promise<Object>} Sync result
    */
-  async syncAllProducts(options = {}) {
+  async syncAllProducts(_options = {}) {
     const startTime = Date.now();
     const results = {
       total: 0,

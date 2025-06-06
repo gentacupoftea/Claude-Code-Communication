@@ -3,11 +3,11 @@
  * 統合テスト
  */
 
-const AmazonAuth = require('../auth/AmazonAuth');
-const AmazonAPIClient = require('../client/AmazonAPIClient');
-const ProductSyncProcessor = require('../processors/ProductSyncProcessor');
-const OrderSyncProcessor = require('../processors/OrderSyncProcessor');
-const ReportGenerator = require('../reporting/ReportGenerator');
+import AmazonAuth from '../auth/AmazonAuth';
+import AmazonAPIClient from '../client/AmazonAPIClient';
+import ProductSyncProcessor from '../processors/ProductSyncProcessor';
+import OrderSyncProcessor from '../processors/OrderSyncProcessor';
+import ReportGenerator from '../reporting/ReportGenerator';
 
 // Test configuration (環境変数から取得)
 const testConfig = {
@@ -224,7 +224,7 @@ describe('Amazon SP-API Integration', () => {
 // Integration test for complete workflow
 describe('Complete Workflow', () => {
   test('should complete full sync and report workflow', async () => {
-    const client = new AmazonAPIClient(testConfig);
+    const _client = new AmazonAPIClient(testConfig);
     const productProcessor = new ProductSyncProcessor(testConfig);
     const orderProcessor = new OrderSyncProcessor(testConfig);
     const reportGenerator = new ReportGenerator(testConfig);
@@ -329,7 +329,7 @@ async function runIntegrationExample() {
     console.log(`Report generated: ${report.reportId}`);
     
     // Save report to file
-    const fs = require('fs').promises;
+    const { promises: fs } = await import('fs');
     await fs.writeFile(`amazon_report_${report.reportId}.pdf`, report.data);
     
   } catch (error) {

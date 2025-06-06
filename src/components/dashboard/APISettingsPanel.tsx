@@ -31,7 +31,7 @@ export const APISettingsPanel: React.FC<APISettingsPanelProps> = ({
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [testResults, setTestResults] = useState<Record<string, 'success' | 'error' | 'testing' | null>>({});
   const [isAutoSave, setIsAutoSave] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [_isLoading, setIsLoading] = useState(false);
 
   // コンポーネントマウント時にAPI設定を読み込み
   useEffect(() => {
@@ -136,7 +136,7 @@ export const APISettingsPanel: React.FC<APISettingsPanelProps> = ({
         <div className="relative">
           <input
             type={isSecret && !isVisible ? 'password' : 'text'}
-            value={(localSettings[api] as any)[key] || ''}
+            value={(localSettings[api] as unknown as Record<string, string>)[key] || ''}
             onChange={(e) => handleSettingChange(api, key, e.target.value)}
             className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1ABC9C] backdrop-blur-lg pr-10"
             placeholder={placeholder}

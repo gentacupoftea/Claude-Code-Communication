@@ -82,7 +82,7 @@ export interface AnalyticsDashboard {
 export interface TimeSeriesData {
   timestamp: Date;
   value: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface AnalyticsFilter {
@@ -108,7 +108,7 @@ export interface AnalyticsQuery {
 
 export interface AnalyticsResponse {
   query: AnalyticsQuery;
-  data: Array<Record<string, any>>;
+  data: Array<Record<string, unknown>>;
   metadata: {
     totalRows: number;
     executionTime: number;

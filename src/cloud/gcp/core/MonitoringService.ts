@@ -24,7 +24,7 @@ interface MetricDefinition {
 
 interface AlertPolicy {
   name: string;
-  condition: any;
+  condition: unknown;
   notificationChannels: string[];
   documentation?: string;
 }
@@ -55,7 +55,7 @@ export class MonitoringService {
   private errorReporting: ErrorReporting;
   private config: MonitoringConfig;
   private metrics: Map<string, MetricDefinition> = new Map();
-  private customMetrics: Map<string, any> = new Map();
+  private customMetrics: Map<string, MetricDescriptor> = new Map();
   private alerts: Map<string, AlertPolicy> = new Map();
   private slos: Map<string, SLO> = new Map();
   private healthChecks: Map<string, HealthCheck> = new Map();
@@ -324,7 +324,7 @@ export class MonitoringService {
   }
 
   // Distributed Tracing
-  createSpan(name: string, attributes?: Record<string, any>): any {
+  createSpan(name: string, attributes?: Record<string, unknown>): unknown {
     const tracer = Trace.get();
     const span = tracer.createChildSpan({ name });
     
@@ -338,12 +338,12 @@ export class MonitoringService {
   }
 
   // Error Reporting
-  reportError(error: Error, context?: any): void {
+  reportError(error: Error, context?: unknown): void {
     this.errorReporting.report(error, context);
   }
 
   // Logging
-  async log(severity: string, message: string, metadata?: any): Promise<void> {
+  async log(severity: string, message: string, metadata?: unknown): Promise<void> {
     const log = this.logging.log(this.config.serviceName);
     const entry = log.entry({
       severity,
@@ -375,7 +375,7 @@ export class MonitoringService {
         alertPolicy
       };
 
-      const [createdPolicy] = await this.alertClient.createAlertPolicy(request);
+      const [_createdPolicy] = await this.alertClient.createAlertPolicy(request);
       this.alerts.set(policy.name, policy);
       logger.info(`Created alert policy: ${policy.name}`);
     } catch (error) {
@@ -413,7 +413,7 @@ export class MonitoringService {
         uptimeCheckConfig
       };
 
-      const [createdCheck] = await this.uptimeClient.createUptimeCheckConfig(request);
+      const [_createdCheck] = await this.uptimeClient.createUptimeCheckConfig(request);
       this.healthChecks.set(check.name, check);
       logger.info(`Created uptime check: ${check.name}`);
     } catch (error) {
@@ -447,7 +447,7 @@ export class MonitoringService {
   }
 
   // Dashboard Creation
-  async createDashboard(name: string, widgets: any[]): Promise<void> {
+  async createDashboard(name: string, widgets: unknown[]): Promise<void> {
     // This would use the Cloud Monitoring Dashboard API
     // For now, we'll just log the intent
     logger.info('Dashboard creation not implemented', { name, widgets });
@@ -458,8 +458,8 @@ export class MonitoringService {
     metricType: string,
     startTime: Date,
     endTime: Date,
-    aggregation?: any
-  ): Promise<any[]> {
+    aggregation?: unknown
+  ): Promise<unknown[]> {
     try {
       const request = {
         name: this.metricClient.projectPath(this.config.projectId),
@@ -480,13 +480,13 @@ export class MonitoringService {
   }
 
   // Custom Dashboards
-  getMetricsSummary(): any {
+  getMetricsSummary(): unknown {
     const summary: {
       timestamp: string;
-      metrics: Record<string, any>;
-      alerts: Record<string, any>;
-      slos: Record<string, any>;
-      healthChecks: Record<string, any>;
+      metrics: Record<string, unknown>;
+      alerts: Record<string, unknown>;
+      slos: Record<string, unknown>;
+      healthChecks: Record<string, unknown>;
     } = {
       timestamp: new Date().toISOString(),
       metrics: {},
@@ -533,7 +533,7 @@ export class MonitoringService {
   async recordTransaction(
     name: string,
     duration: number,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, unknown> = {}
   ): Promise<void> {
     await this.recordMetric('transaction_duration', duration, {
       transaction: name,
@@ -619,7 +619,7 @@ export class MonitoringService {
     });
   }
 
-  private async sendSlackNotification(payload: any): Promise<void> {
+  private async sendSlackNotification(payload: unknown): Promise<void> {
     if (!this.config.slackWebhook) {
       return;
     }

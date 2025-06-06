@@ -165,7 +165,7 @@ export class ModelSelector {
   /**
    * バランス型の推薦
    */
-  private static recommendBalanced(requirements: TaskRequirements): ModelRecommendation {
+  private static recommendBalanced(_requirements: TaskRequirements): ModelRecommendation {
     return {
       provider: 'anthropic',
       model: LATEST_MODELS.anthropic.claude3_5_sonnet,
@@ -245,7 +245,13 @@ export class ModelSelector {
     maxTokens: number;
     systemPrompt?: string;
   } {
-    const scenarios: Record<string, any> = {
+    const scenarios: Record<string, {
+      provider: string;
+      model: string;
+      temperature: number;
+      maxTokens: number;
+      systemPrompt: string;
+    }> = {
       'product_description': {
         provider: 'anthropic',
         model: LATEST_MODELS.anthropic.claude3_5_sonnet,

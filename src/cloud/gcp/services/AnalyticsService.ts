@@ -1,6 +1,6 @@
 import * as express from 'express';
-import { BigQuery, Dataset, Table } from '@google-cloud/bigquery';
-import { PubSub } from '@google-cloud/pubsub';
+import { BigQuery, _Dataset, _Table } from '@google-cloud/bigquery';
+import { _PubSub } from '@google-cloud/pubsub';
 import { logger } from '../config/logger';
 import { DataLayerClient } from '../core/DataLayerClient';
 import { EventBroker } from '../core/EventBroker';
@@ -36,7 +36,7 @@ interface DashboardWidget {
   id: string;
   type: 'chart' | 'table' | 'metric' | 'map';
   metricId: string;
-  config: any;
+  config: unknown;
 }
 
 interface Report {
@@ -99,7 +99,7 @@ export class AnalyticsService {
     this.app.use(express.json());
 
     // Health check
-    this.app.get('/health', (req: any, res: any) => {
+    this.app.get('/health', (req: unknown, res: unknown) => {
       res.json({ status: 'healthy', service: 'analytics' });
     });
 
@@ -774,7 +774,7 @@ export class AnalyticsService {
     }
   }
 
-  private async handleRealtimeStream(ws: any, req: express.Request): Promise<void> {
+  private async handleRealtimeStream(ws: unknown, req: express.Request): Promise<void> {
     const { shopId } = req.params;
     
     // Set up real-time event stream
@@ -792,7 +792,7 @@ export class AnalyticsService {
   }
 
   // Helper methods
-  private async executeMetricQuery(metric: MetricDefinition, params: any): Promise<any> {
+  private async executeMetricQuery(metric: MetricDefinition, params: unknown): Promise<unknown> {
     // Replace parameters in query
     let query = metric.query;
     for (const [key, value] of Object.entries(params)) {
@@ -886,25 +886,25 @@ export class AnalyticsService {
     }
   }
 
-  private async generatePDFReport(report: Report, data: any[]): Promise<Buffer> {
+  private async generatePDFReport(_report: Report, _data: unknown[]): Promise<Buffer> {
     // Implement PDF generation using a library like puppeteer or pdfkit
     // For now, return a placeholder
     return Buffer.from('PDF Report Content');
   }
 
-  private async generateExcelReport(report: Report, data: any[]): Promise<Buffer> {
+  private async generateExcelReport(_report: Report, _data: unknown[]): Promise<Buffer> {
     // Implement Excel generation using a library like exceljs
     // For now, return a placeholder
     return Buffer.from('Excel Report Content');
   }
 
-  private async generateCSVReport(report: Report, data: any[]): Promise<Buffer> {
+  private async generateCSVReport(report: Report, data: unknown[]): Promise<Buffer> {
     // Implement CSV generation
     const csv = data.map(metric => {
       if (!metric || !metric.data) return '';
       
       const headers = Object.keys(metric.data[0] || {}).join(',');
-      const rows = metric.data.map((row: any) => 
+      const rows = metric.data.map((row: unknown) => 
         Object.values(row).join(',')
       ).join('\n');
       
@@ -960,7 +960,7 @@ export class AnalyticsService {
     });
   }
 
-  private async getRealtimeMetrics(shopId: string): Promise<any> {
+  private async getRealtimeMetrics(shopId: string): Promise<unknown> {
     // Get real-time metrics from cache/memory
     const metrics = {
       activeUsers: await this.dataLayer.cacheGet(`realtime:${shopId}:active_users`) || 0,
@@ -976,7 +976,7 @@ export class AnalyticsService {
   }
 
   // Event processing
-  private async processAnalyticsEvent(event: any): Promise<void> {
+  private async processAnalyticsEvent(event: unknown): Promise<void> {
     // Process analytics events (page views, clicks, etc.)
     const { type, data } = event;
 
@@ -989,7 +989,7 @@ export class AnalyticsService {
     await this.storeAnalyticsEvent(event);
   }
 
-  private async processShopifyEvent(event: any): Promise<void> {
+  private async processShopifyEvent(event: unknown): Promise<void> {
     // Process Shopify events for analytics
     const { type, data } = event;
 
@@ -1006,7 +1006,7 @@ export class AnalyticsService {
     }
   }
 
-  private async updateRealtimeMetrics(shopId: string, eventType: string, data: any): Promise<void> {
+  private async updateRealtimeMetrics(shopId: string, eventType: string, data: unknown): Promise<void> {
     // Update real-time metrics in cache
     const key = `realtime:${shopId}`;
     
@@ -1039,7 +1039,7 @@ export class AnalyticsService {
     );
   }
 
-  private async storeAnalyticsEvent(event: any): Promise<void> {
+  private async storeAnalyticsEvent(event: unknown): Promise<void> {
     // Store event in BigQuery for analysis
     await this.dataLayer.bigqueryInsert('analytics', 'events', [{
       event_id: event.id,
@@ -1052,7 +1052,7 @@ export class AnalyticsService {
     }]);
   }
 
-  private async updateOrderMetrics(data: any): Promise<void> {
+  private async updateOrderMetrics(data: unknown): Promise<void> {
     // Update order-related metrics
     await this.monitoring.recordBusinessMetric('order_created', 1, {
       shop: data.shopId,
@@ -1060,7 +1060,7 @@ export class AnalyticsService {
     });
   }
 
-  private async updateProductMetrics(data: any): Promise<void> {
+  private async updateProductMetrics(data: unknown): Promise<void> {
     // Update product-related metrics
     await this.monitoring.recordBusinessMetric('product_viewed', 1, {
       shop: data.shopId,
@@ -1068,7 +1068,7 @@ export class AnalyticsService {
     });
   }
 
-  private async updateCustomerMetrics(data: any): Promise<void> {
+  private async updateCustomerMetrics(data: unknown): Promise<void> {
     // Update customer-related metrics
     await this.monitoring.recordBusinessMetric('customer_created', 1, {
       shop: data.shopId
@@ -1133,7 +1133,7 @@ export class AnalyticsService {
     }
   }
 
-  private async exportToCSV(data: any[], destination: string): Promise<string> {
+  private async exportToCSV(data: unknown[], _destination: string): Promise<string> {
     const csv = this.convertToCSV(data);
     const fileName = `export_${Date.now()}.csv`;
     
@@ -1145,7 +1145,7 @@ export class AnalyticsService {
     );
   }
 
-  private async exportToJSON(data: any[], destination: string): Promise<string> {
+  private async exportToJSON(data: unknown[], _destination: string): Promise<string> {
     const json = JSON.stringify(data, null, 2);
     const fileName = `export_${Date.now()}.json`;
     
@@ -1171,7 +1171,7 @@ export class AnalyticsService {
     return `${this.config.projectId}.${destination}`;
   }
 
-  private convertToCSV(data: any[]): string {
+  private convertToCSV(data: unknown[]): string {
     if (data.length === 0) return '';
     
     const headers = Object.keys(data[0]);

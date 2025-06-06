@@ -3,11 +3,11 @@
  * Amazon広告APIクライアント
  */
 
-const axios = require('axios');
-const axiosRetry = require('axios-retry');
-const { logger } = require('../../../utils/logger');
-const { cache } = require('../../../utils/cache');
-const AmazonAuth = require('../auth/AmazonAuth');
+import axios from 'axios';
+import axiosRetry from 'axios-retry';
+import { logger  } from '../../../utils/logger';
+import { cache  } from '../../../utils/cache';
+import AmazonAuth from '../auth/AmazonAuth';
 
 class AmazonAdvertisingClient {
   constructor(config) {
@@ -117,7 +117,7 @@ class AmazonAdvertisingClient {
     }
     
     // Exchange SP-API token for Advertising API token
-    const spToken = await this.auth.getAccessToken();
+    const _spToken = await this.auth.getAccessToken();
     
     try {
       const response = await axios.post('https://api.amazon.com/auth/o2/token', {
@@ -244,7 +244,7 @@ class AmazonAdvertisingClient {
       });
       
       // Decompress if needed
-      const zlib = require('zlib');
+      import zlib from 'zlib';
       const data = zlib.gunzipSync(response.data);
       
       return JSON.parse(data.toString());

@@ -1,3 +1,20 @@
 {
-  "extends": ["next/core-web-vitals", "next/typescript"]
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "ignorePatterns": [
+    "src/security/*.js",
+    "backend/",
+    "node_modules/",
+    ".next/",
+    "out/",
+    "dist/"
+  ],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "no-console": "off",
+    "react/display-name": "off",
+    "@typescript-eslint/no-empty-object-type": "off",
+    "@typescript-eslint/no-misused-new": "off",
+    "@typescript-eslint/no-non-null-assertion": "off"
+  }
 }

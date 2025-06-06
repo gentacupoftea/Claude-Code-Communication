@@ -3,14 +3,14 @@
  * 統合レポート生成機能
  */
 
-const AmazonAPIClient = require('../client/AmazonAPIClient');
-const MarketingAnalyticsProcessor = require('../marketing/MarketingAnalyticsProcessor');
-const { logger } = require('../../../utils/logger');
-const { cache } = require('../../../utils/cache');
-const PDFDocument = require('pdfkit');
-const ExcelJS = require('exceljs');
-const fs = require('fs').promises;
-const path = require('path');
+import AmazonAPIClient from '../client/AmazonAPIClient';
+import MarketingAnalyticsProcessor from '../marketing/MarketingAnalyticsProcessor';
+import { logger  } from '../../../utils/logger';
+import { cache  } from '../../../utils/cache';
+import PDFDocument from 'pdfkit';
+import ExcelJS from 'exceljs';
+import { promises as _fs } from 'fs';
+import _path from 'path';
 
 class ReportGenerator {
   constructor(config) {
@@ -473,7 +473,7 @@ class ReportGenerator {
    * @param {Object} options - Report options
    * @returns {Promise<Object>} Analysis results
    */
-  async analyzeReportData(reportData, options) {
+  async analyzeReportData(reportData, _options) {
     const analysis = {
       summary: {},
       trends: {},
@@ -573,7 +573,7 @@ class ReportGenerator {
    * @param {Object} options - Report options
    * @returns {Promise<Buffer>} PDF report
    */
-  async generatePDFReport(analysis, options) {
+  async generatePDFReport(analysis, _options) {
     const doc = new PDFDocument({
       size: 'A4',
       margins: {
@@ -691,7 +691,7 @@ class ReportGenerator {
    * @param {Object} options - Report options
    * @returns {Promise<Buffer>} Excel report
    */
-  async generateExcelReport(analysis, options) {
+  async generateExcelReport(analysis, _options) {
     const workbook = new ExcelJS.Workbook();
     
     // Summary sheet
@@ -805,7 +805,7 @@ class ReportGenerator {
    * @param {Object} options - Report options
    * @returns {Buffer} CSV report
    */
-  generateCSVReport(analysis, options) {
+  generateCSVReport(analysis, _options) {
     const rows = [];
     
     // Headers

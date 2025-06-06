@@ -8,15 +8,15 @@
  * @requires sinon
  */
 
-const { expect } = require('chai');
-const sinon = require('sinon');
-const GSCAuth = require('../auth/GSCAuth');
-const GSCApiClient = require('../api/GSCApiClient');
-const QueryData = require('../models/QueryData');
-const PerformanceData = require('../models/PerformanceData');
-const DataFetchProcessor = require('../processors/DataFetchProcessor');
-const AnalyticsProcessor = require('../processors/AnalyticsProcessor');
-const DataVisualizer = require('../visualizers/DataVisualizer');
+import { expect  } from 'chai';
+import sinon from 'sinon';
+import GSCAuth from '../auth/GSCAuth';
+import GSCApiClient from '../api/GSCApiClient';
+import QueryData from '../models/QueryData';
+import PerformanceData from '../models/PerformanceData';
+import DataFetchProcessor from '../processors/DataFetchProcessor';
+import AnalyticsProcessor from '../processors/AnalyticsProcessor';
+import DataVisualizer from '../visualizers/DataVisualizer';
 
 describe('Google Search Console Integration Tests', () => {
   let sandbox;
@@ -31,8 +31,8 @@ describe('Google Search Console Integration Tests', () => {
   
   describe('GSCAuth', () => {
     it('should initialize with environment variables', () => {
-      expect(GSCAuth).to.exist;
-      expect(GSCAuth.isAuthenticated).to.be.false;
+      void expect(GSCAuth).to.exist;
+      void expect(GSCAuth.isAuthenticated).to.be.false;
     });
     
     it('should emit authenticated event on successful auth', (done) => {
@@ -88,7 +88,7 @@ describe('Google Search Console Integration Tests', () => {
         endDate: '2024-01-31'
       });
       
-      expect(stub.calledOnce).to.be.true;
+      void expect(stub.calledOnce).to.be.true;
     });
     
     it('should cache API responses', async () => {
@@ -100,7 +100,7 @@ describe('Google Search Console Integration Tests', () => {
         endDate: '2024-01-31'
       });
       
-      expect(cacheStub.calledOnce).to.be.true;
+      void expect(cacheStub.calledOnce).to.be.true;
     });
   });
   
@@ -115,7 +115,7 @@ describe('Google Search Console Integration Tests', () => {
         position: 5
       }];
       
-      const saveStub = sandbox.stub(QueryData, 'save').resolves({
+      const _saveStub = sandbox.stub(QueryData, 'save').resolves({
         total: 1,
         saved: 1,
         errors: 0
@@ -128,7 +128,7 @@ describe('Google Search Console Integration Tests', () => {
     });
     
     it('should find queries with filters', async () => {
-      const findStub = sandbox.stub(QueryData, 'find').resolves([
+      const _findStub = sandbox.stub(QueryData, 'find').resolves([
         { query: 'test keyword', clicks: 100 }
       ]);
       
@@ -143,7 +143,7 @@ describe('Google Search Console Integration Tests', () => {
     });
     
     it('should get top queries', async () => {
-      const topQueriesStub = sandbox.stub(QueryData, 'getTopQueries').resolves([
+      const _topQueriesStub = sandbox.stub(QueryData, 'getTopQueries').resolves([
         { query: 'top keyword', totalClicks: 500 }
       ]);
       
@@ -169,7 +169,7 @@ describe('Google Search Console Integration Tests', () => {
         position: 10
       }];
       
-      const saveStub = sandbox.stub(PerformanceData, 'save').resolves({
+      const _saveStub = sandbox.stub(PerformanceData, 'save').resolves({
         total: 1,
         saved: 1,
         errors: 0
@@ -181,7 +181,7 @@ describe('Google Search Console Integration Tests', () => {
     });
     
     it('should get daily performance', async () => {
-      const dailyStub = sandbox.stub(PerformanceData, 'getDailyPerformance').resolves([
+      const _dailyStub = sandbox.stub(PerformanceData, 'getDailyPerformance').resolves([
         { date: '2024-01-01', clicks: 100 }
       ]);
       
@@ -193,7 +193,7 @@ describe('Google Search Console Integration Tests', () => {
     });
     
     it('should analyze trends', async () => {
-      const trendStub = sandbox.stub(PerformanceData, 'analyzeTrends').resolves({
+      const _trendStub = sandbox.stub(PerformanceData, 'analyzeTrends').resolves({
         trend: 'up',
         changeRate: 15.5
       });
@@ -217,7 +217,7 @@ describe('Google Search Console Integration Tests', () => {
     });
     
     it('should sync all data types', async () => {
-      const syncStub = sandbox.stub(DataFetchProcessor, 'syncAllData').resolves({
+      const _syncStub = sandbox.stub(DataFetchProcessor, 'syncAllData').resolves({
         totalTasks: 4,
         completed: 4,
         failed: 0
@@ -234,7 +234,7 @@ describe('Google Search Console Integration Tests', () => {
     });
     
     it('should handle incremental sync', async () => {
-      const incrementalStub = sandbox.stub(DataFetchProcessor, 'incrementalSync').resolves({
+      const _incrementalStub = sandbox.stub(DataFetchProcessor, 'incrementalSync').resolves({
         totalTasks: 2,
         completed: 2,
         failed: 0
@@ -268,7 +268,7 @@ describe('Google Search Console Integration Tests', () => {
     });
     
     it('should perform comprehensive analysis', async () => {
-      const analysisStub = sandbox.stub(AnalyticsProcessor, 'performComprehensiveAnalysis').resolves({
+      const _analysisStub = sandbox.stub(AnalyticsProcessor, 'performComprehensiveAnalysis').resolves({
         overview: {},
         keywords: {},
         pages: {},
@@ -286,7 +286,7 @@ describe('Google Search Console Integration Tests', () => {
     });
     
     it('should identify keyword opportunities', async () => {
-      const opportunitiesStub = sandbox.stub(AnalyticsProcessor, 'identifyKeywordOpportunities').resolves([
+      const _opportunitiesStub = sandbox.stub(AnalyticsProcessor, 'identifyKeywordOpportunities').resolves([
         { type: 'low_ctr', keyword: 'test', potentialClicks: 50 }
       ]);
       
@@ -307,7 +307,7 @@ describe('Google Search Console Integration Tests', () => {
   
   describe('DataVisualizer', () => {
     it('should generate charts', async () => {
-      const chartStub = sandbox.stub(DataVisualizer, 'createOverviewChart').resolves({
+      const _chartStub = sandbox.stub(DataVisualizer, 'createOverviewChart').resolves({
         buffer: Buffer.from('test'),
         url: 'https://example.com/chart'
       });
@@ -323,7 +323,7 @@ describe('Google Search Console Integration Tests', () => {
     });
     
     it('should generate HTML reports', async () => {
-      const htmlStub = sandbox.stub(DataVisualizer, 'generateHtmlReport').resolves('<html>test</html>');
+      const _htmlStub = sandbox.stub(DataVisualizer, 'generateHtmlReport').resolves('<html>test</html>');
       
       const html = await DataVisualizer.generateHtmlReport({
         siteUrl: 'https://example.com',
@@ -336,7 +336,7 @@ describe('Google Search Console Integration Tests', () => {
     });
     
     it('should generate dashboard data', async () => {
-      const dashboardStub = sandbox.stub(DataVisualizer, 'generateDashboardData').resolves({
+      const _dashboardStub = sandbox.stub(DataVisualizer, 'generateDashboardData').resolves({
         overview: {},
         topKeywords: [],
         devices: []
@@ -354,16 +354,16 @@ describe('Google Search Console Integration Tests', () => {
   describe('Integration Flow', () => {
     it('should complete full data sync and analysis flow', async () => {
       // フルフローのモック
-      const authStub = sandbox.stub(GSCAuth, 'isAuthValid').returns(true);
-      const syncStub = sandbox.stub(DataFetchProcessor, 'syncAllData').resolves({
+      const _authStub = sandbox.stub(GSCAuth, 'isAuthValid').returns(true);
+      const _syncStub = sandbox.stub(DataFetchProcessor, 'syncAllData').resolves({
         completed: 4,
         failed: 0
       });
-      const analysisStub = sandbox.stub(AnalyticsProcessor, 'performComprehensiveAnalysis').resolves({
+      const _analysisStub = sandbox.stub(AnalyticsProcessor, 'performComprehensiveAnalysis').resolves({
         overview: {},
         recommendations: []
       });
-      const reportStub = sandbox.stub(DataVisualizer, 'generateComprehensiveReport').resolves({
+      const _reportStub = sandbox.stub(DataVisualizer, 'generateComprehensiveReport').resolves({
         reportId: 'test-report',
         htmlPath: '/path/to/report.html'
       });
@@ -395,7 +395,7 @@ describe('Google Search Console Integration Tests', () => {
   
   describe('Error Handling', () => {
     it('should handle API errors gracefully', async () => {
-      const errorStub = sandbox.stub(GSCApiClient, 'getSearchAnalytics').rejects(new Error('API Error'));
+      const _errorStub = sandbox.stub(GSCApiClient, 'getSearchAnalytics').rejects(new Error('API Error'));
       
       try {
         await GSCApiClient.getSearchAnalytics({
@@ -407,7 +407,7 @@ describe('Google Search Console Integration Tests', () => {
     });
     
     it('should handle database errors', async () => {
-      const dbErrorStub = sandbox.stub(QueryData, 'save').rejects(new Error('DB Error'));
+      const _dbErrorStub = sandbox.stub(QueryData, 'save').rejects(new Error('DB Error'));
       
       try {
         await QueryData.save([]);
@@ -424,7 +424,7 @@ describe('Google Search Console Integration Tests', () => {
         clicks: 100
       };
       
-      const saveStub = sandbox.stub(QueryData, 'save').resolves({
+      const _saveStub = sandbox.stub(QueryData, 'save').resolves({
         saved: 1
       });
       

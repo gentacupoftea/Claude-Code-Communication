@@ -9,12 +9,12 @@ import {
 } from './apiMocks';
 
 const apiBaseUrl = 'https://api.test.com';
-const shopifyGraphqlUrl = 'https://test-shop.myshopify.com/admin/api/2023-10/graphql.json';
+const _shopifyGraphqlUrl = 'https://test-shop.myshopify.com/admin/api/2023-10/graphql.json';
 
 export const handlers = [
   // Auth handlers
   rest.post(`${apiBaseUrl}/auth/token`, (req, res, ctx) => {
-    const { code, shop } = req.body as any;
+    const { code, shop } = req.body as { code?: string; shop?: string };
     
     if (code && shop) {
       return res(
@@ -30,7 +30,7 @@ export const handlers = [
   }),
   
   rest.post(`${apiBaseUrl}/auth/refresh`, (req, res, ctx) => {
-    const { refreshToken } = req.body as any;
+    const { refreshToken } = req.body as { refreshToken?: string };
     
     if (refreshToken === 'test-refresh-token') {
       return res(

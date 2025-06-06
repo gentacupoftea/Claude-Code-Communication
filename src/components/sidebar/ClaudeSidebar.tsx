@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useSidebar } from '@/src/hooks/useSidebar';
 import { SidebarProject } from '@/src/types/sidebar';
+import { SidebarSectionState, SidebarFolder } from '@/src/types/sidebar-hook';
 
 interface ClaudeSidebarProps {
   onProjectSelect?: (project: SidebarProject) => void;
@@ -98,7 +99,7 @@ export const ClaudeSidebar: React.FC<ClaudeSidebarProps> = ({ onProjectSelect })
         case 'starred':
           return matchesSearch && project.isStarred;
         case 'recent':
-          return matchesSearch && sidebar.recentProjects.some((rp: any) => rp.id === project.id);
+          return matchesSearch && sidebar.recentProjects.some((rp: unknown) => (rp as { id: string }).id === project.id);
         case 'chat':
           return matchesSearch && project.type === 'chat';
         case 'analytics':
@@ -190,7 +191,7 @@ export const ClaudeSidebar: React.FC<ClaudeSidebarProps> = ({ onProjectSelect })
 
         {/* プロジェクトリスト */}
         <div className="flex-1 overflow-y-auto">
-          {sidebar.sections.map((section: any) => (
+          {sidebar.sections.map((section: SidebarSectionState) => (
             <div key={section.id} className="mb-2">
               {!sidebar.isCollapsed && (
                 <div className="px-4 py-2">
@@ -332,7 +333,7 @@ export const ClaudeSidebar: React.FC<ClaudeSidebarProps> = ({ onProjectSelect })
                     )}
 
                     {/* フォルダ */}
-                    {section.folders.map((folder: any) => (
+                    {section.folders.map((folder: SidebarFolder) => (
                       <div key={folder.id} className="mb-2">
                         {!sidebar.isCollapsed && folder.isCollapsible && (
                           <div className="px-4">
@@ -506,8 +507,8 @@ export const ClaudeSidebar: React.FC<ClaudeSidebarProps> = ({ onProjectSelect })
             <button
               onClick={() => handleRename(contextMenu.id, 
                 contextMenu.type === 'folder' 
-                  ? sidebar.sections.flatMap((s: any) => s.folders).find((f: any) => f.id === contextMenu.id)?.name || ''
-                  : sidebar.sections.flatMap((s: any) => s.folders.flatMap((f: any) => f.projects)).find((p: any) => p.id === contextMenu.id)?.name || ''
+                  ? sidebar.sections.flatMap((s: SidebarSectionState) => s.folders).find((f: SidebarFolder) => f.id === contextMenu.id)?.name || ''
+                  : sidebar.sections.flatMap((s: SidebarSectionState) => s.folders.flatMap((f: SidebarFolder) => f.projects)).find((p: SidebarProject) => p.id === contextMenu.id)?.name || ''
               )}
               className="w-full px-4 py-2 text-left text-sm text-white hover:bg-white/10 flex items-center space-x-2"
             >

@@ -100,7 +100,7 @@ export class ShopifyService {
 
   private setupRoutes(): void {
     // Health check
-    this.app.get('/health', (req: any, res: any) => {
+    this.app.get('/health', (req: unknown, res: unknown) => {
       res.json({ status: 'healthy', service: 'shopify' });
     });
 
@@ -170,7 +170,7 @@ export class ShopifyService {
       this.shopify.webhooks.addHandler(topic, {
         deliveryMethod: 'http',
         callbackUrl: `${this.config.hostName}${this.config.webhookPath}/${topic.toLowerCase()}`,
-        callback: async (topic: any, shopDomain: any, body: any) => {
+        callback: async (topic: unknown, shopDomain: unknown, body: unknown) => {
           await this.processWebhook(topic, shopDomain, body);
         }
       });
@@ -771,7 +771,7 @@ export class ShopifyService {
   private async handleGetCustomers(req: express.Request, res: express.Response): Promise<void> {
     try {
       const { domain } = req.params;
-      const { page = 1, limit = 50, search } = req.query;
+      const { page = 1, limit = 50, _search } = req.query;
 
       const shop = await this.getShop(domain);
       if (!shop) {
@@ -1016,7 +1016,7 @@ export class ShopifyService {
     try {
       const { topic } = req.params;
       const shopDomain = req.headers['x-shopify-shop-domain'] as string;
-      const hmac = req.headers['x-shopify-hmac-sha256'] as string;
+      const _hmac = req.headers['x-shopify-hmac-sha256'] as string;
 
       // Verify webhook
       const isValid = await this.shopify.webhooks.validate({
@@ -1098,7 +1098,7 @@ export class ShopifyService {
         }
 
         // Save to Firestore
-        const batch = products.map((product: any) => ({
+        const batch = products.map((product: unknown) => ({
           type: 'set' as const,
           collection: 'products',
           documentId: `${shop.id}_${product.id}`,
@@ -1113,7 +1113,7 @@ export class ShopifyService {
         await this.dataLayer.firestoreBatchWrite(batch);
 
         // Save to BigQuery
-        const bigQueryRows = products.map((product: any) => ({
+        const bigQueryRows = products.map((product: unknown) => ({
           id: product.id,
           shop_id: shop.id,
           title: product.title,
@@ -1182,7 +1182,7 @@ export class ShopifyService {
         }
 
         // Save to Firestore
-        const batch = orders.map((order: any) => ({
+        const batch = orders.map((order: unknown) => ({
           type: 'set' as const,
           collection: 'orders',
           documentId: `${shop.id}_${order.id}`,
@@ -1197,7 +1197,7 @@ export class ShopifyService {
         await this.dataLayer.firestoreBatchWrite(batch);
 
         // Save to BigQuery
-        const bigQueryRows = orders.map((order: any) => ({
+        const bigQueryRows = orders.map((order: unknown) => ({
           id: order.id,
           shop_id: shop.id,
           customer_id: order.customer?.id,
@@ -1260,7 +1260,7 @@ export class ShopifyService {
         }
 
         // Save to Firestore
-        const batch = customers.map((customer: any) => ({
+        const batch = customers.map((customer: unknown) => ({
           type: 'set' as const,
           collection: 'customers',
           documentId: `${shop.id}_${customer.id}`,
@@ -1332,7 +1332,7 @@ export class ShopifyService {
           }
 
           // Save to Firestore
-          const batch = inventoryLevels.map((inventory: any) => ({
+          const batch = inventoryLevels.map((inventory: unknown) => ({
             type: 'set' as const,
             collection: 'inventory',
             documentId: `${shop.id}_${inventory.inventory_item_id}_${location.id}`,
@@ -1375,7 +1375,7 @@ export class ShopifyService {
   }
 
   // Webhook processing
-  private async processWebhook(topic: string, shopDomain: string, data: any): Promise<void> {
+  private async processWebhook(topic: string, shopDomain: string, data: unknown): Promise<void> {
     logger.info(`Processing webhook: ${topic} for ${shopDomain}`);
 
     // Record webhook metric
@@ -1448,7 +1448,7 @@ export class ShopifyService {
     });
   }
 
-  private async handleProductWebhook(shop: Shop, data: any, topic: string): Promise<void> {
+  private async handleProductWebhook(shop: Shop, data: unknown, _topic: string): Promise<void> {
     const product = data;
     
     // Save to Firestore
@@ -1475,7 +1475,7 @@ export class ShopifyService {
     }]);
   }
 
-  private async handleProductDeleteWebhook(shop: Shop, data: any): Promise<void> {
+  private async handleProductDeleteWebhook(shop: Shop, data: unknown): Promise<void> {
     const productId = data.id;
     
     // Delete from Firestore
@@ -1486,7 +1486,7 @@ export class ShopifyService {
     );
   }
 
-  private async handleOrderWebhook(shop: Shop, data: any, topic: string): Promise<void> {
+  private async handleOrderWebhook(shop: Shop, data: unknown, _topic: string): Promise<void> {
     const order = data;
     
     // Save to Firestore
@@ -1513,7 +1513,7 @@ export class ShopifyService {
     }]);
   }
 
-  private async handleCustomerWebhook(shop: Shop, data: any, topic: string): Promise<void> {
+  private async handleCustomerWebhook(shop: Shop, data: unknown, _topic: string): Promise<void> {
     const customer = data;
     
     // Save to Firestore
@@ -1529,7 +1529,7 @@ export class ShopifyService {
     );
   }
 
-  private async handleInventoryWebhook(shop: Shop, data: any): Promise<void> {
+  private async handleInventoryWebhook(shop: Shop, data: unknown): Promise<void> {
     const inventory = data;
     
     // Save to Firestore
@@ -1546,7 +1546,7 @@ export class ShopifyService {
   }
 
   // Analytics methods
-  private async getShopAnalytics(shopId: string, startDate: string, endDate: string): Promise<any> {
+  private async getShopAnalytics(shopId: string, startDate: string, endDate: string): Promise<unknown> {
     const query = `
       SELECT 
         COUNT(DISTINCT id) as total_orders,
@@ -1568,7 +1568,7 @@ export class ShopifyService {
     startDate: string,
     endDate: string,
     productId?: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     let query = `
       SELECT 
         p.id as product_id,
@@ -1600,7 +1600,7 @@ export class ShopifyService {
     shopId: string,
     startDate: string,
     endDate: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     const query = `
       SELECT 
         customer_id,

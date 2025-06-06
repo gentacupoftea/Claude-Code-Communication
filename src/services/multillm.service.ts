@@ -333,7 +333,7 @@ export class MultiLLMService {
   public async *streamResponse(
     messages: ChatMessage[],
     modelId: string,
-    settings?: { temperature?: number; maxTokens?: number }
+    _settings?: { temperature?: number; maxTokens?: number }
   ): AsyncGenerator<StreamingResponse, void, unknown> {
     const model = this.getAvailableModels().find(m => m.id === modelId);
     if (!model) {
@@ -361,33 +361,53 @@ export class MultiLLMService {
   }
 
   // モデル比較の生成
-  private generateComparison(prompt: string, responses: any[]): ModelComparison {
+  private generateComparison(prompt: string, responses: unknown[]): ModelComparison {
     // デモ用の簡単な比較分析
     const scores: { [modelId: string]: number } = {};
     let winner = '';
     let maxScore = 0;
 
     responses.forEach(response => {
-      const score = Math.random() * 30 + 70; // 70-100の範囲
-      scores[response.model] = score;
-      if (score > maxScore) {
-        maxScore = score;
-        winner = response.model;
+      if (response && typeof response === 'object' && 'model' in response) {
+        const resp = response as { model: string };
+        const score = Math.random() * 30 + 70; // 70-100の範囲
+        scores[resp.model] = score;
+        if (score > maxScore) {
+          maxScore = score;
+          winner = resp.model;
+        }
       }
     });
 
     return {
       id: `comparison-${Date.now()}`,
       prompt,
-      responses: responses.map(r => ({
-        ...r,
-        metadata: {
-          ...r.metadata,
-          quality: Math.random() * 20 + 80,
-          relevance: Math.random() * 15 + 85,
-          creativity: Math.random() * 25 + 75
+      responses: responses.map(r => {
+        if (r && typeof r === 'object') {
+          const response = r as Record<string, unknown>;
+          return {
+            model: (response.model as string) || 'unknown',
+            provider: (response.provider as string) || 'unknown',
+            response: response.response,
+            content: response.content as string,
+            responseTime: (response.responseTime as number) || 0,
+            error: response.error as string,
+            metadata: {
+              tokenCount: 0,
+              cost: 0,
+              ...(response.metadata && typeof response.metadata === 'object' ? response.metadata : {}),
+              quality: Math.random() * 20 + 80,
+              relevance: Math.random() * 15 + 85,
+              creativity: Math.random() * 25 + 75
+            }
+          };
         }
-      })),
+        return {
+          model: 'unknown',
+          responseTime: 0,
+          metadata: { tokenCount: 0, cost: 0 }
+        };
+      }) as ModelComparison['responses'],
       analysis: {
         winner,
         scores,
@@ -399,17 +419,18 @@ export class MultiLLMService {
   }
 
   // 使用統計の更新
-  private updateUsageStats(provider: string, model: string, metadata: any) {
+  private updateUsageStats(provider: string, model: string, metadata: unknown) {
+    const meta = metadata && typeof metadata === 'object' ? metadata as Record<string, unknown> : {};
     const existingStats = this.usageStats.find(s => 
       s.provider === provider && s.model === model && s.period === 'day'
     );
 
     if (existingStats) {
       existingStats.data.requests += 1;
-      existingStats.data.outputTokens += metadata.tokenCount || 0;
-      existingStats.data.cost += metadata.cost || 0;
+      existingStats.data.outputTokens += (meta.tokenCount as number) || 0;
+      existingStats.data.cost += (meta.cost as number) || 0;
       existingStats.data.averageResponseTime = 
-        (existingStats.data.averageResponseTime + (metadata.responseTime || 0)) / 2;
+        (existingStats.data.averageResponseTime + ((meta.responseTime as number) || 0)) / 2;
     } else {
       this.usageStats.push({
         provider,
@@ -418,9 +439,9 @@ export class MultiLLMService {
         data: {
           requests: 1,
           inputTokens: 0,
-          outputTokens: metadata.tokenCount || 0,
-          cost: metadata.cost || 0,
-          averageResponseTime: metadata.responseTime || 0,
+          outputTokens: (meta.tokenCount as number) || 0,
+          cost: (meta.cost as number) || 0,
+          averageResponseTime: (meta.responseTime as number) || 0,
           errorRate: 0,
           successRate: 100
         },
@@ -466,7 +487,7 @@ export class MultiLLMService {
         await new Promise(resolve => setTimeout(resolve, Math.random() * 1000));
         provider.status = Math.random() > 0.1 ? 'available' : 'rate_limited';
         provider.lastHealthCheck = new Date();
-      } catch (error) {
+      } catch (_error) {
         provider.status = 'error';
       }
     }

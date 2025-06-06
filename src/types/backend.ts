@@ -10,13 +10,13 @@ export interface BackendConfig {
   headers?: Record<string, string>;
 }
 
-export interface BackendResponse<T = any> {
+export interface BackendResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: {
     code: string;
     message: string;
-    details?: any;
+    details?: Record<string, unknown>;
   };
   metadata?: {
     timestamp: Date;
@@ -28,8 +28,8 @@ export interface BackendResponse<T = any> {
 export interface BackendRequest {
   endpoint: string;
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-  params?: Record<string, any>;
-  body?: any;
+  params?: Record<string, unknown>;
+  body?: unknown;
   headers?: Record<string, string>;
 }
 
@@ -46,7 +46,7 @@ export interface PaginatedResponse<T> {
 export interface BackendError extends Error {
   code: string;
   statusCode?: number;
-  details?: any;
+  details?: Record<string, unknown>;
   requestId?: string;
 }
 
@@ -84,7 +84,7 @@ export interface ApiEndpoint {
 
 export interface WebSocketMessage {
   type: string;
-  payload: any;
+  payload: unknown;
   timestamp: Date;
   id?: string;
 }
@@ -112,8 +112,8 @@ export interface SyncStatus {
 export interface SyncConflict {
   id: string;
   type: string;
-  localValue: any;
-  remoteValue: any;
+  localValue: unknown;
+  remoteValue: unknown;
   timestamp: Date;
 }
 
@@ -128,7 +128,7 @@ export interface QueueStatus {
 export interface SyncData {
   id?: string;
   type: string;
-  data: any;
+  data: unknown;
   priority?: 'low' | 'normal' | 'high';
   timestamp?: Date;
   status?: 'pending' | 'syncing' | 'completed' | 'failed';
@@ -140,7 +140,7 @@ export interface SyncError {
   message: string;
   timestamp: Date;
   type: string;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 export interface BackendIntegrationService {
@@ -206,7 +206,7 @@ export interface BackendMessage {
   message: string;
   timestamp: Date;
   priority?: 'low' | 'normal' | 'high' | 'critical';
-  data?: any;
+  data?: unknown;
   action?: {
     label: string;
     handler: () => void;

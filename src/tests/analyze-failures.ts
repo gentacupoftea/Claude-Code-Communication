@@ -33,7 +33,12 @@ export class FailureAnalyzer {
     const results = JSON.parse(await fs.readFile(resultsPath, 'utf-8'));
     
     // 失敗した質問を抽出
-    const failures = results.results.filter((r: any) => !r.passed);
+    const failures = results.results.filter((r: unknown) => {
+      if (r && typeof r === 'object' && 'passed' in r) {
+        return !(r as { passed: boolean }).passed;
+      }
+      return false;
+    });
     
     // 基本統計
     const analysis: FailureAnalysis = {
@@ -58,28 +63,43 @@ export class FailureAnalyzer {
     return analysis;
   }
 
-  private groupFailures(failures: any[], key: string): Record<string, number> {
+  private groupFailures(failures: unknown[], key: string): Record<string, number> {
     const grouped: Record<string, number> = {};
     
     failures.forEach(failure => {
-      const value = failure[key];
-      grouped[value] = (grouped[value] || 0) + 1;
+      if (failure && typeof failure === 'object' && key in failure) {
+        const failureObj = failure as Record<string, unknown>;
+        const value = failureObj[key];
+        if (typeof value === 'string') {
+          grouped[value] = (grouped[value] || 0) + 1;
+        }
+      }
     });
     
     return grouped;
   }
 
   private async loadFailedQuestions(
-    failures: any[],
-    fullResults: any
-  ): Promise<Array<{ question: string; scores: any; provider: string }>> {
+    failures: unknown[],
+    _fullResults: unknown
+  ): Promise<Array<{ question: string; scores: unknown; provider: string }>> {
     // 実際の実装では、元の質問データを読み込む必要がある
     // ここではモックデータを使用
-    return failures.map(f => ({
-      question: `質問ID: ${f.questionId} のサンプル質問テキスト`,
-      scores: f.scores,
-      provider: f.provider
-    }));
+    return failures.map(f => {
+      if (f && typeof f === 'object') {
+        const failure = f as Record<string, unknown>;
+        return {
+          question: `質問ID: ${failure.questionId || 'unknown'} のサンプル質問テキスト`,
+          scores: failure.scores,
+          provider: (failure.provider as string) || 'unknown'
+        };
+      }
+      return {
+        question: 'Unknown question',
+        scores: {},
+        provider: 'unknown'
+      };
+    });
   }
 
   // 詳細な失敗分析レポートの生成
@@ -162,10 +182,12 @@ export class FailureAnalyzer {
 
   // スコア改善シミュレーション
   simulateImprovements(
-    currentScores: any,
+    currentScores: unknown,
     proposedChanges: string[]
   ): Record<string, number> {
-    const improvements: Record<string, number> = { ...currentScores };
+    const improvements: Record<string, number> = currentScores && typeof currentScores === 'object' 
+      ? { ...(currentScores as Record<string, number>) }
+      : {};
     
     proposedChanges.forEach(change => {
       if (change.includes('プロンプト')) {

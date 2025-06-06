@@ -19,10 +19,10 @@ export class ApiLog {
   statusCode: number;
 
   @Column({ type: 'json', nullable: true })
-  requestBody?: any;
+  requestBody?: unknown;
 
   @Column({ type: 'json', nullable: true })
-  responseBody?: any;
+  responseBody?: unknown;
 
   @Column({ nullable: true })
   error?: string;

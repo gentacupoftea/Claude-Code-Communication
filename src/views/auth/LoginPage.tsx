@@ -26,7 +26,7 @@ export default function LoginPage() {
       } else {
         setError('メールアドレスまたはパスワードが正しくありません');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('ログインに失敗しました。もう一度お試しください。');
     } finally {
       setIsLoading(false);

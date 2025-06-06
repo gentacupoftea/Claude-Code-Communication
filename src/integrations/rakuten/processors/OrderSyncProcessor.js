@@ -3,13 +3,13 @@
  * 楽天注文同期処理
  */
 
-const RakutenAPIClient = require('../client/RakutenAPIClient');
-const RakutenOrder = require('../models/Order');
-const { logger } = require('../../../utils/logger');
-const { cache } = require('../../../utils/cache');
-const { queue } = require('../../../utils/queue');
-const BatchProcessor = require('../../../utils/BatchProcessor');
-const EventEmitter = require('events');
+import RakutenAPIClient from '../client/RakutenAPIClient';
+import RakutenOrder from '../models/Order';
+import { logger  } from '../../../utils/logger';
+import { cache  } from '../../../utils/cache';
+import { queue  } from '../../../utils/queue';
+import BatchProcessor from '../../../utils/BatchProcessor';
+import EventEmitter from 'events';
 
 class OrderSyncProcessor extends EventEmitter {
   constructor(config) {

@@ -254,7 +254,7 @@ conea_llm_requests_total{provider="gemini"} 0
 }
 
 // Error handling middleware
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
   console.error('Unhandled error:', err);
   
   res.status(500).json({

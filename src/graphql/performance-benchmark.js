@@ -5,10 +5,10 @@
  * ベストプラクティスを実証します。
  */
 
-const { OptimizedShopifyGraphQLClient, Queries } = require('./optimized-client');
-const { gql } = require('@apollo/client');
-const Table = require('cli-table3');
-const { performance } = require('perf_hooks');
+import { OptimizedShopifyGraphQLClient, Queries  } from './optimized-client';
+import { gql  } from '@apollo/client';
+import Table from 'cli-table3';
+import { performance  } from 'perf_hooks';
 
 /**
  * ベンチマーク結果を記録するクラス
@@ -280,7 +280,7 @@ class GraphQLBenchmark {
     for (let i = 0; i < 5; i++) {
       try {
         await this.client.query(invalidQuery);
-      } catch (error) {
+      } catch (_error) { // eslint-disable-line no-unused-vars
         errorCount++;
       }
     }
@@ -425,7 +425,7 @@ async function demonstrateBestPractices() {
   // 3. エラーハンドリング
   console.log('\n3. Robust Error Handling');
   
-  async function safeQuery(query, variables = {}) {
+  async function _safeQuery(query, variables = {}) { // eslint-disable-line no-unused-vars
     try {
       return await client.query(query, variables);
     } catch (error) {

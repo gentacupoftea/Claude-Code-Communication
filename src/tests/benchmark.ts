@@ -81,26 +81,31 @@ export class BenchmarkRunner {
   }
 
   private async processQuestion(
-    question: any,
+    question: unknown,
     runType: 'baseline' | 'improved'
   ): Promise<BenchmarkResult> {
+    if (!question || typeof question !== 'object') {
+      throw new Error('Invalid question object');
+    }
+    
+    const q = question as { question: string; context: unknown; category?: string; difficulty?: string; id?: string };
     const startTime = Date.now();
 
     // ルーティング決定
-    const routingDecision = this.router.route(question.question, question.context);
+    const routingDecision = this.router.route(q.question, q.context);
     
     // コンテキスト構築
     const enrichedContext = runType === 'improved' 
       ? this.contextBuilder.buildEnrichedContext(
-          question.question,
-          question.context,
-          question.category
+          q.question,
+          q.context,
+          q.category || 'general'
         )
-      : question.context;
+      : q.context;
 
     // LLMへの問い合わせ（モック）
     const response = await this.orchestrator.query(
-      question.question,
+      q.question,
       enrichedContext,
       routingDecision.provider
     );
@@ -109,7 +114,7 @@ export class BenchmarkRunner {
     const finalResponse = runType === 'improved'
       ? this.responseEnhancer.enhanceResponse(
           response,
-          question.category,
+          q.category || 'general',
           {
             addMetrics: true,
             addImplementationSteps: true,
@@ -120,18 +125,18 @@ export class BenchmarkRunner {
 
     // 品質評価
     const scores = this.evaluator.evaluate(
-      question.question,
+      q.question,
       finalResponse,
-      question.evaluationCriteria
+      (q as any).evaluationCriteria
     );
 
     const responseTime = Date.now() - startTime;
     const tokenCount = this.estimateTokenCount(finalResponse);
 
     return {
-      questionId: question.id,
-      category: question.category,
-      difficulty: question.difficulty,
+      questionId: q.id || 'unknown',
+      category: q.category || 'general',
+      difficulty: q.difficulty || 'medium',
       provider: routingDecision.provider,
       scores: {
         relevance: scores.relevance,
@@ -155,7 +160,7 @@ export class BenchmarkRunner {
   private async saveResults(
     config: BenchmarkConfig,
     results: BenchmarkResult[],
-    aggregateMetrics: any
+    aggregateMetrics: unknown
   ): Promise<void> {
     const timestamp = new Date().toISOString();
     const data = {
@@ -168,7 +173,7 @@ export class BenchmarkRunner {
       },
       results,
       aggregateMetrics,
-      improvementAreas: this.metricsCalculator.identifyImprovementAreas(aggregateMetrics),
+      improvementAreas: this.metricsCalculator.identifyImprovementAreas(aggregateMetrics as any),
       successPatterns: this.metricsCalculator.extractSuccessPatterns(results)
     };
 
@@ -182,36 +187,37 @@ export class BenchmarkRunner {
     console.log(`\\n💾 結果を保存しました: ${config.outputPath}`);
   }
 
-  private displaySummary(metrics: any): void {
+  private displaySummary(metrics: unknown): void {
+    const m = metrics as any;
     console.log('\\n' + '='.repeat(60));
     console.log('📊 ベンチマーク結果サマリー');
     console.log('='.repeat(60));
     
-    console.log(`\\n✅ 合格率: ${(metrics.passRate * 100).toFixed(1)}% (${metrics.passedQuestions}/${metrics.totalQuestions})`);
+    console.log(`\\n✅ 合格率: ${(m.passRate * 100).toFixed(1)}% (${m.passedQuestions}/${m.totalQuestions})`);
     
     console.log('\\n📈 平均スコア:');
-    Object.entries(metrics.averageScores).forEach(([key, value]) => {
+    Object.entries(m.averageScores).forEach(([key, value]) => {
       console.log(`  - ${this.translateMetric(key)}: ${(value as number).toFixed(2)}`);
     });
     
     console.log('\\n🏷️  カテゴリ別パフォーマンス:');
-    Object.entries(metrics.scoresByCategory).forEach(([category, stats]: [string, any]) => {
+    Object.entries(m.scoresByCategory).forEach(([category, stats]: [string, any]) => {
       console.log(`  - ${category}: 合格率 ${(stats.passRate * 100).toFixed(1)}%, 平均スコア ${stats.averageScore.toFixed(2)}`);
     });
     
     console.log('\\n📊 難易度別パフォーマンス:');
-    Object.entries(metrics.scoresByDifficulty).forEach(([difficulty, stats]: [string, any]) => {
+    Object.entries(m.scoresByDifficulty).forEach(([difficulty, stats]: [string, any]) => {
       console.log(`  - ${difficulty}: 合格率 ${(stats.passRate * 100).toFixed(1)}%, 平均スコア ${stats.averageScore.toFixed(2)}`);
     });
     
     console.log('\\n🤖 プロバイダー別パフォーマンス:');
-    Object.entries(metrics.scoresByProvider).forEach(([provider, stats]: [string, any]) => {
+    Object.entries(m.scoresByProvider).forEach(([provider, stats]: [string, any]) => {
       console.log(`  - ${provider}: 合格率 ${(stats.passRate * 100).toFixed(1)}%, 平均応答時間 ${stats.averageResponseTime.toFixed(0)}ms`);
     });
     
     console.log('\\n⚡ パフォーマンスメトリクス:');
-    console.log(`  - 平均応答時間: ${metrics.performanceMetrics.averageResponseTime.toFixed(0)}ms`);
-    console.log(`  - 質問あたりトークン数: ${metrics.performanceMetrics.tokensPerQuestion.toFixed(0)}`);
+    console.log(`  - 平均応答時間: ${m.performanceMetrics.averageResponseTime.toFixed(0)}ms`);
+    console.log(`  - 質問あたりトークン数: ${m.performanceMetrics.tokensPerQuestion.toFixed(0)}`);
   }
 
   private translateMetric(metric: string): string {

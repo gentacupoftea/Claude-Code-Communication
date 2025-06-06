@@ -34,7 +34,7 @@ export class ChartRenderer {
    * @param chartData Chart data object
    * @returns Promise resolving to a base64 encoded image
    */
-  async renderChart(chartData: any): Promise<string> {
+  async renderChart(chartData: unknown): Promise<string> {
     try {
       // Generate a hash for this chart data for caching
       const chartHash = generateChartHash(chartData);
@@ -103,7 +103,7 @@ export class ChartRenderer {
     return this.chartCache.size;
   }
   
-  private convertToChartJSConfig(chartData: any): ChartConfiguration {
+  private convertToChartJSConfig(chartData: unknown): ChartConfiguration {
     // Extract chart properties
     const { type, data, options } = chartData;
     

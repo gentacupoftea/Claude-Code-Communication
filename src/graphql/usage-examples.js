@@ -5,8 +5,8 @@
  * 実践的な使用例を示します。
  */
 
-const { OptimizedShopifyGraphQLClient, Queries } = require('./optimized-client');
-const { gql } = require('@apollo/client');
+import { OptimizedShopifyGraphQLClient, Queries  } from './optimized-client';
+import { gql  } from '@apollo/client';
 
 /**
  * 基本的な使用例
@@ -152,7 +152,7 @@ async function cachingStrategyExample() {
   try {
     // キャッシュを利用したクエリ
     console.time('First query (cache miss)');
-    const firstResult = await client.query(
+    const _firstResult = await client.query( // eslint-disable-line no-unused-vars
       Queries.GET_PRODUCTS,
       { first: 10 }
     );
@@ -160,7 +160,7 @@ async function cachingStrategyExample() {
     
     // 同じクエリを再実行（キャッシュヒット）
     console.time('Second query (cache hit)');
-    const secondResult = await client.query(
+    const _secondResult = await client.query( // eslint-disable-line no-unused-vars
       Queries.GET_PRODUCTS,
       { first: 10 }
     );
@@ -168,7 +168,7 @@ async function cachingStrategyExample() {
     
     // キャッシュをスキップしてクエリ
     console.time('Third query (skip cache)');
-    const thirdResult = await client.query(
+    const _thirdResult = await client.query( // eslint-disable-line no-unused-vars
       Queries.GET_PRODUCTS,
       { first: 10 },
       { fetchPolicy: 'network-only', context: { skipCache: true } }

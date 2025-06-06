@@ -8,6 +8,73 @@ import { Anthropic } from '@anthropic-ai/sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
 
+// Comprehensive type definitions
+interface CustomerHistory {
+  orderCount: number;
+  tier: string;
+  lastOrderDate?: string;
+  totalSpent?: number;
+  metadata?: Record<string, unknown>;
+}
+
+interface ShopifyProduct {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  category?: string;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
+}
+
+interface SalesData {
+  period: string;
+  revenue: number;
+  orders: number;
+  averageOrderValue: number;
+  metadata?: Record<string, unknown>;
+}
+
+interface CustomerSegment {
+  name: string;
+  size: number;
+  characteristics: string[];
+  value: number;
+  metadata?: Record<string, unknown>;
+}
+
+interface StructuredData {
+  [key: string]: unknown;
+}
+
+interface ReviewSummaryResult {
+  summary: string;
+  pros: string[];
+  cons: string[];
+  overallSentiment: 'positive' | 'negative' | 'neutral';
+}
+
+interface MarketingCopyResult {
+  headline: string;
+  body: string;
+  cta: string;
+}
+
+interface InquiryAnalysisResult {
+  category: string;
+  urgency: 'high' | 'medium' | 'low';
+  suggestedResponse: string;
+  requiresHumanReview: boolean;
+}
+
+interface SEOMetadataResult {
+  metaTitle: string;
+  metaDescription: string;
+  ogTitle: string;
+  ogDescription: string;
+  structuredData: StructuredData;
+}
+
 export interface LLMConfig {
   provider: 'anthropic' | 'openai' | 'google';
   apiKey: string;
@@ -190,7 +257,7 @@ ${reviews.map((r, i) => `
    */
   async classifyAndRespondToInquiry(inquiry: {
     message: string;
-    customerHistory?: any;
+    customerHistory?: CustomerHistory;
   }): Promise<{
     category: string;
     urgency: 'high' | 'medium' | 'low';
@@ -233,7 +300,7 @@ ${inquiry.customerHistory ? `
     metaDescription: string;
     ogTitle: string;
     ogDescription: string;
-    structuredData: any;
+    structuredData: StructuredData;
   }> {
     const prompt = `
 以下のページ情報からSEO最適化されたメタデータを生成してください：
@@ -259,9 +326,9 @@ ${page.keywords ? `キーワード: ${page.keywords.join(', ')}` : ''}
    * トレンド分析レポートの生成
    */
   async generateTrendReport(data: {
-    salesData: any[];
-    topProducts: any[];
-    customerSegments: any[];
+    salesData: SalesData[];
+    topProducts: ShopifyProduct[];
+    customerSegments: CustomerSegment[];
     period: string;
   }): Promise<string> {
     const prompt = `
@@ -372,7 +439,7 @@ ${JSON.stringify(data.customerSegments, null, 2)}
   /**
    * レスポンス解析ヘルパーメソッド
    */
-  private parseReviewSummary(content: string): any {
+  private parseReviewSummary(_content: string): ReviewSummaryResult {
     // 実装は簡略化
     return {
       summary: '商品は全体的に高評価を得ています。',
@@ -382,7 +449,7 @@ ${JSON.stringify(data.customerSegments, null, 2)}
     };
   }
 
-  private parseMarketingCopy(content: string): any {
+  private parseMarketingCopy(_content: string): MarketingCopyResult {
     // 実装は簡略化
     return {
       headline: '期間限定セール',
@@ -391,7 +458,7 @@ ${JSON.stringify(data.customerSegments, null, 2)}
     };
   }
 
-  private parseInquiryAnalysis(content: string): any {
+  private parseInquiryAnalysis(_content: string): InquiryAnalysisResult {
     // 実装は簡略化
     return {
       category: '配送',
@@ -401,7 +468,7 @@ ${JSON.stringify(data.customerSegments, null, 2)}
     };
   }
 
-  private parseSEOMetadata(content: string): any {
+  private parseSEOMetadata(_content: string): SEOMetadataResult {
     // 実装は簡略化
     return {
       metaTitle: 'タイトル',

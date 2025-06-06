@@ -173,10 +173,12 @@ export const getEnvironment = (): EnvironmentConfig => {
 export const currentEnvironment = getEnvironment();
 
 // エクスポート
-export default {
+const environments = {
   development,
   staging,
   production,
   test,
   current: currentEnvironment,
 };
+
+export default environments;

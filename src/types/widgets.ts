@@ -10,8 +10,8 @@ export interface BaseWidget {
   title: string;
   position: { x: number; y: number };
   size: { width: number; height: number };
-  data?: any;
-  config?: any;
+  data?: unknown;
+  config?: Record<string, unknown>;
 }
 
 export interface ChartWidget extends BaseWidget {
@@ -130,6 +130,6 @@ export interface DraggableItem {
   type: WidgetType;
   title: string;
   icon: string;
-  preview?: any;
+  preview?: Record<string, unknown>;
   defaultSize: { width: number; height: number };
 }

@@ -7,10 +7,10 @@ import { DataLayerClient } from '../core/DataLayerClient';
 import { EventBroker } from '../core/EventBroker';
 import { MonitoringService } from '../core/MonitoringService';
 import * as ExcelJS from 'exceljs';
-import * as csv from 'csv-writer';
+import * as _csv from 'csv-writer';
 import * as PDFDocument from 'pdfkit';
-import * as archiver from 'archiver';
-import * as moment from 'moment-timezone';
+import * as _archiver from 'archiver';
+import * as _moment from 'moment-timezone';
 
 interface ExportConfig {
   projectId: string;
@@ -29,7 +29,7 @@ interface ExportJob {
     endDate?: string;
     status?: string;
     category?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   options?: {
     includeImages?: boolean;
@@ -65,8 +65,8 @@ interface ExportTemplate {
     label: string;
     transform?: string;
   }[];
-  filters: any;
-  options: any;
+  filters: unknown;
+  options: unknown;
 }
 
 export class ExportService {
@@ -78,7 +78,7 @@ export class ExportService {
   private eventBroker: EventBroker;
   private monitoring: MonitoringService;
   private config: ExportConfig;
-  private bucket: any;
+  private bucket: unknown;
   private exportTemplates: Map<string, ExportTemplate> = new Map();
 
   constructor(config: ExportConfig) {
@@ -123,7 +123,7 @@ export class ExportService {
     this.app.use(express.json());
 
     // Health check
-    this.app.get('/health', (req: any, res: any) => {
+    this.app.get('/health', (req: unknown, res: unknown) => {
       res.json({ status: 'healthy', service: 'export' });
     });
 
@@ -244,7 +244,7 @@ export class ExportService {
   // Export handlers
   private async handleCreateExport(req: express.Request, res: express.Response): Promise<void> {
     try {
-      const { shopId, type, format, filters, options, templateId, scheduleTime } = req.body;
+      const { shopId, type, format, filters, options, _templateId, scheduleTime } = req.body;
 
       // Validate input
       if (!shopId || !type || !format) {
@@ -469,7 +469,7 @@ export class ExportService {
       await this.dataLayer.firestoreSet('export_jobs', job.id, job);
 
       // Get data based on type
-      let data: any[];
+      let data: unknown[];
       switch (job.type) {
         case 'products':
           data = await this.getProductData(job.shopId, job.filters);
@@ -557,7 +557,7 @@ export class ExportService {
       await this.sendCompletionNotification(job);
 
       logger.info(`Export completed: ${job.id} in ${Date.now() - startTime}ms`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error(`Export failed: ${job.id}`, { error });
 
       // Update job status
@@ -577,7 +577,7 @@ export class ExportService {
   }
 
   // Data retrieval methods
-  private async getProductData(shopId: string, filters?: any): Promise<any[]> {
+  private async getProductData(shopId: string, _filters?: unknown): Promise<unknown[]> {
     const query = `
       SELECT * FROM shopify_data.products
       WHERE shop_id = @shopId
@@ -598,7 +598,7 @@ export class ExportService {
     return rows;
   }
 
-  private async getOrderData(shopId: string, filters?: any): Promise<any[]> {
+  private async getOrderData(shopId: string, filters?: unknown): Promise<unknown[]> {
     const query = `
       SELECT * FROM shopify_data.orders
       WHERE shop_id = @shopId
@@ -619,7 +619,7 @@ export class ExportService {
     return rows;
   }
 
-  private async getCustomerData(shopId: string, filters?: any): Promise<any[]> {
+  private async getCustomerData(shopId: string, _filters?: unknown): Promise<unknown[]> {
     const customers = await this.dataLayer.firestoreQuery('customers', {
       where: [{ field: 'shopId', operator: '==', value: shopId }],
       orderBy: [{ field: 'createdAt', direction: 'desc' }]
@@ -628,7 +628,7 @@ export class ExportService {
     return customers;
   }
 
-  private async getInventoryData(shopId: string, filters?: any): Promise<any[]> {
+  private async getInventoryData(shopId: string, _filters?: unknown): Promise<unknown[]> {
     const inventory = await this.dataLayer.firestoreQuery('inventory', {
       where: [{ field: 'shopId', operator: '==', value: shopId }],
       orderBy: [{ field: 'updatedAt', direction: 'desc' }]
@@ -637,7 +637,7 @@ export class ExportService {
     return inventory;
   }
 
-  private async getAnalyticsData(shopId: string, filters?: any): Promise<any[]> {
+  private async getAnalyticsData(shopId: string, filters?: unknown): Promise<unknown[]> {
     const query = `
       SELECT 
         DATE_TRUNC(created_at, DAY) as date,
@@ -662,7 +662,7 @@ export class ExportService {
     return rows;
   }
 
-  private async getAllData(shopId: string, filters?: any): Promise<any> {
+  private async getAllData(shopId: string, filters?: unknown): Promise<unknown> {
     const [products, orders, customers, inventory, analytics] = await Promise.all([
       this.getProductData(shopId, filters),
       this.getOrderData(shopId, filters),
@@ -681,7 +681,7 @@ export class ExportService {
   }
 
   // File generation methods
-  private async generateCSV(data: any[], job: ExportJob): Promise<Buffer> {
+  private async generateCSV(data: unknown[], _job: ExportJob): Promise<Buffer> {
     // Flatten JSON data for CSV
     const flatData = data.map(item => this.flattenObject(item));
     
@@ -700,7 +700,7 @@ export class ExportService {
     return Buffer.from(csvContent, 'utf-8');
   }
 
-  private async generateExcel(data: any[], job: ExportJob): Promise<Buffer> {
+  private async generateExcel(data: unknown[], job: ExportJob): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(job.type);
 
@@ -725,9 +725,9 @@ export class ExportService {
       });
 
       // Auto-fit columns
-      worksheet.columns.forEach((column: any) => {
+      worksheet.columns.forEach((column: unknown) => {
         let maxLength = 0;
-        column.eachCell!({ includeEmpty: true }, (cell: any) => {
+        column.eachCell!({ includeEmpty: true }, (cell: unknown) => {
           const length = cell.value ? cell.value.toString().length : 0;
           maxLength = Math.max(maxLength, length);
         });
@@ -746,7 +746,7 @@ export class ExportService {
     return Buffer.from(buffer);
   }
 
-  private async generateJSON(data: any[], job: ExportJob): Promise<Buffer> {
+  private async generateJSON(data: unknown[], job: ExportJob): Promise<Buffer> {
     const exportData = {
       metadata: {
         exportId: job.id,
@@ -761,12 +761,12 @@ export class ExportService {
     return Buffer.from(JSON.stringify(exportData, null, 2), 'utf-8');
   }
 
-  private async generatePDF(data: any[], job: ExportJob): Promise<Buffer> {
+  private async generatePDF(data: unknown[], job: ExportJob): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const doc = new PDFDocument();
       const chunks: Buffer[] = [];
 
-      doc.on('data', (chunk: any) => chunks.push(chunk));
+      doc.on('data', (chunk: unknown) => chunks.push(chunk));
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
@@ -806,8 +806,8 @@ export class ExportService {
   }
 
   // Helper methods
-  private flattenObject(obj: any, prefix = ''): any {
-    const flattened: any = {};
+  private flattenObject(obj: unknown, prefix = ''): unknown {
+    const flattened: unknown = {};
     
     Object.keys(obj).forEach(key => {
       const value = obj[key];
@@ -829,7 +829,7 @@ export class ExportService {
     return flattened;
   }
 
-  private escapeCSV(value: any): string {
+  private escapeCSV(value: unknown): string {
     if (value === null || value === undefined) return '';
     
     const str = value.toString();
@@ -890,7 +890,7 @@ export class ExportService {
   }
 
   // Event handlers
-  private async processExportRequest(event: any): Promise<void> {
+  private async processExportRequest(event: unknown): Promise<void> {
     const { exportId } = event.data;
     
     const job = await this.dataLayer.firestoreGet('export_jobs', exportId) as ExportJob;
@@ -902,7 +902,7 @@ export class ExportService {
     await this.processExport(job);
   }
 
-  private async processScheduledExport(event: any): Promise<void> {
+  private async processScheduledExport(event: unknown): Promise<void> {
     const { exportId } = event.data;
     
     const job = await this.dataLayer.firestoreGet('scheduled_exports', exportId) as ExportJob;
@@ -929,7 +929,7 @@ export class ExportService {
     await this.dataLayer.firestoreSet('scheduled_exports', exportId, job);
   }
 
-  private calculateNextRun(schedule: string): Date {
+  private calculateNextRun(_schedule: string): Date {
     // Parse cron expression and calculate next run
     // This is a simplified version - would use a proper cron parser
     const now = new Date();

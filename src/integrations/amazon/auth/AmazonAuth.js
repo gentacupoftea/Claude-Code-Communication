@@ -3,11 +3,11 @@
  * SP-API認証実装
  */
 
-const axios = require('axios');
-const crypto = require('crypto');
-const aws4 = require('aws4');
-const { logger } = require('../../../utils/logger');
-const { cache } = require('../../../utils/cache');
+import axios from 'axios';
+import _crypto from 'crypto';
+import aws4 from 'aws4';
+import { logger  } from '../../../utils/logger';
+import { cache  } from '../../../utils/cache';
 
 class AmazonAuth {
   constructor(config) {
@@ -84,7 +84,7 @@ class AmazonAuth {
     }
 
     try {
-      const sts = require('@aws-sdk/client-sts');
+      import sts from '@aws-sdk/client-sts';
       const stsClient = new sts.STSClient({
         region: this.region,
         credentials: {

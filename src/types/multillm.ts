@@ -253,5 +253,5 @@ export interface LLMResponse {
     completionTokens: number;
     totalTokens: number;
   };
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }

@@ -6,18 +6,19 @@
  * @requires express
  */
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const logger = require('../../utils/logger').child({ module: 'GSCIntegration' });
+import { logger } from '../../utils/logger';
+const _gscLogger = logger.child({ module: 'GSCIntegration' });
 
 // コンポーネントをインポート
-const GSCAuth = require('./auth/GSCAuth');
-const GSCApiClient = require('./api/GSCApiClient');
-const QueryData = require('./models/QueryData');
-const PerformanceData = require('./models/PerformanceData');
-const DataFetchProcessor = require('./processors/DataFetchProcessor');
-const AnalyticsProcessor = require('./processors/AnalyticsProcessor');
-const DataVisualizer = require('./visualizers/DataVisualizer');
+import GSCAuth from './auth/GSCAuth';
+import GSCApiClient from './api/GSCApiClient';
+import QueryData from './models/QueryData';
+import PerformanceData from './models/PerformanceData';
+import DataFetchProcessor from './processors/DataFetchProcessor';
+import AnalyticsProcessor from './processors/AnalyticsProcessor';
+import DataVisualizer from './visualizers/DataVisualizer';
 
 /**
  * Google Search Console統合クラス

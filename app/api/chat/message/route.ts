@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { content, sessionId, model } = await request.json();
+    const { content, model } = await request.json();
 
     // デモ用のチャット応答
     const responses = [
@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Chat API Error:', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },

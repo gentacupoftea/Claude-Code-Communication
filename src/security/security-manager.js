@@ -5,15 +5,15 @@
  * OWASP Top 10に対応し、認証・認可・監査機能を統合
  */
 
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-const bcrypt = require('bcryptjs');
-const helmet = require('helmet');
-const winston = require('winston');
-const { RateLimiterRedis, RateLimiterMemory } = require('rate-limiter-flexible');
-const Redis = require('ioredis');
-const { v4: uuidv4 } = require('uuid');
-const speakeasy = require('speakeasy');
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
+import _helmet from 'helmet';
+import winston from 'winston';
+import { RateLimiterRedis, _RateLimiterMemory  } from 'rate-limiter-flexible';
+import Redis from 'ioredis';
+import { v4: uuidv4  } from 'uuid';
+import speakeasy from 'speakeasy';
 
 // セキュリティロガーの設定
 const securityLogger = winston.createLogger({

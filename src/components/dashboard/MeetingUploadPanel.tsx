@@ -97,13 +97,13 @@ export const MeetingUploadPanel: React.FC<MeetingUploadPanelProps> = ({ onUpload
       });
 
       // ダウンロード
-      const url = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob as Blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `meeting-${meetingId}.${format}`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch (_err) {
       setError('エクスポートに失敗しました');
     }
   };

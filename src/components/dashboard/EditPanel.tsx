@@ -84,7 +84,7 @@ export const EditPanel: React.FC<EditPanelProps> = ({
   }, []);
 
   // 設定変更時の処理
-  const handleConfigChange = (key: keyof AgentConfig, value: any) => {
+  const handleConfigChange = (key: keyof AgentConfig, value: unknown) => {
     const newConfig = { ...localConfig, [key]: value };
     setLocalConfig(newConfig);
     

@@ -7,13 +7,14 @@
  * @requires axios
  */
 
-const { EventEmitter } = require('events');
-const axios = require('axios');
-const logger = require('../../../utils/logger').child({ module: 'GSCApiClient' });
-const cache = require('../../../utils/cache');
-const gscAuth = require('../auth/GSCAuth');
-const RateLimiter = require('../../../utils/RateLimiter');
-const { formatDateRange, parseGSCDate } = require('../../../utils/dateHelpers');
+import { EventEmitter  } from 'events';
+import _axios from 'axios';
+import { logger } from '../../../utils/logger';
+const _gscLogger = logger.child({ module: 'GSCApiClient' });
+import cache from '../../../utils/cache';
+import gscAuth from '../auth/GSCAuth';
+import RateLimiter from '../../../utils/RateLimiter';
+import { _formatDateRange, _parseGSCDate  } from '../../../utils/dateHelpers';
 
 /**
  * Google Search Console API クライアントクラス

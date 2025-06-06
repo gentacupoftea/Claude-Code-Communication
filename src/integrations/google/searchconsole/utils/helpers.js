@@ -5,7 +5,8 @@
  * @module helpers
  */
 
-const logger = require('../../../utils/logger').child({ module: 'GSCHelpers' });
+import { logger } from '../../../utils/logger';
+const _helpersLogger = logger.child({ module: 'GSCHelpers' });
 
 /**
  * 日付範囲をフォーマット

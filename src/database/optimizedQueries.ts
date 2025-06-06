@@ -5,7 +5,7 @@
  * N+1クエリ問題やパフォーマンスのボトルネックを解決します。
  */
 
-import { getRepository, In, LessThan, MoreThanOrEqual } from 'typeorm';
+import { getRepository, In, _LessThan, _MoreThanOrEqual } from 'typeorm';
 import { ChatSession, ChatMessage, User, ApiLog, UserPreference } from '../entities';
 
 /**
@@ -130,7 +130,7 @@ export async function getMessagesWithKeysetPagination(
 /**
  * ユーザー設定のバルク更新
  */
-export async function bulkUpdateUserPreferences(updates: Array<{userId: string, settings: any}>) {
+export async function bulkUpdateUserPreferences(updates: Array<{userId: string, settings: unknown}>) {
   // トランザクション内でバルク操作を実行
   const queryRunner = getRepository(UserPreference).manager.connection.createQueryRunner();
   await queryRunner.connect();
@@ -201,7 +201,7 @@ export async function bulkUpdateUserPreferences(updates: Array<{userId: string, 
  * 大量データの効率的な削除（バッチ処理）
  */
 export async function batchDeleteOldRecords(
-  entityClass: any,
+  entityClass: unknown,
   dateField: string,
   cutoffDate: Date,
   batchSize: number = 1000

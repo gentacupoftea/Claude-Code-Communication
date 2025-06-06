@@ -1,7 +1,7 @@
 // マルチLLMオーケストレーター
 
 import { Anthropic } from '@anthropic-ai/sdk';
-import OpenAI from 'openai';
+// import OpenAI from 'openai';
 // import { VertexAI } from '@google-cloud/aiplatform';
 import { claudePrompts, selectClaudePrompt } from '../prompts/claude-prompts';
 import { geminiPrompts } from '../prompts/gemini-prompts';
@@ -18,8 +18,8 @@ interface LLMConfig {
 
 export class MultiLLMOrchestrator {
   private claude?: Anthropic;
-  private openai?: OpenAI;
-  private vertexAI?: any; // VertexAI
+  // private openai?: OpenAI;
+  private vertexAI?: unknown; // VertexAI
   private isTestMode: boolean = false;
 
   constructor(config?: {
@@ -38,11 +38,11 @@ export class MultiLLMOrchestrator {
         });
       }
 
-      if (config?.openai?.apiKey) {
-        this.openai = new OpenAI({
-          apiKey: config.openai.apiKey
-        });
-      }
+      // if (config?.openai?.apiKey) {
+      //   this.openai = new OpenAI({
+      //     apiKey: config.openai.apiKey
+      //   });
+      // }
 
       if (config?.gemini?.projectId) {
         // Gemini/Vertex AI の初期化（実際の実装では適切な設定が必要）
@@ -53,7 +53,7 @@ export class MultiLLMOrchestrator {
 
   async query(
     question: string,
-    context: any,
+    context: unknown,
     provider: LLMProvider
   ): Promise<string> {
     if (this.isTestMode) {
@@ -64,7 +64,8 @@ export class MultiLLMOrchestrator {
       case 'claude':
         return this.queryAnthropic(question, context);
       case 'gpt-4':
-        return this.queryOpenAI(question, context);
+        throw new Error('OpenAI integration is currently disabled');
+        // return this.queryOpenAI(question, context);
       case 'gemini':
         return this.queryGemini(question, context);
       default:
@@ -72,7 +73,7 @@ export class MultiLLMOrchestrator {
     }
   }
 
-  private async queryAnthropic(question: string, context: any): Promise<string> {
+  private async queryAnthropic(question: string, context: unknown): Promise<string> {
     if (!this.claude) {
       throw new Error('Claude client not initialized');
     }
@@ -82,7 +83,7 @@ export class MultiLLMOrchestrator {
     
     const systemPrompt = promptTemplate.systemPrompt;
     const userPrompt = `
-${promptTemplate.contextBuilder(context)}
+${promptTemplate.contextBuilder(context as import('../prompts/claude-prompts').AnalysisContext)}
 
 質問: ${question}
 
@@ -115,44 +116,44 @@ ${promptTemplate.responseFormat}
     }
   }
 
-  private async queryOpenAI(question: string, context: any): Promise<string> {
-    if (!this.openai) {
-      throw new Error('OpenAI client not initialized');
-    }
+  // private async queryOpenAI(question: string, context: unknown): Promise<string> {
+  //   if (!this.openai) {
+  //     throw new Error('OpenAI client not initialized');
+  //   }
 
-    const questionType = this.detectQuestionType(question);
-    const promptTemplate = gpt4Prompts[questionType] || gpt4Prompts.complexAnalysis;
+  //   const questionType = this.detectQuestionType(question);
+  //   const promptTemplate = gpt4Prompts[questionType] || gpt4Prompts.complexAnalysis;
     
-    const systemMessage = promptTemplate.systemMessage;
-    const userMessage = promptTemplate.userMessageBuilder(context);
+  //   const systemMessage = promptTemplate.systemMessage;
+  //   const userMessage = promptTemplate.userMessageBuilder(context);
 
-    try {
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4-turbo-preview',
-        temperature: 0.7,
-        max_tokens: 2000,
-        messages: [
-          { role: 'system', content: systemMessage },
-          { role: 'user', content: `${userMessage}\\n\\n質問: ${question}` }
-        ],
-        functions: promptTemplate.functions
-      });
+  //   try {
+  //     const response = await this.openai.chat.completions.create({
+  //       model: 'gpt-4-turbo-preview',
+  //       temperature: 0.7,
+  //       max_tokens: 2000,
+  //       messages: [
+  //         { role: 'system', content: systemMessage },
+  //         { role: 'user', content: `${userMessage}\\n\\n質問: ${question}` }
+  //       ],
+  //       functions: promptTemplate.functions
+  //     });
 
-      return response.choices[0].message.content || '';
-    } catch (error) {
-      console.error('OpenAI API error:', error);
-      throw error;
-    }
-  }
+  //     return response.choices[0].message.content || '';
+  //   } catch (error) {
+  //     console.error('OpenAI API error:', error);
+  //     throw error;
+  //   }
+  // }
 
-  private async queryGemini(question: string, context: any): Promise<string> {
+  private async queryGemini(question: string, _context: unknown): Promise<string> {
     // Gemini API の実装（実際のAPIが利用可能になったら実装）
     if (!this.vertexAI) {
       throw new Error('Gemini client not initialized');
     }
 
     const questionType = this.detectQuestionType(question);
-    const promptTemplate = geminiPrompts[questionType] || geminiPrompts.creativeProposal;
+    const _promptTemplate = geminiPrompts[questionType] || geminiPrompts.creativeProposal;
 
     // Gemini API呼び出しの実装
     // const response = await this.vertexAI.predict({...});
@@ -173,7 +174,7 @@ ${promptTemplate.responseFormat}
   // テスト用のモックレスポンス生成
   private generateMockResponse(
     question: string,
-    context: any,
+    context: unknown,
     provider: LLMProvider
   ): string {
     const mockResponses = {
@@ -252,7 +253,7 @@ ARIMAモデルとXGBoostのアンサンブルを使用し、以下の結果を�
     queries: Array<{
       id: string;
       question: string;
-      context: any;
+      context: unknown;
       provider: LLMProvider;
     }>
   ): Promise<Map<string, string>> {
@@ -285,7 +286,7 @@ ARIMAモデルとXGBoostのアンサンブルを使用し、以下の結果を�
     queries: Array<{
       id: string;
       question: string;
-      context: any;
+      context: unknown;
       provider: LLMProvider;
     }>,
     provider: LLMProvider,

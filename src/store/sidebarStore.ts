@@ -50,7 +50,7 @@ const categorizeChat = (timestamp: Date): ChatHistory['category'] => {
 
 export const useSidebarStore = create<SidebarState>()(
   persist(
-    (set, get) => ({
+    (set, _get) => ({
       isCollapsed: false,
       projects: [
         {

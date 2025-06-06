@@ -12,9 +12,9 @@ import { getAccessToken, refreshAccessToken, clearAuthTokens } from './authServi
 export class ApiError extends Error {
   public readonly code: string;
   public readonly status: number | undefined;
-  public readonly data: any;
+  public readonly data: unknown;
 
-  constructor(message: string, code: string, status?: number, data?: any) {
+  constructor(message: string, code: string, status?: number, data?: unknown) {
     super(message);
     this.name = 'ApiError';
     this.code = code;
@@ -63,7 +63,7 @@ class ApiClient {
         
         return config;
       },
-      (error: any) => {
+      (error: unknown) => {
         return Promise.reject(error);
       }
     );
@@ -100,7 +100,7 @@ class ApiClient {
             
             // 元のリクエストを再試行
             return this.instance(originalRequest);
-          } catch (refreshError) {
+          } catch (_refreshError) {
             // リフレッシュに失敗した場合はログアウト処理
             clearAuthTokens();
             return Promise.reject(error);
@@ -132,7 +132,7 @@ class ApiClient {
       const { data, status } = error.response;
       
       // APIからのエラーコードとメッセージを抽出
-      const apiError = data as any;
+      const apiError = data as { code?: string; message?: string; [key: string]: unknown };
       const code = apiError?.code || this.mapStatusToErrorCode(status);
       const message = apiError?.message || error.message || 'APIエラーが発生しました';
       
@@ -187,7 +187,7 @@ class ApiClient {
   }
 
   // POSTリクエスト
-  public async post<T>(url: string, data: any, options: ApiRequestOptions = {}): Promise<ApiResponse<T>> {
+  public async post<T>(url: string, data: unknown, options: ApiRequestOptions = {}): Promise<ApiResponse<T>> {
     const config: AxiosRequestConfig = {
       headers: this.prepareHeaders(options),
       timeout: options.timeout || API_CONFIG.TIMEOUT,
@@ -206,7 +206,7 @@ class ApiClient {
   }
 
   // PUTリクエスト
-  public async put<T>(url: string, data: any, options: ApiRequestOptions = {}): Promise<ApiResponse<T>> {
+  public async put<T>(url: string, data: unknown, options: ApiRequestOptions = {}): Promise<ApiResponse<T>> {
     const config: AxiosRequestConfig = {
       headers: this.prepareHeaders(options),
       timeout: options.timeout || API_CONFIG.TIMEOUT,
@@ -225,7 +225,7 @@ class ApiClient {
   }
 
   // PATCHリクエスト
-  public async patch<T>(url: string, data: any, options: ApiRequestOptions = {}): Promise<ApiResponse<T>> {
+  public async patch<T>(url: string, data: unknown, options: ApiRequestOptions = {}): Promise<ApiResponse<T>> {
     const config: AxiosRequestConfig = {
       headers: this.prepareHeaders(options),
       timeout: options.timeout || API_CONFIG.TIMEOUT,
@@ -288,9 +288,9 @@ export const apiClient = new ApiClient();
 // APIリクエスト用の便利な関数
 export const api = {
   get: <T>(url: string, options?: ApiRequestOptions) => apiClient.get<T>(url, options),
-  post: <T>(url: string, data: any, options?: ApiRequestOptions) => apiClient.post<T>(url, data, options),
-  put: <T>(url: string, data: any, options?: ApiRequestOptions) => apiClient.put<T>(url, data, options),
-  patch: <T>(url: string, data: any, options?: ApiRequestOptions) => apiClient.patch<T>(url, data, options),
+  post: <T>(url: string, data: unknown, options?: ApiRequestOptions) => apiClient.post<T>(url, data, options),
+  put: <T>(url: string, data: unknown, options?: ApiRequestOptions) => apiClient.put<T>(url, data, options),
+  patch: <T>(url: string, data: unknown, options?: ApiRequestOptions) => apiClient.patch<T>(url, data, options),
   delete: <T>(url: string, options?: ApiRequestOptions) => apiClient.delete<T>(url, options),
 };
 

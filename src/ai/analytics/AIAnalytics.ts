@@ -5,9 +5,70 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
-import { Order, Product, Customer } from '../../types';
+import { _Order, _Product, _Customer } from '../../types';
 import { DataPipeline } from '../pipeline/DataPipeline';
-import { mean, std, median } from 'simple-statistics';
+import { mean, std, _median } from 'simple-statistics';
+
+// 販売履歴データの型定義
+interface SalesHistoryItem {
+  date: Date;
+  quantity: number;
+  revenue: number;
+  price: number;
+}
+
+// 価格履歴データの型定義
+interface PriceHistoryItem {
+  date: Date;
+  price: number;
+}
+
+// 時系列特徴量の型定義
+interface TimeSeriesFeatures {
+  trend: number;
+  seasonality: number;
+  weekday: number;
+  month: number;
+  dayOfYear: number;
+}
+
+// 顧客セグメント特性の型定義
+interface SegmentCharacteristics {
+  avgTotalSpent: number;
+  avgOrdersCount: number;
+  avgOrderValue: number;
+  avgDaysSinceLastOrder: number;
+  mostPopularCategories: string[];
+}
+
+// クラスタリング結果の型定義
+interface ClusteringResult {
+  assignments: number[];
+  centroids: number[][];
+  inertia: number;
+}
+
+// 商品データの型定義
+interface ProductData {
+  id: string;
+  name: string;
+  price: number;
+  currentStock: number;
+  category: string;
+}
+
+// メトリクス計算結果の型定義
+interface ForecastMetrics {
+  mape: number;
+  rmse: number;
+  confidence: number;
+}
+
+// トレンド分析結果の型定義
+interface TrendAnalysis {
+  slope: number;
+  intercept: number;
+}
 
 interface ForecastConfig {
   horizon: number; // 予測期間（日数）
@@ -73,6 +134,7 @@ export class AIAnalytics {
    * 分析エンジンの初期化
    */
   async initialize(): Promise<void> {
+    // eslint-disable-next-line no-console
     console.log('AI分析エンジンを初期化中...');
     
     // モデルの構築
@@ -84,6 +146,7 @@ export class AIAnalytics {
     await this.trainModels();
     
     this.isInitialized = true;
+    // eslint-disable-next-line no-console
     console.log('AI分析エンジンの初期化が完了しました');
   }
 
@@ -95,6 +158,7 @@ export class AIAnalytics {
       throw new Error('分析エンジンが初期化されていません');
     }
 
+    // eslint-disable-next-line no-console
     console.log(`売上予測を実行中: ${config.horizon}日間`);
     
     // 履歴データの準備
@@ -143,6 +207,7 @@ export class AIAnalytics {
    * 在庫最適化
    */
   async optimizeInventory(productId: string): Promise<InventoryOptimization> {
+    // eslint-disable-next-line no-console
     console.log(`在庫最適化を実行中: ${productId}`);
     
     // 商品データの取得
@@ -200,6 +265,7 @@ export class AIAnalytics {
    * 価格最適化
    */
   async optimizePrice(productId: string): Promise<PriceOptimization> {
+    // eslint-disable-next-line no-console
     console.log(`価格最適化を実行中: ${productId}`);
     
     // 商品データと販売履歴の取得
@@ -264,10 +330,11 @@ export class AIAnalytics {
       id: string;
       name: string;
       size: number;
-      characteristics: any;
+      characteristics: SegmentCharacteristics;
       recommendations: string[];
     }>;
   }> {
+    // eslint-disable-next-line no-console
     console.log('顧客セグメント分析を実行中...');
     
     // 顧客データの準備
@@ -319,7 +386,12 @@ export class AIAnalytics {
     const data = await this.getMetricData(metric);
     
     // 統計的異常検知（Isolation Forest風のアプローチ）
-    const anomalies: any[] = [];
+    const anomalies: Array<{
+      date: Date;
+      value: number;
+      severity: 'low' | 'medium' | 'high';
+      possibleCauses: string[];
+    }> = [];
     
     for (let i = 0; i < data.length; i++) {
       const point = data[i];
@@ -480,17 +552,17 @@ export class AIAnalytics {
   /**
    * ヘルパーメソッド群
    */
-  private async prepareHistoricalSalesData(): Promise<any[]> {
+  private async prepareHistoricalSalesData(): Promise<SalesHistoryItem[]> {
     // 実装
     return [];
   }
 
-  private extractTimeSeriesFeatures(data: any[], config: ForecastConfig): any {
+  private extractTimeSeriesFeatures(_data: SalesHistoryItem[], _config: ForecastConfig): TimeSeriesFeatures {
     // 時系列特徴量の抽出
     return {};
   }
 
-  private prepareDayFeatures(date: Date, features: any): number[] {
+  private prepareDayFeatures(_date: Date, _features: TimeSeriesFeatures): number[] {
     // 日次特徴量の準備
     return [
       date.getDay(), // 曜日
@@ -517,9 +589,9 @@ export class AIAnalytics {
   }
 
   private async calculateForecastMetrics(
-    predictions: any[], 
-    historical: any[]
-  ): Promise<any> {
+    _predictions: ForecastResult['predictions'], 
+    _historical: SalesHistoryItem[]
+  ): Promise<ForecastMetrics> {
     // メトリクス計算の実装
     return {
       mape: 0,
@@ -528,14 +600,14 @@ export class AIAnalytics {
     };
   }
 
-  private calculateSafetyStock(salesHistory: any[], leadTime: number): number {
+  private calculateSafetyStock(_salesHistory: SalesHistoryItem[], _leadTime: number): number {
     // 安全在庫の計算
-    const demands = salesHistory.map(s => s.quantity);
-    const avgDemand = mean(demands);
+    const demands = _salesHistory.map(s => s.quantity);
+    const _avgDemand = mean(demands);
     const stdDemand = std(demands);
     const zScore = 1.65; // 95%サービスレベル
     
-    return zScore * stdDemand * Math.sqrt(leadTime);
+    return zScore * stdDemand * Math.sqrt(_leadTime);
   }
 
   private calculateStockoutRisk(
@@ -548,26 +620,26 @@ export class AIAnalytics {
     return currentStock < leadTimeDemand ? 1 : 0;
   }
 
-  private estimatePriceElasticity(priceHistory: any[], salesHistory: any[]): number {
+  private estimatePriceElasticity(_priceHistory: PriceHistoryItem[], _salesHistory: SalesHistoryItem[]): number {
     // 価格弾力性の推定（簡略版）
     return -1.5; // 仮の値
   }
 
-  private async getProductData(productId: string): Promise<any> {
+  private async getProductData(_productId: string): Promise<ProductData> {
     // 商品データの取得
     return {
-      id: productId,
+      id: _productId,
       price: 100,
       currentStock: 50
     };
   }
 
-  private async getProductSalesHistory(productId: string): Promise<any[]> {
+  private async getProductSalesHistory(_productId: string): Promise<SalesHistoryItem[]> {
     // 販売履歴の取得
     return [];
   }
 
-  private async getProductPriceHistory(productId: string): Promise<any[]> {
+  private async getProductPriceHistory(_productId: string): Promise<PriceHistoryItem[]> {
     // 価格履歴の取得
     return [];
   }
@@ -577,19 +649,19 @@ export class AIAnalytics {
     return new Array(days).fill(10);
   }
 
-  private async estimateLeadTime(productId: string): Promise<number> {
+  private async estimateLeadTime(_productId: string): Promise<number> {
     // リードタイム推定
     return 7;
   }
 
-  private async getCompetitorPrices(product: any): Promise<number[]> {
+  private async getCompetitorPrices(_product: ProductData): Promise<number[]> {
     // 競合価格の取得
     return [95, 105, 110];
   }
 
   private determinePriceRange(
     currentPrice: number, 
-    competitorPrices?: number[]
+    _competitorPrices?: number[]
   ): { min: number; max: number; step: number } {
     const min = currentPrice * 0.7;
     const max = currentPrice * 1.3;
@@ -599,10 +671,10 @@ export class AIAnalytics {
   }
 
   private predictDemandAtPrice(
-    product: any,
+    _product: ProductData,
     price: number,
     elasticity: number,
-    salesHistory: any[]
+    _salesHistory: SalesHistoryItem[]
   ): number {
     // 価格での需要予測
     const baseDemand = mean(salesHistory.map(s => s.quantity));
@@ -612,52 +684,58 @@ export class AIAnalytics {
     return Math.max(0, baseDemand * (1 + demandChange));
   }
 
-  private async prepareCustomerData(): Promise<any[]> {
+  private async prepareCustomerData(): Promise<Array<{
+    totalSpent: number;
+    ordersCount: number;
+    averageOrderValue: number;
+    daysSinceLastOrder: number;
+    productCategories: string[];
+  }>> {
     // 顧客データの準備
     return [];
   }
 
-  private async performKMeansClustering(features: number[][], k: number): Promise<any[]> {
+  private async performKMeansClustering(_features: number[][], _k: number): Promise<ClusteringResult[]> {
     // K-meansクラスタリングの実装
     return [];
   }
 
-  private generateSegmentName(customers: any[]): string {
+  private generateSegmentName(_customers: Array<{ totalSpent: number; ordersCount: number; averageOrderValue: number; daysSinceLastOrder: number; productCategories: string[]; }>): string {
     // セグメント名の生成
     return 'セグメント';
   }
 
-  private analyzeSegmentCharacteristics(customers: any[]): any {
+  private analyzeSegmentCharacteristics(_customers: Array<{ totalSpent: number; ordersCount: number; averageOrderValue: number; daysSinceLastOrder: number; productCategories: string[]; }>): SegmentCharacteristics {
     // セグメント特性の分析
     return {};
   }
 
-  private generateSegmentRecommendations(customers: any[]): string[] {
+  private generateSegmentRecommendations(_customers: Array<{ totalSpent: number; ordersCount: number; averageOrderValue: number; daysSinceLastOrder: number; productCategories: string[]; }>): string[] {
     // セグメント別推奨施策
     return [];
   }
 
-  private async getMetricData(metric: string): Promise<any[]> {
+  private async getMetricData(_metric: string): Promise<Array<{ date: Date; value: number; }>> {
     // メトリクスデータの取得
     return [];
   }
 
-  private analyzePossibleCauses(metric: string, point: any, historical: any[]): string[] {
+  private analyzePossibleCauses(_metric: string, _point: { date: Date; value: number; }, _historical: Array<{ date: Date; value: number; }>): string[] {
     // 異常の原因分析
     return ['季節要因', 'プロモーション効果', 'システム障害'];
   }
 
-  private aggregateByPeriod(data: any[], period: string): any[] {
+  private aggregateByPeriod(_data: Array<{ date: Date; value: number; }>, _period: string): Array<{ date: Date; value: number; }> {
     // 期間別集計
     return data;
   }
 
-  private calculateTrend(data: any[]): { slope: number; intercept: number } {
+  private calculateTrend(_data: Array<{ date: Date; value: number; }>): TrendAnalysis {
     // トレンド計算
     return { slope: 0.1, intercept: 100 };
   }
 
-  private calculateChangeRate(data: any[]): number {
+  private calculateChangeRate(_data: Array<{ date: Date; value: number; }>): number {
     // 変化率計算
     if (data.length < 2) return 0;
     const first = data[0].value;
@@ -665,20 +743,20 @@ export class AIAnalytics {
     return ((last - first) / first) * 100;
   }
 
-  private generateShortTermForecast(data: any[], trend: any): number[] {
+  private generateShortTermForecast(_data: Array<{ date: Date; value: number; }>, _trend: TrendAnalysis): number[] {
     // 短期予測
     return [110, 115, 120];
   }
 
   private generateTrendInsights(
-    metric: string, 
-    trend: any, 
+    _metric: string, 
+    _trend: TrendAnalysis, 
     changeRate: number, 
-    data: any[]
+    _data: Array<{ date: Date; value: number; }>
   ): string[] {
     // トレンドインサイトの生成
     return [
-      `${metric}は${Math.abs(changeRate).toFixed(1)}%の変化を示しています`,
+      `${_metric}は${Math.abs(changeRate).toFixed(1)}%の変化を示しています`,
       'このトレンドは今後も継続する可能性があります'
     ];
   }

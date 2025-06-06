@@ -28,7 +28,7 @@ import { backendIntegrationService } from '@/src/services/backend-integration.se
 export const BackendSyncPanel: React.FC = () => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [healthStatus, setHealthStatus] = useState<APIHealthResponse | null>(null);
-  const [backendConfig, setBackendConfig] = useState<BackendConfig | null>(null);
+  const [_backendConfig, setBackendConfig] = useState<BackendConfig | null>(null);
   const [projectSync, setProjectSync] = useState<ProjectSyncData[]>([]);
   const [offlineCapability, setOfflineCapability] = useState<OfflineCapability | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -41,9 +41,9 @@ export const BackendSyncPanel: React.FC = () => {
 
     // リスナー設定
     const handleSyncUpdate = (status: SyncStatus) => setSyncStatus(status);
-    const handleHealthUpdate = (health: APIHealthResponse) => setHealthStatus(health);
-    const handleMessage = (message: BackendMessage) => {
-      setMessages(prev => [message, ...prev.slice(0, 9)]); // 最新10件を保持
+    const handleHealthUpdate = (health: unknown) => setHealthStatus(health as APIHealthResponse);
+    const handleMessage = (message: unknown) => {
+      setMessages(prev => [message as BackendMessage, ...prev.slice(0, 9)]); // 最新10件を保持
     };
 
     const removeSyncListener = backendIntegrationService.addSyncListener(handleSyncUpdate);
@@ -76,10 +76,10 @@ export const BackendSyncPanel: React.FC = () => {
       ]);
 
       setSyncStatus(sync);
-      setHealthStatus(health);
-      setBackendConfig(config);
-      setProjectSync(projects);
-      setOfflineCapability(offline);
+      setHealthStatus(health as APIHealthResponse);
+      setBackendConfig(config as BackendConfig);
+      setProjectSync(projects as ProjectSyncData[]);
+      setOfflineCapability(offline as OfflineCapability);
     } catch (error) {
       console.error('Failed to load initial data:', error);
     }

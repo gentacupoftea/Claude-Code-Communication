@@ -79,14 +79,14 @@ class BackendAPI {
   /**
    * 学習データ一覧を取得
    */
-  async getLearningData(): Promise<any[]> {
+  async getLearningData(): Promise<unknown[]> {
     return this.request('/api/learning-data');
   }
 
   /**
    * 学習データをアップロード
    */
-  async uploadLearningData(file: File): Promise<{ success: boolean; file: any }> {
+  async uploadLearningData(file: File): Promise<{ success: boolean; file: unknown }> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
@@ -94,7 +94,7 @@ class BackendAPI {
         try {
           const content = e.target?.result as string;
           
-          const result = await this.request<{ success: boolean; file: any }>('/api/learning-data/upload', {
+          const result = await this.request<{ success: boolean; file: unknown }>('/api/learning-data/upload', {
             method: 'POST',
             body: JSON.stringify({
               fileName: file.name,
@@ -131,12 +131,12 @@ class BackendAPI {
   /**
    * チャットメッセージ送信（統合バックエンド）
    */
-  async sendChatMessage(messages: any[], options?: {
+  async sendChatMessage(messages: unknown[], options?: {
     model?: string;
     temperature?: number;
     max_tokens?: number;
     system_prompt?: string;
-  }): Promise<any> {
+  }): Promise<unknown> {
     return this.request('/api/chat', {
       method: 'POST',
       body: JSON.stringify({
@@ -152,25 +152,25 @@ class BackendAPI {
   /**
    * 利用可能なモデル一覧取得（統合バックエンド）
    */
-  async getModels(): Promise<{ models: string[]; providers: any }> {
+  async getModels(): Promise<{ models: string[]; providers: unknown }> {
     return this.request('/api/models');
   }
 
   /**
    * APIキー管理（conea-integration形式）
    */
-  async getAPIKeys(): Promise<any[]> {
+  async getAPIKeys(): Promise<unknown[]> {
     return this.request('/api/keys');
   }
 
-  async saveAPIKey(keyData: any): Promise<{ success: boolean; message: string }> {
+  async saveAPIKey(keyData: unknown): Promise<{ success: boolean; message: string }> {
     return this.request('/api/keys', {
       method: 'POST',
       body: JSON.stringify(keyData),
     });
   }
 
-  async updateAPIKey(id: string, keyData: any): Promise<{ success: boolean; message: string }> {
+  async updateAPIKey(id: string, keyData: unknown): Promise<{ success: boolean; message: string }> {
     return this.request(`/api/keys/${id}`, {
       method: 'PUT',
       body: JSON.stringify(keyData),

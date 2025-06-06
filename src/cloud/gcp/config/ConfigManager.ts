@@ -20,15 +20,15 @@ interface ConfigSource {
   type: 'file' | 'secret' | 'storage' | 'env';
   path: string;
   optional?: boolean;
-  transform?: (data: any) => any;
+  transform?: (data: unknown) => unknown;
 }
 
 interface ConfigSchema {
   [key: string]: {
     type: 'string' | 'number' | 'boolean' | 'object' | 'array';
     required?: boolean;
-    default?: any;
-    validate?: (value: any) => boolean;
+    default?: unknown;
+    validate?: (value: unknown) => boolean;
     sensitive?: boolean;
   };
 }
@@ -37,11 +37,11 @@ export class ConfigManager extends EventEmitter {
   private secretManager: SecretManagerServiceClient;
   private storage: Storage;
   private options: ConfigManagerOptions;
-  private config: Map<string, any> = new Map();
-  private secrets: Map<string, any> = new Map();
+  private config: Map<string, unknown> = new Map();
+  private secrets: Map<string, unknown> = new Map();
   private configSources: Map<string, ConfigSource> = new Map();
   private schemas: Map<string, ConfigSchema> = new Map();
-  private cache: Map<string, { value: any; expires: number }> = new Map();
+  private cache: Map<string, { value: unknown; expires: number }> = new Map();
   private reloadTimer?: NodeJS.Timeout;
 
   constructor(options: ConfigManagerOptions) {
@@ -122,7 +122,7 @@ export class ConfigManager extends EventEmitter {
     this.emit('loaded', this.config);
   }
 
-  private async loadSource(source: ConfigSource): Promise<any> {
+  private async loadSource(source: ConfigSource): Promise<unknown> {
     switch (source.type) {
       case 'file':
         return await this.loadFile(source.path);
@@ -137,7 +137,7 @@ export class ConfigManager extends EventEmitter {
     }
   }
 
-  private async loadFile(filePath: string): Promise<any> {
+  private async loadFile(filePath: string): Promise<unknown> {
     try {
       const content = await fs.readFile(filePath, 'utf8');
       const ext = path.extname(filePath).toLowerCase();
@@ -151,7 +151,7 @@ export class ConfigManager extends EventEmitter {
         default:
           throw new Error(`Unsupported file format: ${ext}`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.code === 'ENOENT') {
         return null;
       }
@@ -159,7 +159,7 @@ export class ConfigManager extends EventEmitter {
     }
   }
 
-  private async loadSecret(secretName: string): Promise<any> {
+  private async loadSecret(secretName: string): Promise<unknown> {
     try {
       const name = `projects/${this.options.projectId}/secrets/${secretName}/versions/latest`;
       const [version] = await this.secretManager.accessSecretVersion({ name });
@@ -171,7 +171,7 @@ export class ConfigManager extends EventEmitter {
 
       const secretString = payload.toString();
       return JSON.parse(secretString);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.code === 5) { // NOT_FOUND
         return null;
       }
@@ -179,7 +179,7 @@ export class ConfigManager extends EventEmitter {
     }
   }
 
-  private async loadFromStorage(path: string): Promise<any> {
+  private async loadFromStorage(path: string): Promise<unknown> {
     try {
       const bucket = this.storage.bucket(this.options.configBucket || `${this.options.projectId}-config`);
       const file = bucket.file(path);
@@ -196,8 +196,8 @@ export class ConfigManager extends EventEmitter {
     }
   }
 
-  private loadEnvVars(): any {
-    const config: any = {};
+  private loadEnvVars(): unknown {
+    const config: unknown = {};
     
     // Load environment variables with prefix
     const prefix = 'SHOPIFY_MCP_';
@@ -211,13 +211,13 @@ export class ConfigManager extends EventEmitter {
     return config;
   }
 
-  private transformEnvVars(data: any): any {
+  private transformEnvVars(data: unknown): unknown {
     // Transform environment variables to match config structure
-    const transformed: any = {};
+    const transformed: unknown = {};
     
     for (const [key, value] of Object.entries(data)) {
       // Convert string values to appropriate types
-      let typedValue: any = value;
+      let typedValue: unknown = value;
       
       if (typeof value === 'string') {
         if (value.toLowerCase() === 'true') typedValue = true;
@@ -232,7 +232,7 @@ export class ConfigManager extends EventEmitter {
     return transformed;
   }
 
-  private mergeConfig(sourceName: string, data: any): void {
+  private mergeConfig(sourceName: string, data: unknown): void {
     // Apply transformation if defined
     const source = this.configSources.get(sourceName);
     if (source?.transform) {
@@ -245,7 +245,7 @@ export class ConfigManager extends EventEmitter {
     this.config.set(sourceName, merged);
   }
 
-  private deepMerge(target: any, source: any): any {
+  private deepMerge(target: unknown, source: unknown): unknown {
     const output = { ...target };
     
     for (const key in source) {
@@ -261,7 +261,7 @@ export class ConfigManager extends EventEmitter {
     return output;
   }
 
-  private setNestedValue(obj: any, path: string, value: any): void {
+  private setNestedValue(obj: unknown, path: string, value: unknown): void {
     const keys = path.split('.');
     let current = obj;
     
@@ -277,7 +277,7 @@ export class ConfigManager extends EventEmitter {
   }
 
   // Get configuration value
-  get<T = any>(path: string, defaultValue?: T): T {
+  get<T = unknown>(path: string, defaultValue?: T): T {
     // Check cache first
     const cached = this.cache.get(path);
     if (cached && cached.expires > Date.now()) {
@@ -286,7 +286,7 @@ export class ConfigManager extends EventEmitter {
 
     // Get value from merged config
     const parts = path.split('.');
-    let value: any = this.getMergedConfig();
+    let value: unknown = this.getMergedConfig();
     
     for (const part of parts) {
       value = value?.[part];
@@ -307,7 +307,7 @@ export class ConfigManager extends EventEmitter {
   }
 
   // Get all configuration
-  getAll(): any {
+  getAll(): unknown {
     return this.getMergedConfig();
   }
 
@@ -336,9 +336,9 @@ export class ConfigManager extends EventEmitter {
   }
 
   // Set configuration value (runtime only)
-  set(path: string, value: any): void {
+  set(path: string, value: unknown): void {
     const parts = path.split('.');
-    let current = this.config.get('runtime') || {};
+    const current = this.config.get('runtime') || {};
     let ref = current;
     
     for (let i = 0; i < parts.length - 1; i++) {
@@ -375,8 +375,8 @@ export class ConfigManager extends EventEmitter {
     }
   }
 
-  private findChanges(oldConfig: any, newConfig: any, path: string = ''): any[] {
-    const changes: any[] = [];
+  private findChanges(oldConfig: unknown, newConfig: unknown, path: string = ''): unknown[] {
+    const changes: unknown[] = [];
     
     // Check for new or changed values
     for (const key in newConfig) {
@@ -429,9 +429,9 @@ export class ConfigManager extends EventEmitter {
 
   // Validate configuration
   private async validateConfig(): Promise<void> {
-    const config = this.getMergedConfig();
+    const _config = this.getMergedConfig();
     
-    for (const [schemaName, schema] of this.schemas) {
+    for (const [_schemaName, schema] of this.schemas) {
       for (const [key, definition] of Object.entries(schema)) {
         const value = this.get(key);
         
@@ -460,7 +460,7 @@ export class ConfigManager extends EventEmitter {
   }
 
   // Get merged configuration
-  private getMergedConfig(): any {
+  private getMergedConfig(): unknown {
     let merged = {};
     
     // Merge in order of precedence
@@ -487,10 +487,10 @@ export class ConfigManager extends EventEmitter {
     });
   }
 
-  private maskSensitive(obj: any, path: string = ''): any {
+  private maskSensitive(obj: unknown, path: string = ''): unknown {
     if (typeof obj !== 'object' || obj === null) {
       // Check if this path is marked as sensitive
-      for (const [schemaName, schema] of this.schemas) {
+      for (const [_schemaName, schema] of this.schemas) {
         for (const [key, definition] of Object.entries(schema)) {
           if (key === path && definition.sensitive) {
             return '***MASKED***';
@@ -500,7 +500,7 @@ export class ConfigManager extends EventEmitter {
       return obj;
     }
 
-    const masked: any = Array.isArray(obj) ? [] : {};
+    const masked: unknown = Array.isArray(obj) ? [] : {};
     
     for (const key in obj) {
       const newPath = path ? `${path}.${key}` : key;

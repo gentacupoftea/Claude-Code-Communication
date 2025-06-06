@@ -1,8 +1,42 @@
 // Claude用のECドメイン特化プロンプト
 
+export interface AnalysisContext {
+  storeName?: string;
+  period?: string;
+  metrics?: unknown;
+  categories?: string[];
+  notes?: string;
+  channels?: string[];
+  inventoryValue?: number;
+  wasteRate?: number;
+  avgOrderValue?: number;
+  repeatRate?: number;
+  acquisitionChannels?: string[];
+  targetSegment?: string;
+  monthlyBudget?: number;
+  mainKPIs?: string[];
+  currentCPA?: number;
+  conversionRate?: number;
+  targetAudience?: string;
+  activeChannels?: string[];
+  analysisType?: string;
+  avgPurchaseFrequency?: number;
+  competitorPriceRange?: string;
+  cost?: number;
+  currentPrice?: number;
+  leadTime?: number;
+  priceHistory?: unknown;
+  productName?: string;
+  skuCount?: number;
+  targetMargin?: number;
+  totalCustomers?: number;
+  turnoverRate?: number;
+  [key: string]: unknown;
+}
+
 export interface ECPromptTemplate {
   systemPrompt: string;
-  contextBuilder: (context: any) => string;
+  contextBuilder: (context: AnalysisContext) => string;
   responseFormat: string;
 }
 
@@ -163,8 +197,8 @@ export function selectClaudePrompt(questionType: string): ECPromptTemplate {
 
 // コンテキスト強化関数
 export function enhanceContextForClaude(
-  baseContext: any,
-  knowledgeBase: any
+  baseContext: AnalysisContext,
+  knowledgeBase: unknown
 ): string {
   const relevantKnowledge = extractRelevantKnowledge(baseContext, knowledgeBase);
   
@@ -175,23 +209,35 @@ ${baseContext}
 ${relevantKnowledge}
 
 分析に使用可能な公式：
-${getRelevantFormulas(baseContext.analysisType)}
+${getRelevantFormulas(baseContext.analysisType || '')}
 `;
 }
 
-function extractRelevantKnowledge(context: any, knowledgeBase: any): string {
+function extractRelevantKnowledge(context: AnalysisContext, knowledgeBase: unknown): string {
   // コンテキストに基づいて関連する知識を抽出
   const relevantTopics = [];
   
   if (context.analysisType?.includes('sales')) {
-    relevantTopics.push(knowledgeBase.sales_analysis);
+    if (knowledgeBase && typeof knowledgeBase === 'object' && 'sales_analysis' in knowledgeBase) {
+      relevantTopics.push((knowledgeBase as { sales_analysis: unknown }).sales_analysis);
+    }
   }
   if (context.analysisType?.includes('inventory')) {
-    relevantTopics.push(knowledgeBase.inventory_optimization);
+    if (knowledgeBase && typeof knowledgeBase === 'object' && 'inventory_optimization' in knowledgeBase) {
+      relevantTopics.push((knowledgeBase as { inventory_optimization: unknown }).inventory_optimization);
+    }
   }
   
   return relevantTopics
-    .map(topic => topic?.best_practices?.join('\n') || '')
+    .map(topic => {
+      if (topic && typeof topic === 'object' && 'best_practices' in topic) {
+        const practices = (topic as { best_practices: unknown }).best_practices;
+        if (Array.isArray(practices) && practices.every(p => typeof p === 'string')) {
+          return practices.join('\n');
+        }
+      }
+      return '';
+    })
     .join('\n\n');
 }
 

@@ -16,7 +16,7 @@ export interface ApiError {
   code: string;
   message: string;
   field?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 // メタデータ情報（ページネーションなど）
@@ -48,7 +48,7 @@ export interface PaginationParams {
 // APIリクエストオプション
 export interface ApiRequestOptions {
   headers?: Record<string, string>;
-  params?: Record<string, any>;
+  params?: Record<string, unknown>;
   timeout?: number;
   signal?: AbortSignal;
   skipAuthHeader?: boolean;
@@ -265,6 +265,6 @@ export interface AnalyticsChart {
   id: string;
   title: string;
   type: 'line' | 'bar' | 'pie' | 'area' | 'scatter';
-  data: any; // チャートデータの構造はチャートタイプによって異なる
-  options?: any;
+  data: unknown; // チャートデータの構造はチャートタイプによって異なる
+  options?: unknown;
 }

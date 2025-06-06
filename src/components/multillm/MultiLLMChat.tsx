@@ -26,7 +26,7 @@ import {
 } from '@/src/types/multillm';
 
 interface MultiLLMChatProps {
-  onGenerateWidget?: (widgetData: any) => void;
+  onGenerateWidget?: (widgetData: unknown) => void;
 }
 
 export const MultiLLMChat: React.FC<MultiLLMChatProps> = ({ onGenerateWidget }) => {
@@ -38,7 +38,7 @@ export const MultiLLMChat: React.FC<MultiLLMChatProps> = ({ onGenerateWidget }) 
   const [showComparison, setShowComparison] = useState(false);
   const [currentComparison, setCurrentComparison] = useState<IModelComparison | null>(null);
   const [currentResponses, setCurrentResponses] = useState<MultiLLMResponse['responses']>([]);
-  const [settings, setSettings] = useState({
+  const [settings, _setSettings] = useState({
     temperature: 0.7,
     maxTokens: 1000,
     compareResponses: true,

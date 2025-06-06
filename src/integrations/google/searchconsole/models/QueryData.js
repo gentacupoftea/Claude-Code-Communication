@@ -6,10 +6,11 @@
  * @requires events
  */
 
-const { EventEmitter } = require('events');
-const logger = require('../../../utils/logger').child({ module: 'GSCQueryData' });
-const db = require('../../../db/connection');
-const cache = require('../../../utils/cache');
+import { EventEmitter  } from 'events';
+import { logger } from '../../../utils/logger';
+const _queryLogger = logger.child({ module: 'GSCQueryData' });
+import db from '../../../db/connection';
+import cache from '../../../utils/cache';
 
 /**
  * 検索クエリデータを管理するクラス

@@ -139,7 +139,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           {/* ソート */}
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            onChange={(e) => setSortBy(e.target.value as 'name' | 'speed' | 'quality' | 'cost')}
             className="bg-gray-800 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
           >
             <option value="name">名前順</option>

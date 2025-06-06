@@ -3,11 +3,11 @@
  * マーケティング分析処理統合
  */
 
-const AmazonAdvertisingClient = require('./AmazonAdvertisingClient');
-const BrandAnalyticsClient = require('../analytics/BrandAnalyticsClient');
-const { logger } = require('../../../utils/logger');
-const { cache } = require('../../../utils/cache');
-const EventEmitter = require('events');
+import AmazonAdvertisingClient from './AmazonAdvertisingClient';
+import BrandAnalyticsClient from '../analytics/BrandAnalyticsClient';
+import { logger  } from '../../../utils/logger';
+import { cache  } from '../../../utils/cache';
+import EventEmitter from 'events';
 
 class MarketingAnalyticsProcessor extends EventEmitter {
   constructor(config) {
@@ -387,7 +387,7 @@ class MarketingAnalyticsProcessor extends EventEmitter {
    * @param {Object} organic - Organic metrics
    * @returns {Object} ROI analysis
    */
-  calculateROI(advertising, organic) {
+  calculateROI(advertising, _organic) {
     const roi = {
       overall: {
         spend: advertising.summary.totalSpend,
@@ -696,7 +696,7 @@ class MarketingAnalyticsProcessor extends EventEmitter {
    * @param {Object} trafficAnalysis - Traffic analysis
    * @returns {Array} Opportunities
    */
-  identifyOrganicOpportunities(searchAnalysis, trafficAnalysis) {
+  identifyOrganicOpportunities(searchAnalysis, _trafficAnalysis) {
     const opportunities = [];
     
     // Low-hanging fruit: High impressions, low CTR

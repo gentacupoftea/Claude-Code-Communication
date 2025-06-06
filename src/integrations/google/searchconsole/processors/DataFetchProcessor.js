@@ -6,13 +6,14 @@
  * @requires events
  */
 
-const { EventEmitter } = require('events');
-const logger = require('../../../utils/logger').child({ module: 'GSCDataFetchProcessor' });
-const gscApiClient = require('../api/GSCApiClient');
-const QueryData = require('../models/QueryData');
-const PerformanceData = require('../models/PerformanceData');
-const Queue = require('../../../utils/Queue');
-const { formatDateRange, addDays } = require('../../../utils/dateHelpers');
+import { EventEmitter  } from 'events';
+import { logger } from '../../../utils/logger';
+const _fetchLogger = logger.child({ module: 'GSCDataFetchProcessor' });
+import gscApiClient from '../api/GSCApiClient';
+import QueryData from '../models/QueryData';
+import PerformanceData from '../models/PerformanceData';
+import Queue from '../../../utils/Queue';
+import { _formatDateRange, _addDays  } from '../../../utils/dateHelpers';
 
 /**
  * データ取得プロセッサークラス

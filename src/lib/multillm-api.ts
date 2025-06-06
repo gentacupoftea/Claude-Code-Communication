@@ -4,25 +4,25 @@
 
 export interface TaskExecutionRequest {
   taskType: 'text_generation' | 'translation' | 'summarization' | 'classification' | 'custom';
-  input: string | any;
+  input: string | unknown;
   model?: string;
   parameters?: {
     temperature?: number;
     maxTokens?: number;
     topP?: number;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   options?: {
     timeout?: number;
     priority?: 'low' | 'normal' | 'high';
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
 export interface TaskExecutionResponse {
   taskId: string;
   status: 'queued' | 'processing' | 'completed' | 'failed';
-  result?: any;
+  result?: unknown;
   error?: string;
   executionTime?: number;
   metadata?: {
@@ -34,7 +34,7 @@ export interface TaskExecutionResponse {
 
 export interface WorkflowExecutionRequest {
   workflowId: string;
-  inputs: Record<string, any>;
+  inputs: Record<string, unknown>;
   options?: {
     parallel?: boolean;
     continueOnError?: boolean;
@@ -50,10 +50,10 @@ export interface WorkflowExecutionResponse {
     stepId: string;
     name: string;
     status: string;
-    result?: any;
+    result?: unknown;
     error?: string;
   }>;
-  outputs?: Record<string, any>;
+  outputs?: Record<string, unknown>;
   startedAt: string;
   completedAt?: string;
 }
@@ -78,7 +78,7 @@ export interface Workflow {
     id: string;
     name: string;
     type: string;
-    config: any;
+    config: unknown;
   }>;
   createdAt: string;
   updatedAt: string;
@@ -113,13 +113,13 @@ export interface CSVAnalysisResult {
     missingValues: number;
     dataTypes: Record<string, string>;
   };
-  statistics?: Record<string, any>;
+  statistics?: Record<string, unknown>;
   insights?: string[];
-  predictions?: any[];
+  predictions?: unknown[];
   visualizations?: Array<{
     type: string;
-    data: any;
-    config: any;
+    data: unknown;
+    config: unknown;
   }>;
 }
 

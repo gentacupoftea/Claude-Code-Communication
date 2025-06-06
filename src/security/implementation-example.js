@@ -4,10 +4,10 @@
  * Shopify MCP Serverのセキュリティ機能の実装例
  */
 
-const express = require('express');
-const SecurityManager = require('./security-manager');
-const SecurityMiddleware = require('./security-middleware');
-const VulnerabilityScanner = require('./vulnerability-scanner');
+import express from 'express';
+import SecurityManager from './security-manager';
+import SecurityMiddleware from './security-middleware';
+import VulnerabilityScanner from './vulnerability-scanner';
 
 /**
  * セキュアなExpressアプリケーションの設定例
@@ -76,7 +76,7 @@ function createSecureApp() {
       }
       
       // パスワードのハッシュ化
-      const hashedPassword = await securityManager.hashPassword(password);
+      const _hashedPassword = await securityManager.hashPassword(password);
       
       // ユーザー作成（実際のデータベース処理は省略）
       const userId = 'user_' + Date.now();
@@ -90,7 +90,7 @@ function createSecureApp() {
       });
       
       // リフレッシュトークンの生成
-      const { tokenId, token } = securityManager.generateRefreshToken(userId);
+      const { _tokenId, token } = securityManager.generateRefreshToken(userId);
       
       // TOTP秘密鍵の生成（2FA用）
       const totpSecret = securityManager.generateTOTPSecret(userId);
@@ -209,7 +209,7 @@ function createSecureApp() {
         const { sensitiveData } = req.body;
         
         // データの暗号化
-        const encryptedData = securityManager.encrypt(sensitiveData);
+        const _encryptedData = securityManager.encrypt(sensitiveData);
         
         // 保存（実際のデータベース処理は省略）
         
@@ -277,7 +277,7 @@ function createSecureApp() {
  * CSVプロセッサーとの統合例
  */
 function integrateWithCSVProcessor(app, securityManager, securityMiddleware) {
-  const { CSVProcessor } = require('../csv-processor');
+  import { CSVProcessor  } from '../csv-processor';
   
   app.post('/api/csv/upload',
     securityMiddleware.authenticate(),
@@ -322,7 +322,7 @@ function integrateWithCSVProcessor(app, securityManager, securityMiddleware) {
  * GraphQL APIとの統合例
  */
 function integrateWithGraphQL(app, securityManager, securityMiddleware) {
-  const { OptimizedShopifyGraphQLClient } = require('../graphql/optimized-client');
+  import { OptimizedShopifyGraphQLClient  } from '../graphql/optimized-client';
   
   app.post('/api/graphql',
     securityMiddleware.authenticate(),
@@ -363,7 +363,7 @@ async function checkRedisConnection(redis) {
   try {
     await redis.ping();
     return 'connected';
-  } catch (error) {
+  } catch (_error) {
     return 'disconnected';
   }
 }
@@ -372,7 +372,7 @@ async function checkRateLimitStatus(securityManager) {
   try {
     const testResult = await securityManager.checkRateLimit('test-key', 'api');
     return testResult.allowed ? 'operational' : 'limited';
-  } catch (error) {
+  } catch (_error) {
     return 'error';
   }
 }

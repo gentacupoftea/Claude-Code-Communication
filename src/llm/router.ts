@@ -76,7 +76,7 @@ export class LLMRouter {
     }
   };
 
-  route(question: string, context: any): RoutingDecision {
+  route(question: string, context: unknown): RoutingDecision {
     const analysis = this.analyzeQuestion(question, context);
     const scores = this.calculateProviderScores(analysis);
     const decision = this.makeRoutingDecision(scores, analysis);
@@ -84,7 +84,7 @@ export class LLMRouter {
     return decision;
   }
 
-  private analyzeQuestion(question: string, context: any): QuestionAnalysis {
+  private analyzeQuestion(question: string, context: unknown): QuestionAnalysis {
     const analysis: QuestionAnalysis = {
       type: this.detectQuestionType(question),
       complexity: this.assessComplexity(question, context),
@@ -171,7 +171,7 @@ export class LLMRouter {
     return detectedType;
   }
 
-  private assessComplexity(question: string, context: any): number {
+  private assessComplexity(question: string, context: unknown): number {
     let complexity = 0;
 
     // 質問の長さ
@@ -235,7 +235,7 @@ export class LLMRouter {
     return capabilities;
   }
 
-  private assessDataIntensity(question: string, context: any): 'low' | 'medium' | 'high' {
+  private assessDataIntensity(question: string, context: unknown): 'low' | 'medium' | 'high' {
     let dataScore = 0;
 
     // データ関連キーワード
@@ -253,10 +253,11 @@ export class LLMRouter {
     });
 
     // コンテキストのデータ量
-    if (context) {
-      if (context.historicalData) dataScore += 3;
-      if (context.metrics) dataScore += 2;
-      if (context.kpis) dataScore += 2;
+    if (context && typeof context === 'object') {
+      const ctx = context as Record<string, unknown>;
+      if (ctx.historicalData) dataScore += 3;
+      if (ctx.metrics) dataScore += 2;
+      if (ctx.kpis) dataScore += 2;
     }
 
     if (dataScore >= 5) return 'high';
@@ -481,9 +482,9 @@ export class LLMRouter {
 
   // バッチ処理用：複数の質問を最適なプロバイダーに振り分け
   batchRoute(
-    questions: Array<{ id: string; question: string; context?: any }>
-  ): Map<LLMProvider, Array<{ id: string; question: string; context?: any }>> {
-    const routing = new Map<LLMProvider, Array<{ id: string; question: string; context?: any }>>();
+    questions: Array<{ id: string; question: string; context?: unknown }>
+  ): Map<LLMProvider, Array<{ id: string; question: string; context?: unknown }>> {
+    const routing = new Map<LLMProvider, Array<{ id: string; question: string; context?: unknown }>>();
     
     // 初期化
     (['claude', 'gemini', 'gpt-4'] as LLMProvider[]).forEach(provider => {

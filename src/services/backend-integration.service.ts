@@ -33,8 +33,8 @@ class BackendIntegrationServiceImpl implements BackendIntegrationService {
 
   private syncQueue: SyncData[] = [];
   private syncListeners: Array<(status: SyncStatus) => void> = [];
-  private healthListeners: Array<(health: any) => void> = [];
-  private messageListeners: Array<(message: any) => void> = [];
+  private healthListeners: Array<(health: unknown) => void> = [];
+  private messageListeners: Array<(message: unknown) => void> = [];
 
   getStatus(): SyncStatus {
     return { ...this.status };
@@ -110,14 +110,14 @@ class BackendIntegrationServiceImpl implements BackendIntegrationService {
     };
   }
 
-  addHealthListener(listener: (health: any) => void): () => void {
+  addHealthListener(listener: (health: unknown) => void): () => void {
     this.healthListeners.push(listener);
     return () => {
       this.healthListeners = this.healthListeners.filter(l => l !== listener);
     };
   }
 
-  addMessageListener(listener: (message: any) => void): () => void {
+  addMessageListener(listener: (message: unknown) => void): () => void {
     this.messageListeners.push(listener);
     return () => {
       this.messageListeners = this.messageListeners.filter(l => l !== listener);
@@ -128,11 +128,11 @@ class BackendIntegrationServiceImpl implements BackendIntegrationService {
     this.syncListeners.forEach(listener => listener(this.getStatus()));
   }
 
-  private notifyHealthListeners(health: any): void {
+  private notifyHealthListeners(health: unknown): void {
     this.healthListeners.forEach(listener => listener(health));
   }
 
-  private notifyMessageListeners(message: any): void {
+  private notifyMessageListeners(message: unknown): void {
     this.messageListeners.forEach(listener => listener(message));
   }
 
@@ -140,7 +140,7 @@ class BackendIntegrationServiceImpl implements BackendIntegrationService {
     return this.getStatus();
   }
 
-  async checkHealth(): Promise<any> {
+  async checkHealth(): Promise<unknown> {
     return {
       status: 'healthy',
       version: '1.0.0',
@@ -154,7 +154,7 @@ class BackendIntegrationServiceImpl implements BackendIntegrationService {
     };
   }
 
-  async getBackendConfig(): Promise<any> {
+  async getBackendConfig(): Promise<unknown> {
     return {
       apiUrl: 'https://api.example.com',
       timeout: 30000,
@@ -162,7 +162,7 @@ class BackendIntegrationServiceImpl implements BackendIntegrationService {
     };
   }
 
-  async getProjectSyncData(): Promise<any[]> {
+  async getProjectSyncData(): Promise<unknown[]> {
     return [
       {
         id: '1',
@@ -175,7 +175,7 @@ class BackendIntegrationServiceImpl implements BackendIntegrationService {
     ];
   }
 
-  async getOfflineCapability(): Promise<any> {
+  async getOfflineCapability(): Promise<unknown> {
     return {
       enabled: true,
       cacheSize: 1024 * 1024 * 10, // 10MB

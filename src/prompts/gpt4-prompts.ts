@@ -2,11 +2,11 @@
 
 export interface GPT4PromptTemplate {
   systemMessage: string;
-  userMessageBuilder: (context: any) => string;
+  userMessageBuilder: (context: unknown) => string;
   functions?: Array<{
     name: string;
     description: string;
-    parameters: any;
+    parameters: unknown;
   }>;
 }
 
@@ -22,20 +22,22 @@ export const gpt4Prompts: Record<string, GPT4PromptTemplate> = {
 - アンサンブル予測
 - 予測区間の提供`,
     
-    userMessageBuilder: (context) => `
+    userMessageBuilder: (context) => {
+      const ctx = context && typeof context === 'object' ? context as Record<string, unknown> : {};
+      return `
 以下のデータに基づいて需要予測を実施してください：
 
 歴史データ：
-- 期間: ${context.historicalPeriod}
-- 粒度: ${context.dataGranularity}
-- 売上実績: ${context.salesData ? '提供済み' : '要確認'}
-- 季節性: ${context.seasonality || '未特定'}
+- 期間: ${ctx.historicalPeriod || '未指定'}
+- 粒度: ${ctx.dataGranularity || '未指定'}
+- 売上実績: ${ctx.salesData ? '提供済み' : '要確認'}
+- 季節性: ${ctx.seasonality || '未特定'}
 
 予測要件：
-- 予測期間: ${context.forecastPeriod}
-- 予測対象: ${context.forecastTarget}
-- 必要な精度: ${context.requiredAccuracy || '±10%'}
-- 考慮すべき外部要因: ${context.externalFactors?.join(', ') || 'なし'}
+- 予測期間: ${ctx.forecastPeriod || '未指定'}
+- 予測対象: ${ctx.forecastTarget || '未指定'}
+- 必要な精度: ${ctx.requiredAccuracy || '±10%'}
+- 考慮すべき外部要因: ${Array.isArray(ctx.externalFactors) ? ctx.externalFactors.join(', ') : 'なし'}
 
 期待する出力：
 1. 点推定値と予測区間（95%信頼区間）
@@ -43,7 +45,8 @@ export const gpt4Prompts: Record<string, GPT4PromptTemplate> = {
 3. 主要な予測ドライバー
 4. モデルの精度評価
 5. ビジネス上の注意点
-`,
+`;
+    },
     
     functions: [
       {
@@ -83,21 +86,29 @@ export const gpt4Prompts: Record<string, GPT4PromptTemplate> = {
 - ネットワーク分析（商品関連性、顧客関係）
 - テキスト分析（レビュー、問い合わせ）`,
     
-    userMessageBuilder: (context) => `
+    userMessageBuilder: (context) => {
+      const ctx = context && typeof context === 'object' ? context as Record<string, unknown> : {};
+      return `
 以下の複雑な分析課題を解決してください：
 
-分析目的: ${context.analysisObjective}
+分析目的: ${ctx.analysisObjective || '未指定'}
 
 利用可能なデータ：
-${context.availableData?.map((d: any) => `- ${d.name}: ${d.description}`).join('\n') || '- 未指定'}
+${Array.isArray(ctx.availableData) ? ctx.availableData.map((d: unknown) => {
+  if (d && typeof d === 'object' && 'name' in d && 'description' in d) {
+    const data = d as { name: unknown; description: unknown };
+    return `- ${data.name}: ${data.description}`;
+  }
+  return '- 未指定';
+}).join('\n') : '- 未指定'}
 
 分析の制約条件：
-- 計算時間: ${context.computationLimit || '制限なし'}
-- 解釈可能性: ${context.interpretability || '高'}
-- 統計的有意性: ${context.significanceLevel || '0.05'}
+- 計算時間: ${ctx.computationLimit || '制限なし'}
+- 解釈可能性: ${ctx.interpretability || '高'}
+- 統計的有意性: ${ctx.significanceLevel || '0.05'}
 
 具体的な質問：
-${context.specificQuestions?.join('\n') || context.mainQuestion}
+${Array.isArray(ctx.specificQuestions) ? ctx.specificQuestions.join('\n') : (ctx.mainQuestion || '未指定')}
 
 期待する成果物：
 1. 分析結果の要約
@@ -105,7 +116,8 @@ ${context.specificQuestions?.join('\n') || context.mainQuestion}
 3. ビジュアライゼーションの提案
 4. アクションアイテム
 5. 追加分析の推奨
-`
+`;
+    }
   },
 
   // 最適化問題の解決
@@ -119,21 +131,23 @@ ${context.specificQuestions?.join('\n') || context.mainQuestion}
 - 多目的最適化
 - 制約充足問題`,
     
-    userMessageBuilder: (context) => `
+    userMessageBuilder: (context) => {
+      const ctx = context && typeof context === 'object' ? context as Record<string, unknown> : {};
+      return `
 以下の最適化問題を解決してください：
 
 問題設定：
-- 最適化対象: ${context.optimizationTarget}
-- 目的関数: ${context.objectiveFunction}
-- 決定変数: ${context.decisionVariables?.join(', ') || '未定義'}
+- 最適化対象: ${ctx.optimizationTarget || '未指定'}
+- 目的関数: ${ctx.objectiveFunction || '未指定'}
+- 決定変数: ${Array.isArray(ctx.decisionVariables) ? ctx.decisionVariables.join(', ') : '未定義'}
 
 制約条件：
-${context.constraints?.map((c: string, i: number) => `${i + 1}. ${c}`).join('\n') || '制約なし'}
+${Array.isArray(ctx.constraints) ? ctx.constraints.map((c: unknown, i: number) => `${i + 1}. ${c}`).join('\n') : '制約なし'}
 
 現在の状況：
-- 現在値: ${context.currentValue}
-- ベンチマーク: ${context.benchmark || 'なし'}
-- 改善目標: ${context.improvementTarget}
+- 現在値: ${ctx.currentValue || '未指定'}
+- ベンチマーク: ${ctx.benchmark || 'なし'}
+- 改善目標: ${ctx.improvementTarget || '未指定'}
 
 求める解答：
 1. 最適解（または準最適解）
@@ -141,7 +155,8 @@ ${context.constraints?.map((c: string, i: number) => `${i + 1}. ${c}`).join('\n'
 3. 感度分析
 4. 実装上の課題と対策
 5. 段階的な実装計画
-`,
+`;
+    },
     
     functions: [
       {
@@ -180,18 +195,20 @@ ${context.constraints?.map((c: string, i: number) => `${i + 1}. ${c}`).join('\n'
 - VaR（Value at Risk）
 - ストレステスト`,
     
-    userMessageBuilder: (context) => `
+    userMessageBuilder: (context) => {
+      const ctx = context && typeof context === 'object' ? context as Record<string, unknown> : {};
+      return `
 リスク評価を実施してください：
 
 評価対象：
-- ビジネス領域: ${context.businessArea}
-- 評価期間: ${context.assessmentPeriod}
-- 主要なリスク要因: ${context.riskFactors?.join(', ') || '未特定'}
+- ビジネス領域: ${ctx.businessArea || '未指定'}
+- 評価期間: ${ctx.assessmentPeriod || '未指定'}
+- 主要なリスク要因: ${Array.isArray(ctx.riskFactors) ? ctx.riskFactors.join(', ') : '未特定'}
 
 現在の状況：
-- 過去のインシデント: ${context.pastIncidents || 'なし'}
-- 現在の対策: ${context.currentMeasures || '未実装'}
-- リスク許容度: ${context.riskTolerance || '中程度'}
+- 過去のインシデント: ${ctx.pastIncidents || 'なし'}
+- 現在の対策: ${ctx.currentMeasures || '未実装'}
+- リスク許容度: ${ctx.riskTolerance || '中程度'}
 
 評価項目：
 1. リスクの定量化（発生確率×影響度）
@@ -199,7 +216,8 @@ ${context.constraints?.map((c: string, i: number) => `${i + 1}. ${c}`).join('\n'
 3. 最悪シナリオの分析
 4. 緩和策の提案と効果
 5. モニタリング指標の設定
-`
+`;
+    }
   },
 
   // 高度な価格最適化
@@ -213,24 +231,26 @@ ${context.constraints?.map((c: string, i: number) => `${i + 1}. ${c}`).join('\n'
 - 心理的価格設定
 - マルチチャネル価格戦略`,
     
-    userMessageBuilder: (context) => `
+    userMessageBuilder: (context) => {
+      const ctx = context && typeof context === 'object' ? context as Record<string, unknown> : {};
+      return `
 高度な価格最適化分析を実施してください：
 
 商品情報：
-- 商品カテゴリ: ${context.productCategory}
-- 現在の価格帯: ${context.currentPriceRange}
-- 競合数: ${context.competitorCount}
-- 商品ライフサイクル: ${context.productLifecycle}
+- 商品カテゴリ: ${ctx.productCategory || '未指定'}
+- 現在の価格帯: ${ctx.currentPriceRange || '未指定'}
+- 競合数: ${ctx.competitorCount || '未指定'}
+- 商品ライフサイクル: ${ctx.productLifecycle || '未指定'}
 
 市場環境：
-- 需要の価格弾力性: ${context.priceElasticity || '未測定'}
-- 競合の価格戦略: ${context.competitorStrategy || '不明'}
-- 季節性/イベント: ${context.seasonalFactors || 'なし'}
+- 需要の価格弾力性: ${ctx.priceElasticity || '未測定'}
+- 競合の価格戦略: ${ctx.competitorStrategy || '不明'}
+- 季節性/イベント: ${ctx.seasonalFactors || 'なし'}
 
 最適化目標：
-- 主目標: ${context.primaryGoal} (利益最大化/シェア拡大/在庫消化)
-- 制約: ${context.pricingConstraints || 'なし'}
-- 時間軸: ${context.optimizationTimeframe}
+- 主目標: ${ctx.primaryGoal || '未指定'} (利益最大化/シェア拡大/在庫消化)
+- 制約: ${ctx.pricingConstraints || 'なし'}
+- 時間軸: ${ctx.optimizationTimeframe || '未指定'}
 
 求める分析：
 1. 最適価格の算出（セグメント別）
@@ -238,7 +258,8 @@ ${context.constraints?.map((c: string, i: number) => `${i + 1}. ${c}`).join('\n'
 3. 競合反応のシナリオ
 4. 実装ロードマップ
 5. KPIとモニタリング方法
-`
+`;
+    }
   }
 };
 

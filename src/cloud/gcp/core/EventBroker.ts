@@ -15,7 +15,7 @@ interface EventMessage {
   id: string;
   type: string;
   source: string;
-  data: any;
+  data: unknown;
   metadata?: Record<string, string>;
   timestamp: Date;
   version: string;
@@ -83,7 +83,7 @@ export class EventBroker {
   }
 
   // Topic Management
-  async createTopic(topicName: string, options?: any): Promise<Topic> {
+  async createTopic(topicName: string, options?: unknown): Promise<Topic> {
     if (this.topics.has(topicName)) {
       return this.topics.get(topicName)!;
     }
@@ -93,7 +93,7 @@ export class EventBroker {
       this.topics.set(topicName, topic);
       logger.info(`Created topic: ${topicName}`);
       return topic;
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.code === 6) { // Topic already exists
         const topic = this.pubsub.topic(topicName);
         this.topics.set(topicName, topic);
@@ -118,7 +118,7 @@ export class EventBroker {
   async createSubscription(
     topicName: string, 
     subscriptionName: string, 
-    options?: any
+    options?: unknown
   ): Promise<Subscription> {
     if (this.subscriptions.has(subscriptionName)) {
       return this.subscriptions.get(subscriptionName)!;
@@ -145,7 +145,7 @@ export class EventBroker {
       this.subscriptions.set(subscriptionName, subscription);
       logger.info(`Created subscription: ${subscriptionName}`);
       return subscription;
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.code === 6) { // Subscription already exists
         const subscription = topic.subscription(subscriptionName);
         this.subscriptions.set(subscriptionName, subscription);
@@ -159,7 +159,7 @@ export class EventBroker {
   async publish(
     topicName: string, 
     eventType: string, 
-    data: any, 
+    data: unknown, 
     metadata?: Record<string, string>
   ): Promise<string> {
     const topic = await this.createTopic(topicName);
@@ -194,7 +194,7 @@ export class EventBroker {
   // Batch Publishing
   async publishBatch(
     topicName: string,
-    events: Array<{ type: string; data: any; metadata?: Record<string, string> }>
+    events: Array<{ type: string; data: unknown; metadata?: Record<string, string> }>
   ): Promise<string[]> {
     const topic = await this.createTopic(topicName);
     const messages = events.map(event => {
@@ -273,7 +273,7 @@ export class EventBroker {
       }
     });
 
-    subscription.on('error', (error: any) => {
+    subscription.on('error', (error: unknown) => {
       logger.error('Subscription error', { error, subscriptionName });
     });
 
@@ -351,9 +351,9 @@ export class EventBroker {
   // Cloud Tasks Integration
   async createTask(
     queueName: string,
-    payload: any,
+    payload: unknown,
     scheduleTime?: Date,
-    options?: any
+    options?: unknown
   ): Promise<string> {
     const parent = `projects/${this.config.projectId}/locations/${this.config.region}/queues/${queueName}`;
     
@@ -396,7 +396,7 @@ export class EventBroker {
     const jobName = `${task.name}-${task.id}`;
     const parent = `projects/${this.config.projectId}/locations/${this.config.region}`;
     
-    const job = {
+    const _job = {
       name: `${parent}/jobs/${jobName}`,
       schedule: task.schedule,
       timeZone: task.timezone || 'Asia/Tokyo',
@@ -422,7 +422,7 @@ export class EventBroker {
   // Event Arc Integration
   async createEventArcTrigger(
     triggerName: string,
-    eventFilter: any,
+    eventFilter: unknown,
     destination: string
   ): Promise<void> {
     const parent = `projects/${this.config.projectId}/locations/${this.config.region}`;
@@ -573,11 +573,11 @@ export class EventBroker {
   }
 
   // Metrics and Monitoring
-  async getMetrics(): Promise<any> {
+  async getMetrics(): Promise<unknown> {
     const metrics: {
-      topics: Record<string, any>;
-      subscriptions: Record<string, any>;
-      tasks: Record<string, any>;
+      topics: Record<string, unknown>;
+      subscriptions: Record<string, unknown>;
+      tasks: Record<string, unknown>;
     } = {
       topics: {},
       subscriptions: {},

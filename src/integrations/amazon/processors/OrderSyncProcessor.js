@@ -3,13 +3,13 @@
  * アマゾン注文同期処理
  */
 
-const AmazonAPIClient = require('../client/AmazonAPIClient');
-const AmazonOrder = require('../models/AmazonOrder');
-const { logger } = require('../../../utils/logger');
-const { cache } = require('../../../utils/cache');
-const { queue } = require('../../../utils/queue');
-const BatchProcessor = require('../../../utils/BatchProcessor');
-const EventEmitter = require('events');
+import AmazonAPIClient from '../client/AmazonAPIClient';
+import AmazonOrder from '../models/AmazonOrder';
+import { logger  } from '../../../utils/logger';
+import { cache  } from '../../../utils/cache';
+import { queue  } from '../../../utils/queue';
+import BatchProcessor from '../../../utils/BatchProcessor';
+import EventEmitter from 'events';
 
 class OrderSyncProcessor extends EventEmitter {
   constructor(config) {
@@ -120,7 +120,7 @@ class OrderSyncProcessor extends EventEmitter {
    * @param {Object} options - Additional options
    * @returns {Promise<Array>} Order list
    */
-  async fetchOrderList(dateRange, options = {}) {
+  async fetchOrderList(dateRange, _options = {}) {
     const orders = [];
     let nextToken = null;
     const maxResultsPerPage = 100;

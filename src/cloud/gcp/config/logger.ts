@@ -10,7 +10,7 @@ interface LoggerConfig {
 
 class Logger {
   private winston: winston.Logger;
-  private stackdriver?: any;
+  private stackdriver?: unknown;
   private config: LoggerConfig;
 
   constructor(config: LoggerConfig = {}) {
@@ -72,24 +72,24 @@ class Logger {
   }
 
   // Log methods
-  info(message: string, meta?: any): void {
+  info(message: string, meta?: unknown): void {
     this.winston.info(message, meta);
   }
 
-  error(message: string, meta?: any): void {
+  error(message: string, meta?: unknown): void {
     this.winston.error(message, meta);
   }
 
-  warn(message: string, meta?: any): void {
+  warn(message: string, meta?: unknown): void {
     this.winston.warn(message, meta);
   }
 
-  debug(message: string, meta?: any): void {
+  debug(message: string, meta?: unknown): void {
     this.winston.debug(message, meta);
   }
 
   // Structured logging for specific events
-  logApiRequest(req: any, res: any, duration: number): void {
+  logApiRequest(req: unknown, res: unknown, duration: number): void {
     this.info('API Request', {
       method: req.method,
       path: req.path,
@@ -102,7 +102,7 @@ class Logger {
     });
   }
 
-  logError(error: Error, context?: any): void {
+  logError(error: Error, context?: unknown): void {
     this.error(error.message, {
       stack: error.stack,
       name: error.name,
@@ -119,7 +119,7 @@ class Logger {
     });
   }
 
-  logEvent(eventType: string, data: any): void {
+  logEvent(eventType: string, data: unknown): void {
     this.info('Event', {
       eventType,
       data,
@@ -129,7 +129,7 @@ class Logger {
 
   // Middleware for Express
   expressMiddleware() {
-    return (req: any, res: any, next: any) => {
+    return (req: unknown, res: unknown, next: unknown) => {
       const startTime = Date.now();
       
       // Add correlation ID if not present

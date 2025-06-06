@@ -7,14 +7,15 @@
  * @requires chart.js
  */
 
-const { EventEmitter } = require('events');
-const ChartJSImage = require('chart.js-image');
-const logger = require('../../../utils/logger').child({ module: 'GSCDataVisualizer' });
-const QueryData = require('../models/QueryData');
-const PerformanceData = require('../models/PerformanceData');
-const cache = require('../../../utils/cache');
-const fs = require('fs').promises;
-const path = require('path');
+import { EventEmitter  } from 'events';
+import ChartJSImage from 'chart.js-image';
+import { logger } from '../../../utils/logger';
+const _visualizerLogger = logger.child({ module: 'GSCDataVisualizer' });
+import QueryData from '../models/QueryData';
+import PerformanceData from '../models/PerformanceData';
+import _cache from '../../../utils/cache';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 /**
  * データビジュアライザークラス
@@ -74,8 +75,8 @@ class DataVisualizer extends EventEmitter {
       siteUrl,
       startDate,
       endDate,
-      previousStartDate,
-      previousEndDate,
+      _previousStartDate,
+      _previousEndDate,
       analysisData
     } = params;
     
@@ -163,7 +164,7 @@ class DataVisualizer extends EventEmitter {
    * @private
    */
   async createOverviewChart(overviewData) {
-    const { current, previous, changes } = overviewData;
+    const { current, previous, _changes } = overviewData;
     
     const data = {
       labels: ['クリック数', 'インプレッション数', '平均CTR', '平均掲載順位'],

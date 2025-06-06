@@ -141,7 +141,7 @@ export class MicroserviceManager {
         endpoint,
         timestamp: new Date()
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error(`Failed to deploy ${serviceName}`, { error });
       return {
         serviceName: service.name,
@@ -194,7 +194,7 @@ export class MicroserviceManager {
     return imageTag;
   }
 
-  private async waitForBuildCompletion(operation: any): Promise<void> {
+  private async waitForBuildCompletion(operation: unknown): Promise<void> {
     // Poll for build completion
     let build;
     do {
@@ -218,7 +218,7 @@ export class MicroserviceManager {
       await k8sCoreClient.createNamespace({
         metadata: { name: namespace }
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.statusCode !== 409) { // Namespace already exists
         throw error;
       }
@@ -293,7 +293,7 @@ export class MicroserviceManager {
     try {
       await k8sAppsClient.createNamespacedDeployment(namespace, deployment);
       logger.info(`Created deployment for ${service.name}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.statusCode === 409) { // Deployment already exists
         await k8sAppsClient.patchNamespacedDeployment(
           service.name,
@@ -361,7 +361,7 @@ export class MicroserviceManager {
     try {
       await k8sAutoscalingClient.createNamespacedHorizontalPodAutoscaler(namespace, hpa);
       logger.info(`Created HPA for ${service.name}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.statusCode === 409) { // HPA already exists
         await k8sAutoscalingClient.patchNamespacedHorizontalPodAutoscaler(
           `${service.name}-hpa`,
@@ -411,7 +411,7 @@ export class MicroserviceManager {
     try {
       await k8sCoreClient.createNamespacedService(namespace, k8sService);
       logger.info(`Created service for ${service.name}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.statusCode !== 409) { // Service already exists
         throw error;
       }
@@ -457,7 +457,7 @@ export class MicroserviceManager {
     try {
       await k8sNetworkingClient.createNamespacedIngress(namespace, ingress);
       logger.info(`Created ingress for ${service.name}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.statusCode !== 409) { // Ingress already exists
         throw error;
       }
@@ -468,7 +468,7 @@ export class MicroserviceManager {
 
   // Monitoring Configuration
   private async configureMonitoring(service: MicroserviceConfig): Promise<void> {
-    const k8sCoreClient = this.k8sClient.makeApiClient(k8s.CoreV1Api);
+    const _k8sCoreClient = this.k8sClient.makeApiClient(k8s.CoreV1Api);
     const namespace = 'shopify-mcp';
 
     // Create ServiceMonitor for Prometheus
@@ -550,7 +550,7 @@ export class MicroserviceManager {
     logger.info(`Configured monitoring for ${service.name}`);
   }
 
-  private async applyKubernetesManifest(manifest: any): Promise<void> {
+  private async applyKubernetesManifest(manifest: unknown): Promise<void> {
     // This would typically use kubectl apply or the Kubernetes dynamic client
     // For now, we'll save it to a file and apply it
     const filename = `${manifest.metadata.name}.yaml`;
@@ -559,9 +559,9 @@ export class MicroserviceManager {
     await fs.writeFile(filepath, yaml.dump(manifest));
     
     // Apply using kubectl
-    const { exec } = require('child_process');
+    import { exec  } from 'child_process';
     await new Promise((resolve, reject) => {
-      exec(`kubectl apply -f ${filepath}`, (error: any, stdout: string, stderr: string) => {
+      exec(`kubectl apply -f ${filepath}`, (error: unknown, stdout: string, stderr: string) => {
         if (error) {
           logger.error('Failed to apply Kubernetes manifest', { error, stderr });
           reject(error);
@@ -582,8 +582,8 @@ export class MicroserviceManager {
       const { body: services } = await k8sCoreClient.listNamespacedService(namespace);
       
       return services.items
-        .filter((svc: any) => svc.metadata?.labels?.project === 'shopify-mcp')
-        .map((svc: any) => ({
+        .filter((svc: unknown) => svc.metadata?.labels?.project === 'shopify-mcp')
+        .map((svc: unknown) => ({
           name: svc.metadata!.name!,
           image: '', // Would need to fetch from deployment
           replicas: 1,
@@ -831,7 +831,7 @@ export class MicroserviceManager {
 
       // Add secret version
       const payload = Buffer.from(JSON.stringify(data), 'utf8');
-      const [version] = await this.secretManagerClient.addSecretVersion({
+      const [_version] = await this.secretManagerClient.addSecretVersion({
         parent: secret.name,
         payload: {
           data: payload
@@ -839,7 +839,7 @@ export class MicroserviceManager {
       });
 
       logger.info(`Created secret: ${secretId}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.code !== 6) { // Secret already exists
         throw error;
       }
@@ -858,7 +858,7 @@ export class MicroserviceManager {
 
     try {
       await k8sCoreClient.createNamespacedSecret('shopify-mcp', k8sSecret);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.statusCode !== 409) { // Secret already exists
         throw error;
       }
@@ -866,7 +866,7 @@ export class MicroserviceManager {
   }
 
   // Health monitoring
-  async getServiceHealth(serviceName: string): Promise<any> {
+  async getServiceHealth(serviceName: string): Promise<unknown> {
     const k8sAppsClient = this.k8sClient.makeApiClient(k8s.AppsV1Api);
     const k8sCoreClient = this.k8sClient.makeApiClient(k8s.CoreV1Api);
     const namespace = 'shopify-mcp';
@@ -902,16 +902,16 @@ export class MicroserviceManager {
           updatedReplicas: deployment.status?.updatedReplicas,
           availableReplicas: deployment.status?.availableReplicas
         },
-        pods: pods.items.map((pod: any) => ({
+        pods: pods.items.map((pod: unknown) => ({
           name: pod.metadata?.name,
           phase: pod.status?.phase,
-          ready: pod.status?.conditions?.find((c: any) => c.type === 'Ready')?.status === 'True',
+          ready: pod.status?.conditions?.find((c: unknown) => c.type === 'Ready')?.status === 'True',
           restarts: pod.status?.containerStatuses?.[0]?.restartCount || 0,
           startTime: pod.status?.startTime
         })),
-        endpoints: endpoints.subsets?.map((subset: any) => ({
+        endpoints: endpoints.subsets?.map((subset: unknown) => ({
           addresses: subset.addresses?.length || 0,
-          ports: subset.ports?.map((p: any) => p.port)
+          ports: subset.ports?.map((p: unknown) => p.port)
         }))
       };
     } catch (error) {

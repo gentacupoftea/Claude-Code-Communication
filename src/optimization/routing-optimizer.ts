@@ -4,9 +4,40 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { LLMRouter } from '../llm/router';
 
+interface BenchmarkResult {
+  provider: string;
+  scores: {
+    overall: number;
+    [key: string]: number;
+  };
+  category?: string;
+  difficulty?: string;
+  passed?: boolean;
+  [key: string]: unknown;
+}
+
+interface BenchmarkResults {
+  results: BenchmarkResult[];
+  [key: string]: unknown;
+}
+
+interface AnalysisData {
+  providerAccuracy: Map<string, { sum: number; count: number }>;
+  categoryProviderFit: Map<string, Map<string, { sum: number; count: number }>>;
+  difficultyProviderFit: Map<string, Map<string, { sum: number; count: number }>>;
+  misroutedQuestions: unknown[];
+}
+
+interface FinalizedAnalysis {
+  providerAccuracy: Record<string, number>;
+  categoryProviderFit: Record<string, Record<string, number>>;
+  difficultyProviderFit: Record<string, Record<string, number>>;
+  misroutedQuestions: unknown[];
+}
+
 interface RoutingOptimizationResult {
-  originalRules: any;
-  optimizedRules: any;
+  originalRules: unknown;
+  optimizedRules: unknown;
   changes: Array<{
     type: string;
     description: string;
@@ -28,8 +59,8 @@ export class RoutingOptimizer {
   }
 
   async optimizeRouting(
-    benchmarkResults: any,
-    failureAnalysis?: any
+    benchmarkResults: BenchmarkResults,
+    failureAnalysis?: unknown
   ): Promise<void> {
     console.log('\n🚦 ルーティング最適化開始\n');
 
@@ -54,16 +85,16 @@ export class RoutingOptimizer {
     await this.saveOptimizationResults();
   }
 
-  private analyzeRoutingPerformance(benchmarkResults: any): any {
-    const analysis = {
+  private analyzeRoutingPerformance(benchmarkResults: BenchmarkResults): FinalizedAnalysis {
+    const analysis: AnalysisData = {
       providerAccuracy: new Map<string, { sum: number; count: number }>(),
       categoryProviderFit: new Map<string, Map<string, { sum: number; count: number }>>(),
       difficultyProviderFit: new Map<string, Map<string, { sum: number; count: number }>>(),
-      misroutedQuestions: [] as any[]
+      misroutedQuestions: [] as unknown[]
     };
 
     // プロバイダー別の精度計算
-    benchmarkResults.results.forEach((result: any) => {
+    benchmarkResults.results.forEach((result: BenchmarkResult) => {
       const provider = result.provider;
       const score = result.scores.overall;
       
@@ -74,14 +105,16 @@ export class RoutingOptimizer {
       analysis.providerAccuracy.set(provider, current);
 
       // カテゴリ×プロバイダーの適合度
-      if (!analysis.categoryProviderFit.has(result.category)) {
+      if (result.category && !analysis.categoryProviderFit.has(result.category)) {
         analysis.categoryProviderFit.set(result.category, new Map());
       }
-      const categoryMap = analysis.categoryProviderFit.get(result.category)!;
-      const catCurrent = categoryMap.get(provider) || { sum: 0, count: 0 };
-      catCurrent.sum += score;
-      catCurrent.count += 1;
-      categoryMap.set(provider, catCurrent);
+      if (result.category) {
+        const categoryMap = analysis.categoryProviderFit.get(result.category)!;
+        const catCurrent = categoryMap.get(provider) || { sum: 0, count: 0 };
+        catCurrent.sum += score;
+        catCurrent.count += 1;
+        categoryMap.set(provider, catCurrent);
+      }
 
       // 明らかにミスルーティングされた質問
       if (score < 0.5) {
@@ -98,8 +131,8 @@ export class RoutingOptimizer {
     return this.finalizeAnalysis(analysis);
   }
 
-  private finalizeAnalysis(analysis: any): any {
-    const finalized: any = {
+  private finalizeAnalysis(analysis: AnalysisData): FinalizedAnalysis {
+    const finalized: FinalizedAnalysis = {
       providerAccuracy: {},
       categoryProviderFit: {},
       difficultyProviderFit: {},
@@ -107,13 +140,13 @@ export class RoutingOptimizer {
     };
 
     // 平均値の計算
-    analysis.providerAccuracy.forEach((value: any, provider: string) => {
+    analysis.providerAccuracy.forEach((value, provider: string) => {
       finalized.providerAccuracy[provider] = value.sum / value.count;
     });
 
-    analysis.categoryProviderFit.forEach((providerMap: Map<string, any>, category: string) => {
+    analysis.categoryProviderFit.forEach((providerMap, category: string) => {
       finalized.categoryProviderFit[category] = {};
-      providerMap.forEach((value: any, provider: string) => {
+      providerMap.forEach((value, provider: string) => {
         finalized.categoryProviderFit[category][provider] = value.sum / value.count;
       });
     });
@@ -122,19 +155,19 @@ export class RoutingOptimizer {
   }
 
   private generateOptimizationRules(
-    performanceAnalysis: any,
-    failureAnalysis?: any
+    performanceAnalysis: FinalizedAnalysis,
+    failureAnalysis?: unknown
   ): Array<{
     type: string;
-    rule: any;
+    rule: unknown;
     priority: number;
   }> {
-    const rules: Array<{ type: string; rule: any; priority: number }> = [];
+    const rules: Array<{ type: string; rule: unknown; priority: number }> = [];
 
     // ルール1: カテゴリ別の最適プロバイダーマッピング更新
-    Object.entries(performanceAnalysis.categoryProviderFit).forEach(([category, providers]: [string, any]) => {
+    Object.entries(performanceAnalysis.categoryProviderFit).forEach(([category, providers]: [string, Record<string, number>]) => {
       const bestProvider = Object.entries(providers)
-        .sort(([, a]: any, [, b]: any) => b - a)[0];
+        .sort(([, a], [, b]) => b - a)[0];
       
       if (bestProvider) {
         rules.push({
@@ -150,16 +183,19 @@ export class RoutingOptimizer {
     });
 
     // ルール2: 複雑性スコアリングの調整
-    if (failureAnalysis?.commonPatterns) {
-      const complexityAdjustments = this.deriveComplexityAdjustments(
-        failureAnalysis.commonPatterns
-      );
-      
-      rules.push({
-        type: 'complexity_scoring',
-        rule: complexityAdjustments,
-        priority: 2
-      });
+    if (failureAnalysis && typeof failureAnalysis === 'object' && 'commonPatterns' in failureAnalysis) {
+      const commonPatterns = (failureAnalysis as { commonPatterns: unknown }).commonPatterns;
+      if (Array.isArray(commonPatterns)) {
+        const complexityAdjustments = this.deriveComplexityAdjustments(
+          commonPatterns as Array<{ pattern: string; frequency: number }>
+        );
+        
+        rules.push({
+          type: 'complexity_scoring',
+          rule: complexityAdjustments,
+          priority: 2
+        });
+      }
     }
 
     // ルール3: プロバイダー強みの再定義
@@ -191,10 +227,13 @@ export class RoutingOptimizer {
 
   private deriveComplexityAdjustments(
     commonPatterns: Array<{ pattern: string; frequency: number }>
-  ): any {
-    const adjustments: any = {
-      weights: {},
-      thresholds: {}
+  ): {
+    weights: Record<string, number>;
+    thresholds: Record<string, number>;
+  } {
+    const adjustments = {
+      weights: {} as Record<string, number>,
+      thresholds: {} as Record<string, number>
     };
 
     commonPatterns.forEach(pattern => {
@@ -215,17 +254,17 @@ export class RoutingOptimizer {
     return adjustments;
   }
 
-  private calculateProviderStrengths(performanceAnalysis: any): any {
-    const strengths: any = {
+  private calculateProviderStrengths(performanceAnalysis: FinalizedAnalysis): Record<string, { strengths: string[]; weaknesses: string[] }> {
+    const strengths: Record<string, { strengths: string[]; weaknesses: string[] }> = {
       claude: { strengths: [], weaknesses: [] },
       gemini: { strengths: [], weaknesses: [] },
       'gpt-4': { strengths: [], weaknesses: [] }
     };
 
     // カテゴリ別の強み・弱みを特定
-    Object.entries(performanceAnalysis.categoryProviderFit).forEach(([category, providers]: [string, any]) => {
+    Object.entries(performanceAnalysis.categoryProviderFit).forEach(([category, providers]: [string, Record<string, number>]) => {
       const sortedProviders = Object.entries(providers)
-        .sort(([, a]: [string, any], [, b]: [string, any]) => b - a) as [string, number][];
+        .sort(([, a]: [string, number], [, b]: [string, number]) => b - a) as [string, number][];
       
       // 最高性能のプロバイダー
       if (sortedProviders[0] && sortedProviders[0][1] > 0.8) {
@@ -248,15 +287,18 @@ export class RoutingOptimizer {
     return strengths;
   }
 
-  private generateFallbackRules(misroutedQuestions: any[]): any[] {
-    const rules: any[] = [];
+  private generateFallbackRules(misroutedQuestions: unknown[]): unknown[] {
+    const rules: unknown[] = [];
     
     // パターン分析
     const patterns = new Map<string, number>();
     
     misroutedQuestions.forEach(q => {
-      const pattern = `${q.category}_${q.difficulty}`;
-      patterns.set(pattern, (patterns.get(pattern) || 0) + 1);
+      if (q && typeof q === 'object' && 'category' in q && 'difficulty' in q) {
+        const item = q as { category: string; difficulty: string };
+        const pattern = `${item.category}_${item.difficulty}`;
+        patterns.set(pattern, (patterns.get(pattern) || 0) + 1);
+      }
     });
 
     // 頻出パターンに対するフォールバックルール
@@ -275,8 +317,8 @@ export class RoutingOptimizer {
   }
 
   private async applyAndTestRule(
-    rule: any,
-    benchmarkResults: any
+    rule: { type: string; rule: unknown; priority: number },
+    benchmarkResults: BenchmarkResults
   ): Promise<RoutingOptimizationResult> {
     // 元のルールを保存
     const originalRules = this.captureCurrentRules();
@@ -303,7 +345,7 @@ export class RoutingOptimizer {
     };
   }
 
-  private captureCurrentRules(): any {
+  private captureCurrentRules(): unknown {
     // 現在のルーティングルールをキャプチャ（簡略化）
     return {
       providerStrengths: {
@@ -319,20 +361,24 @@ export class RoutingOptimizer {
     };
   }
 
-  private applyRule(originalRules: any, rule: any): any {
+  private applyRule(originalRules: unknown, rule: { type: string; rule: unknown; priority: number }): unknown {
     const optimized = JSON.parse(JSON.stringify(originalRules));
     
     switch (rule.type) {
       case 'complexity_scoring':
-        Object.assign(optimized.complexityWeights, rule.rule.weights);
+        if (rule.rule && typeof rule.rule === 'object' && 'weights' in rule.rule) {
+          Object.assign(optimized.complexityWeights, (rule.rule as { weights: unknown }).weights);
+        }
         break;
         
       case 'provider_strengths':
-        Object.entries(rule.rule).forEach(([provider, updates]: [string, any]) => {
-          if (updates.strengths) {
-            optimized.providerStrengths[provider] = updates.strengths;
-          }
-        });
+        if (rule.rule && typeof rule.rule === 'object') {
+          Object.entries(rule.rule).forEach(([provider, updates]: [string, unknown]) => {
+            if (updates && typeof updates === 'object' && 'strengths' in updates) {
+              optimized.providerStrengths[provider] = (updates as { strengths: unknown }).strengths;
+            }
+          });
+        }
         break;
         
       default:
@@ -340,7 +386,10 @@ export class RoutingOptimizer {
           if (!optimized.categoryMappings) {
             optimized.categoryMappings = {};
           }
-          optimized.categoryMappings[rule.rule.category] = rule.rule.preferredProvider;
+          if (rule.rule && typeof rule.rule === 'object' && 'category' in rule.rule && 'preferredProvider' in rule.rule) {
+            const ruleData = rule.rule as { category: string; preferredProvider: string };
+            optimized.categoryMappings[ruleData.category] = ruleData.preferredProvider;
+          }
         }
     }
     
@@ -348,15 +397,15 @@ export class RoutingOptimizer {
   }
 
   private simulateRouting(
-    benchmarkResults: any,
-    originalRules: any,
-    optimizedRules: any
-  ): any {
+    benchmarkResults: BenchmarkResults,
+    originalRules: unknown,
+    optimizedRules: unknown
+  ): { accuracyBefore: number; accuracyAfter: number; improvement: number } {
     let originalCorrect = 0;
     let optimizedCorrect = 0;
     let total = 0;
 
-    benchmarkResults.results.forEach((result: any) => {
+    benchmarkResults.results.forEach((result: BenchmarkResult) => {
       total++;
       
       // 元のルーティングでの正解率
@@ -389,17 +438,20 @@ export class RoutingOptimizer {
     };
   }
 
-  private predictProvider(result: any, rules: any): string {
+  private predictProvider(result: BenchmarkResult, rules: unknown): string {
     // カテゴリマッピングがある場合
-    if (rules.categoryMappings && rules.categoryMappings[result.category]) {
-      return rules.categoryMappings[result.category];
+    if (rules && typeof rules === 'object' && 'categoryMappings' in rules) {
+      const rulesObj = rules as { categoryMappings: Record<string, string> };
+      if (result.category && rulesObj.categoryMappings[result.category]) {
+        return rulesObj.categoryMappings[result.category];
+      }
     }
     
     // デフォルトロジック
     return result.provider;
   }
 
-  private wouldImprove(result: any, newProvider: string): boolean {
+  private wouldImprove(result: BenchmarkResult, newProvider: string): boolean {
     // 簡易的な改善予測
     // 実際の実装では、過去のデータから学習したモデルを使用
     const improvementProbability: Record<string, Record<string, number>> = {
@@ -408,22 +460,25 @@ export class RoutingOptimizer {
       'prediction': { 'gpt-4': 0.92, claude: 0.8, gemini: 0.75 }
     };
     
-    const category = result.category;
+    const category = result.category || 'default';
     const currentScore = result.scores.overall;
     const expectedScore = improvementProbability[category]?.[newProvider] || 0.7;
     
     return expectedScore > currentScore;
   }
 
-  private describeRule(rule: any): string {
-    const descriptions: Record<string, (r: any) => string> = {
+  private describeRule(rule: { type: string; rule: unknown; priority: number }): string {
+    const descriptions: Record<string, (r: unknown) => string> = {
       complexity_scoring: () => '複雑性スコアリングの重み調整',
       provider_strengths: () => 'プロバイダー強みマッピングの更新',
       fallback_strategy: () => 'フォールバック戦略の改善'
     };
     
     if (rule.type.startsWith('category_mapping_')) {
-      return `${rule.rule.category}カテゴリを${rule.rule.preferredProvider}に優先ルーティング`;
+      if (rule.rule && typeof rule.rule === 'object' && 'category' in rule.rule && 'preferredProvider' in rule.rule) {
+        const ruleData = rule.rule as { category: string; preferredProvider: string };
+        return `${ruleData.category}カテゴリを${ruleData.preferredProvider}に優先ルーティング`;
+      }
     }
     
     return descriptions[rule.type]?.(rule) || rule.type;

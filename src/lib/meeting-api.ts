@@ -135,7 +135,7 @@ class MeetingAPI {
   /**
    * ミーティング結果をエクスポート
    */
-  async exportMeeting(meetingId: string, options: ExportOptions): Promise<Blob | any> {
+  async exportMeeting(meetingId: string, options: ExportOptions): Promise<Blob | unknown> {
     const response = await fetch(`${this.baseURL}/api/v2/multillm/meeting/${meetingId}/export`, {
       method: 'POST',
       headers: {

@@ -9,13 +9,14 @@
  * @requires path
  */
 
-const { google } = require('googleapis');
-const { EventEmitter } = require('events');
-const fs = require('fs').promises;
-const path = require('path');
-const logger = require('../../../utils/logger').child({ module: 'GSCAuth' });
-const cache = require('../../../utils/cache');
-const config = require('../../../config/settings');
+import { google  } from 'googleapis';
+import { EventEmitter  } from 'events';
+import { promises as fs } from 'fs';
+import _path from 'path';
+import { logger } from '../../../utils/logger';
+const _gscAuthLogger = logger.child({ module: 'GSCAuth' });
+import cache from '../../../utils/cache';
+import _config from '../../../config/settings';
 
 /**
  * Google Search Console認証クラス

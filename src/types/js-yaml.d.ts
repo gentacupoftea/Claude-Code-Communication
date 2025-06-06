@@ -16,9 +16,9 @@ declare module 'js-yaml' {
     noArrayIndent?: boolean;
     skipInvalid?: boolean;
     flowLevel?: number;
-    styles?: Record<string, any>;
+    styles?: Record<string, unknown>;
     schema?: Schema;
-    sortKeys?: boolean | ((a: any, b: any) => number);
+    sortKeys?: boolean | ((a: unknown, b: unknown) => number);
     lineWidth?: number;
     noRefs?: boolean;
     noCompatMode?: boolean;
@@ -32,16 +32,16 @@ declare module 'js-yaml' {
   }
 
   export interface Type {
-    new (tag: string, options?: any): Type;
+    constructor: (tag: string, options?: Record<string, unknown>) => Type;
   }
 
-  export function load(str: string, options?: LoadOptions): any;
-  export function loadAll(str: string, iterator?: (doc: any) => void, options?: LoadOptions): any;
-  export function safeLoad(str: string, options?: LoadOptions): any;
-  export function safeLoadAll(str: string, iterator?: (doc: any) => void, options?: LoadOptions): any;
+  export function load(str: string, options?: LoadOptions): unknown;
+  export function loadAll(str: string, iterator?: (doc: unknown) => void, options?: LoadOptions): unknown;
+  export function safeLoad(str: string, options?: LoadOptions): unknown;
+  export function safeLoadAll(str: string, iterator?: (doc: unknown) => void, options?: LoadOptions): unknown;
   
-  export function dump(obj: any, options?: DumpOptions): string;
-  export function safeDump(obj: any, options?: DumpOptions): string;
+  export function dump(obj: unknown, options?: DumpOptions): string;
+  export function safeDump(obj: unknown, options?: DumpOptions): string;
 
   export const DEFAULT_SAFE_SCHEMA: Schema;
   export const DEFAULT_FULL_SCHEMA: Schema;

@@ -10,6 +10,7 @@ import { logger } from '../../utils/logger';
 
 // リクエストにAPIバージョンを追加する型拡張
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       apiVersion: number;
@@ -116,17 +117,18 @@ export function versionedResponse(req: Request, res: Response, next: NextFunctio
   const originalJson = res.json;
   
   // json関数をオーバーライドしてレスポンス形式を変換
-  res.json = function(body: any): Response {
+  res.json = function(body: unknown): Response {
     const apiVersion = req.apiVersion || CURRENT_API_VERSION;
     let transformedBody = body;
     
     // バージョンに応じたレスポンス変換
     if (apiVersion === 1 && body && typeof body === 'object') {
+      const typedBody = body as Record<string, unknown>;
       // v1形式への変換（例: ネストされたオブジェクトをフラット化）
-      if (body.data && body.meta) {
+      if (typedBody.data && typedBody.meta) {
         transformedBody = {
-          ...body.data,
-          _meta: body.meta
+          ...(typedBody.data as Record<string, unknown>),
+          _meta: typedBody.meta
         };
       }
       
@@ -148,12 +150,12 @@ export function versionedResponse(req: Request, res: Response, next: NextFunctio
 /**
  * v1互換性のためのオブジェクト変換
  */
-function transformV1Item(item: any): any {
+function transformV1Item(item: unknown): unknown {
   if (!item || typeof item !== 'object') {
     return item;
   }
   
-  const result = { ...item };
+  const result = { ...item } as Record<string, unknown>;
   
   // v1で存在しないフィールドを除外
   const v1IncompatibleFields = ['createdById', 'lastModifiedById', 'version', 'schemaVersion'];

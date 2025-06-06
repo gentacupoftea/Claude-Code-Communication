@@ -3,10 +3,10 @@
  * OAuth 2.0 implementation for Rakuten RMS API
  */
 
-const axios = require('axios');
-const crypto = require('crypto');
-const { logger } = require('../../../utils/logger');
-const { cache } = require('../../../utils/cache');
+import axios from 'axios';
+import crypto from 'crypto';
+import { logger  } from '../../../utils/logger';
+import { cache  } from '../../../utils/cache';
 
 class RakutenAuth {
   constructor(config) {

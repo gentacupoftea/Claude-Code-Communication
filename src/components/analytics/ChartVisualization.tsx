@@ -13,11 +13,11 @@ interface ChartVisualizationProps {
 
 export const ChartVisualization: React.FC<ChartVisualizationProps> = ({
   chart,
-  onUpdate,
+  onUpdate: _onUpdate,
   onDelete,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const chartInstanceRef = useRef<any>(null);
+  const chartInstanceRef = useRef<{ destroy: () => void } | null>(null);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -36,7 +36,7 @@ export const ChartVisualization: React.FC<ChartVisualizationProps> = ({
       if (!ctx) return;
 
       chartInstanceRef.current = new Chart(ctx, {
-        type: chart.type as any,
+        type: chart.type as 'line' | 'bar' | 'pie' | 'doughnut' | 'radar' | 'scatter',
         data: chart.data,
         options: {
           responsive: true,

@@ -9,13 +9,13 @@
  * - Performance monitoring
  */
 
-const { ApolloClient, InMemoryCache, ApolloLink, gql } = require('@apollo/client');
-const { BatchHttpLink } = require('@apollo/client/link/batch-http');
-const { RetryLink } = require('@apollo/client/link/retry');
-const { onError } = require('@apollo/client/link/error');
-const Redis = require('ioredis');
-const winston = require('winston');
-const { RateLimiter } = require('limiter');
+import { ApolloClient, InMemoryCache, ApolloLink, gql  } from '@apollo/client';
+import { BatchHttpLink  } from '@apollo/client/link/batch-http';
+import { RetryLink  } from '@apollo/client/link/retry';
+import { onError  } from '@apollo/client/link/error';
+import Redis from 'ioredis';
+import winston from 'winston';
+import { RateLimiter  } from 'limiter';
 
 // ロガーの設定
 const logger = winston.createLogger({

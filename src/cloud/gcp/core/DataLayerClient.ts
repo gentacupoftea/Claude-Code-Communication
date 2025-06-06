@@ -1,8 +1,8 @@
-import { Firestore, DocumentData, Query, CollectionReference, DocumentReference } from '@google-cloud/firestore';
-import { BigQuery, Dataset, Table, Job } from '@google-cloud/bigquery';
-import { Datastore, Key, Entity } from '@google-cloud/datastore';
+import { Firestore, DocumentData, Query, _CollectionReference, _DocumentReference } from '@google-cloud/firestore';
+import { BigQuery, _Dataset, _Table, _Job } from '@google-cloud/bigquery';
+import { Datastore, _Key, Entity } from '@google-cloud/datastore';
 import { Redis } from 'ioredis';
-import { Storage, Bucket, File } from '@google-cloud/storage';
+import { Storage, _Bucket, _File } from '@google-cloud/storage';
 import { logger } from '../config/logger';
 
 interface DataLayerConfig {
@@ -28,7 +28,7 @@ interface QueryOptions {
   limit?: number;
   offset?: number;
   orderBy?: { field: string; direction: 'asc' | 'desc' }[];
-  where?: { field: string; operator: string; value: any }[];
+  where?: { field: string; operator: string; value: unknown }[];
   select?: string[];
 }
 
@@ -37,9 +37,9 @@ interface CacheOptions {
   namespace?: string;
 }
 
-interface StreamOptions {
+interface _StreamOptions {
   batchSize?: number;
-  transform?: (item: any) => any;
+  transform?: (item: unknown) => unknown;
 }
 
 export class DataLayerClient {
@@ -89,7 +89,7 @@ export class DataLayerClient {
       logger.info('Redis connected');
     });
 
-    this.redis.on('error', (error: any) => {
+    this.redis.on('error', (error: unknown) => {
       logger.error('Redis error', { error });
     });
 
@@ -115,7 +115,7 @@ export class DataLayerClient {
     }
   }
 
-  async firestoreSet(collection: string, documentId: string, data: any): Promise<void> {
+  async firestoreSet(collection: string, documentId: string, data: unknown): Promise<void> {
     try {
       const docRef = this.firestore.collection(collection).doc(documentId);
       await docRef.set(data, { merge: true });
@@ -135,7 +135,7 @@ export class DataLayerClient {
       // Apply where clauses
       if (options.where) {
         for (const condition of options.where) {
-          query = query.where(condition.field, condition.operator as any, condition.value);
+          query = query.where(condition.field, condition.operator as FirebaseFirestore.WhereFilterOp, condition.value);
         }
       }
 
@@ -162,7 +162,7 @@ export class DataLayerClient {
       }
 
       const snapshot = await query.get();
-      return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+      return snapshot.docs.map((doc: unknown) => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
       logger.error('Firestore query error', { collection, options, error });
       throw error;
@@ -173,7 +173,7 @@ export class DataLayerClient {
     type: 'set' | 'update' | 'delete';
     collection: string;
     documentId: string;
-    data?: any;
+    data?: unknown;
   }>): Promise<void> {
     const batch = this.firestore.batch();
 
@@ -203,7 +203,7 @@ export class DataLayerClient {
   }
 
   // BigQuery Operations
-  async bigqueryQuery(query: string, params?: any[]): Promise<any[]> {
+  async bigqueryQuery(query: string, params?: unknown[]): Promise<unknown[]> {
     try {
       const options = {
         query,
@@ -221,7 +221,7 @@ export class DataLayerClient {
     }
   }
 
-  async bigqueryInsert(datasetId: string, tableId: string, rows: any[]): Promise<void> {
+  async bigqueryInsert(datasetId: string, tableId: string, rows: unknown[]): Promise<void> {
     try {
       const dataset = this.bigquery.dataset(datasetId);
       const table = dataset.table(tableId);
@@ -270,7 +270,7 @@ export class DataLayerClient {
     }
   }
 
-  async bigqueryImport(datasetId: string, tableId: string, sourceUri: string, schema?: any[]): Promise<void> {
+  async bigqueryImport(datasetId: string, tableId: string, sourceUri: string, schema?: unknown[]): Promise<void> {
     try {
       const dataset = this.bigquery.dataset(datasetId);
       const table = dataset.table(tableId);
@@ -353,7 +353,7 @@ export class DataLayerClient {
   }
 
   // Storage Operations
-  async storageUpload(bucketName: string, filePath: string, buffer: Buffer, metadata?: any): Promise<string> {
+  async storageUpload(bucketName: string, filePath: string, buffer: Buffer, metadata?: unknown): Promise<string> {
     try {
       const bucket = this.storage.bucket(bucketName);
       const file = bucket.file(filePath);
@@ -405,7 +405,7 @@ export class DataLayerClient {
       const bucket = this.storage.bucket(bucketName);
       const [files] = await bucket.getFiles({ prefix });
       
-      return files.map((file: any) => file.name);
+      return files.map((file: unknown) => file.name);
     } catch (error) {
       logger.error('Storage list error', { bucketName, prefix, error });
       throw error;
@@ -442,7 +442,7 @@ export class DataLayerClient {
     }
   }
 
-  async datastoreSave(kind: string, id: string | number, data: any): Promise<void> {
+  async datastoreSave(kind: string, id: string | number, data: unknown): Promise<void> {
     try {
       const key = this.datastore.key([kind, id]);
       const entity = {
@@ -457,7 +457,7 @@ export class DataLayerClient {
     }
   }
 
-  async datastoreQuery(kind: string, filters: { [key: string]: any } = {}, limit?: number): Promise<Entity[]> {
+  async datastoreQuery(kind: string, filters: { [key: string]: unknown } = {}, limit?: number): Promise<Entity[]> {
     try {
       let query = this.datastore.createQuery(kind);
       
@@ -484,7 +484,7 @@ export class DataLayerClient {
     collection: string,
     datasetId: string,
     tableId: string,
-    transform?: (doc: any) => any
+    transform?: (doc: unknown) => unknown
   ): Promise<void> {
     try {
       // Read all documents from Firestore
@@ -510,7 +510,7 @@ export class DataLayerClient {
 
   async cacheWarmup(queries: Array<{
     key: string;
-    fn: () => Promise<any>;
+    fn: () => Promise<unknown>;
     ttl?: number;
   }>): Promise<void> {
     const promises = queries.map(async ({ key, fn, ttl }) => {
@@ -529,13 +529,13 @@ export class DataLayerClient {
   async migrateCollection(
     sourceCollection: string,
     targetCollection: string,
-    transform?: (doc: any) => any,
+    transform?: (doc: unknown) => unknown,
     batchSize: number = 500
   ): Promise<void> {
     const sourceRef = this.firestore.collection(sourceCollection);
     const targetRef = this.firestore.collection(targetCollection);
     
-    let lastDoc: any = null;
+    let lastDoc: unknown = null;
     let migrated = 0;
 
     while (true) {
@@ -553,7 +553,7 @@ export class DataLayerClient {
 
       const batch = this.firestore.batch();
       
-      snapshot.docs.forEach((doc: any) => {
+      snapshot.docs.forEach((doc: unknown) => {
         const data = transform ? transform(doc.data()) : doc.data();
         const targetDoc = targetRef.doc(doc.id);
         batch.set(targetDoc, data);

@@ -54,7 +54,7 @@ export function sanitizeOutput(output: string): string {
  * @param jsonData Chart data as a JSON object
  * @returns Sanitized chart data or null if invalid
  */
-export function validateChartData(jsonData: any): any | null {
+export function validateChartData(jsonData: unknown): unknown | null {
   if (!jsonData || typeof jsonData !== 'object') {
     return null;
   }
@@ -88,7 +88,7 @@ export function validateChartData(jsonData: any): any | null {
   
   // Sanitize data labels
   if (sanitized.data.labels && Array.isArray(sanitized.data.labels)) {
-    sanitized.data.labels = sanitized.data.labels.map((label: any) => 
+    sanitized.data.labels = sanitized.data.labels.map((label: unknown) => 
       typeof label === 'string' ? sanitizeOutput(label).substring(0, 50) : label
     );
   }
@@ -100,7 +100,7 @@ export function validateChartData(jsonData: any): any | null {
     
     sanitized.data.datasets = sanitized.data.datasets
       .slice(0, MAX_DATASETS)
-      .map((dataset: any) => {
+      .map((dataset: unknown) => {
         if (dataset.label) {
           dataset.label = sanitizeOutput(String(dataset.label)).substring(0, 50);
         }
@@ -121,7 +121,7 @@ export function validateChartData(jsonData: any): any | null {
  * @param chartData The chart data to hash
  * @returns A hash string for the chart data
  */
-export function generateChartHash(chartData: any): string {
+export function generateChartHash(chartData: unknown): string {
   const jsonString = JSON.stringify(chartData);
   return createHash('sha256').update(jsonString).digest('hex').substring(0, 16);
 }

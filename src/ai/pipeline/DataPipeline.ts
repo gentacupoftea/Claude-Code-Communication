@@ -9,6 +9,48 @@ import * as tf from '@tensorflow/tfjs';
 import { Product, Order, Customer } from '../../types';
 import { ShopifyService } from '../../services/ShopifyService';
 
+// Additional interfaces for type safety
+interface ProductVariant {
+  id: string;
+  price: string;
+  inventory_quantity?: number;
+  [key: string]: unknown;
+}
+
+interface LineItem {
+  id: string;
+  product_id: string;
+  variant_id: string;
+  title: string;
+  quantity: number;
+  price: string;
+  [key: string]: unknown;
+}
+
+interface TransformedProduct {
+  id: string;
+  title: string;
+  category: string;
+  vendor: string;
+  price: number;
+  inventory: number;
+  tags: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  hasImages: boolean;
+  variantCount: number;
+  isPublished: boolean;
+  averagePrice: number;
+  priceRange: { min: number; max: number };
+}
+
+interface TransformedOrder {
+  id: string;
+  customerId?: string;
+  email: string;
+  [key: string]: unknown;
+}
+
 interface PipelineConfig {
   batchSize: number;
   updateInterval: number; // ミリ秒
@@ -22,12 +64,12 @@ interface DataBatch {
   id: string;
   timestamp: Date;
   type: 'products' | 'orders' | 'customers' | 'mixed';
-  data: any[];
+  data: Record<string, unknown>[];
   metadata: {
     source: string;
     processingTime: number;
     recordCount: number;
-    errors: any[];
+    errors: Error[];
   };
 }
 
@@ -45,7 +87,7 @@ export class DataPipeline extends EventEmitter {
   private processingMetrics: ProcessingMetrics;
   private isRunning: boolean = false;
   private updateTimer: NodeJS.Timeout | null = null;
-  private dataCache: Map<string, any> = new Map();
+  private dataCache: Map<string, Record<string, unknown>> = new Map();
 
   constructor(shopifyService: ShopifyService, config: Partial<PipelineConfig> = {}) {
     super();
@@ -274,7 +316,7 @@ export class DataPipeline extends EventEmitter {
     console.log('機械学習用データを準備中...');
     
     // キャッシュからデータを収集
-    const allData: any[] = [];
+    const allData: Record<string, unknown>[] = [];
     for (const [, batch] of this.dataCache) {
       allData.push(...batch.data);
     }
@@ -325,7 +367,7 @@ export class DataPipeline extends EventEmitter {
     batchSize?: number;
     interval?: number;
   }): AsyncGenerator<DataBatch> {
-    const batchSize = options?.batchSize || this.config.batchSize;
+    const _batchSize = options?.batchSize || this.config.batchSize; // For future batch processing
     const interval = options?.interval || 1000;
     
     while (this.isRunning) {
@@ -421,14 +463,14 @@ export class DataPipeline extends EventEmitter {
   /**
    * データ変換メソッド群
    */
-  private async transformProducts(products: Product[]): Promise<any[]> {
+  private async transformProducts(products: Product[]): Promise<TransformedProduct[]> {
     return products.map(product => ({
       id: product.id,
       title: product.title,
       category: product.product_type || 'uncategorized',
       vendor: product.vendor,
       price: parseFloat(product.variants[0]?.price || '0'),
-      inventory: product.variants.reduce((sum: number, v: any) => sum + (v.inventory_quantity || 0), 0),
+      inventory: product.variants.reduce((sum: number, v: ProductVariant) => sum + (v.inventory_quantity || 0), 0),
       tags: product.tags ? product.tags.split(',').map((t: string) => t.trim()) : [],
       createdAt: new Date(product.created_at),
       updatedAt: new Date(product.updated_at),
@@ -442,7 +484,7 @@ export class DataPipeline extends EventEmitter {
     }));
   }
 
-  private async transformOrders(orders: Order[]): Promise<any[]> {
+  private async transformOrders(orders: Order[]): Promise<TransformedOrder[]> {
     return orders.map(order => ({
       id: order.id,
       customerId: order.customer?.id,
@@ -467,7 +509,7 @@ export class DataPipeline extends EventEmitter {
     }));
   }
 
-  private async transformCustomers(customers: Customer[]): Promise<any[]> {
+  private async transformCustomers(customers: Customer[]): Promise<Record<string, unknown>[]> {
     return customers.map(customer => ({
       id: customer.id,
       email: customer.email,
@@ -496,13 +538,13 @@ export class DataPipeline extends EventEmitter {
     return `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  private calculateAveragePrice(variants: any[]): number {
+  private calculateAveragePrice(variants: ProductVariant[]): number {
     if (variants.length === 0) return 0;
     const sum = variants.reduce((acc, v) => acc + parseFloat(v.price || '0'), 0);
     return sum / variants.length;
   }
 
-  private calculatePriceRange(variants: any[]): { min: number; max: number } {
+  private calculatePriceRange(variants: ProductVariant[]): { min: number; max: number } {
     if (variants.length === 0) return { min: 0, max: 0 };
     const prices = variants.map(v => parseFloat(v.price || '0'));
     return {
@@ -513,7 +555,7 @@ export class DataPipeline extends EventEmitter {
 
   private calculateAverageItemPrice(order: Order): number {
     if (!order.line_items || order.line_items.length === 0) return 0;
-    const total = order.line_items.reduce((sum: number, item: any) => 
+    const total = order.line_items.reduce((sum: number, item: LineItem) => 
       sum + parseFloat(item.price) * item.quantity, 0
     );
     return total / order.line_items.length;
@@ -545,7 +587,7 @@ export class DataPipeline extends EventEmitter {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
 
-  private extractFeature(record: any, featurePath: string): number {
+  private extractFeature(record: Record<string, unknown>, featurePath: string): number {
     // ドット記法で深いプロパティにアクセス
     const parts = featurePath.split('.');
     let value = record;

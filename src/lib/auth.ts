@@ -48,7 +48,7 @@ export class AuthManager {
   /**
    * ログイン処理
    */
-  public async login(email: string, password: string): Promise<boolean> {
+  public async login(email: string, _password: string): Promise<boolean> {
     try {
       // デモ用 - すべてのログインを成功させる
       console.log('[AuthManager] Login attempt for:', email);

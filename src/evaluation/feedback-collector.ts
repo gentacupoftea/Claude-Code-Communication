@@ -1,5 +1,24 @@
 // フィードバック収集と改善提案
 
+export interface EvaluationScores {
+  relevance: number;
+  accuracy: number;
+  completeness: number;
+  actionability: number;
+  ecDomainKnowledge: number;
+}
+
+export interface ProviderStats {
+  passRate: number;
+  [key: string]: unknown;
+}
+
+export interface AggregateResults {
+  averageScores: EvaluationScores;
+  scoresByProvider: Record<string, ProviderStats>;
+  scoresByCategory: Record<string, ProviderStats>;
+}
+
 export interface ImprovementFeedback {
   questionId: string;
   provider: string;
@@ -24,7 +43,7 @@ export class FeedbackCollector {
   collectFeedback(
     question: string,
     response: string,
-    scores: any,
+    scores: EvaluationScores,
     expectedElements: string[]
   ): ImprovementFeedback {
     const weaknesses = this.identifyWeaknesses(response, scores, expectedElements);
@@ -46,7 +65,7 @@ export class FeedbackCollector {
 
   private identifyWeaknesses(
     response: string,
-    scores: any,
+    scores: EvaluationScores,
     expectedElements: string[]
   ): string[] {
     const weaknesses: string[] = [];
@@ -87,7 +106,7 @@ export class FeedbackCollector {
     return weaknesses;
   }
 
-  private generateSuggestions(weaknesses: string[], question: string): string[] {
+  private generateSuggestions(weaknesses: string[], _question: string): string[] {
     const suggestions: string[] = [];
 
     weaknesses.forEach(weakness => {
@@ -139,7 +158,7 @@ export class FeedbackCollector {
   private createExampleImprovement(
     originalResponse: string,
     weaknesses: string[],
-    suggestions: string[]
+    _suggestions: string[]
   ): ImprovementFeedback['exampleImprovement'] | undefined {
     // 最も重要な弱点に対する改善例を作成
     if (weaknesses.length === 0) return undefined;
@@ -174,8 +193,8 @@ export class FeedbackCollector {
 
   // 改善サイクル全体の最適化推奨事項を生成
   generateOptimizationRecommendations(
-    aggregateResults: any,
-    failurePatterns: any[]
+    aggregateResults: AggregateResults,
+    _failurePatterns: unknown[]
   ): OptimizationRecommendation[] {
     const recommendations: OptimizationRecommendation[] = [];
 
@@ -196,7 +215,7 @@ export class FeedbackCollector {
     // ルーティング最適化の推奨
     const providerPerformance = aggregateResults.scoresByProvider;
     const underperformingProviders = Object.entries(providerPerformance)
-      .filter(([_, stats]: [string, any]) => stats.passRate < 0.7);
+      .filter(([_, stats]: [string, ProviderStats]) => stats.passRate < 0.7);
     
     if (underperformingProviders.length > 0) {
       recommendations.push({
@@ -240,7 +259,7 @@ export class FeedbackCollector {
     }
 
     // 特定カテゴリの改善
-    Object.entries(aggregateResults.scoresByCategory).forEach(([category, stats]: [string, any]) => {
+    Object.entries(aggregateResults.scoresByCategory).forEach(([category, stats]: [string, ProviderStats]) => {
       if (stats.passRate < 0.6) {
         recommendations.push({
           type: 'prompt',
@@ -263,7 +282,7 @@ export class FeedbackCollector {
 
   // パターン分析：失敗しやすい質問の特徴を抽出
   analyzeFailurePatterns(
-    failedQuestions: Array<{ question: string; scores: any; provider: string }>
+    failedQuestions: Array<{ question: string; scores: unknown; provider: string }>
   ): Array<{ pattern: string; frequency: number; examples: string[] }> {
     const patterns: Map<string, string[]> = new Map();
 

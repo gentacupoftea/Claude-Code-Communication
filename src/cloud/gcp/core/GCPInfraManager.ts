@@ -1,6 +1,6 @@
 import { 
   ProjectsClient,
-  CloudResourceManager,
+  _CloudResourceManager,
   ServiceUsageClient,
   CloudBuildClient,
   ContainerClient,
@@ -24,7 +24,7 @@ interface ResourceStatus {
   resourceType: string;
   resourceId: string;
   status: 'CREATING' | 'ACTIVE' | 'UPDATING' | 'DELETING' | 'ERROR';
-  metadata?: any;
+  metadata?: unknown;
 }
 
 export class GCPInfraManager {
@@ -108,7 +108,7 @@ export class GCPInfraManager {
           name: `projects/${this.config.projectId}/services/${api}`
         });
         logger.info(`Enabled API: ${api}`);
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (error.code !== 7) { // API already enabled
           logger.error(`Failed to enable API: ${api}`, { error });
           throw error;
@@ -194,7 +194,7 @@ export class GCPInfraManager {
           ...rule
         });
         logger.info(`Created firewall rule: ${rule.name}`);
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (error.code !== 409) { // Rule already exists
           logger.error(`Failed to create firewall rule: ${rule.name}`, { error });
           throw error;
@@ -264,7 +264,7 @@ export class GCPInfraManager {
         }
 
         logger.info(`Created service account: ${sa.accountId}`);
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (error.code !== 409) { // Service account already exists
           logger.error(`Failed to create service account: ${sa.accountId}`, { error });
           throw error;
@@ -318,7 +318,7 @@ export class GCPInfraManager {
           lifecycle: bucket.lifecycleRules ? { rules: bucket.lifecycleRules } : undefined
         });
         logger.info(`Created storage bucket: ${bucket.name}`);
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (error.code !== 409) { // Bucket already exists
           logger.error(`Failed to create storage bucket: ${bucket.name}`, { error });
           throw error;
@@ -347,7 +347,7 @@ export class GCPInfraManager {
       await this.createFirestoreIndexes(databaseId);
 
       logger.info('Firestore setup completed');
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.code !== 409) { // Database already exists
         logger.error('Failed to setup Firestore', { error });
         throw error;
@@ -392,7 +392,7 @@ export class GCPInfraManager {
           }
         });
         logger.info(`Created Firestore index for ${index.collectionGroup}`);
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (error.code !== 409) { // Index already exists
           logger.error(`Failed to create Firestore index for ${index.collectionGroup}`, { error });
           throw error;
@@ -436,7 +436,7 @@ export class GCPInfraManager {
         await this.createBigQueryTables(dataset.datasetId);
 
         logger.info(`Created BigQuery dataset: ${dataset.datasetId}`);
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (error.code !== 409) { // Dataset already exists
           logger.error(`Failed to create BigQuery dataset: ${dataset.datasetId}`, { error });
           throw error;
@@ -501,7 +501,7 @@ export class GCPInfraManager {
             }
           });
         logger.info(`Created BigQuery table: ${datasetId}.${table.tableId}`);
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (error.code !== 409) { // Table already exists
           logger.error(`Failed to create BigQuery table: ${datasetId}.${table.tableId}`, { error });
           throw error;
@@ -511,7 +511,7 @@ export class GCPInfraManager {
   }
 
   // Kubernetes Cluster Management
-  async createGKECluster(clusterName: string, region: string, config?: any): Promise<void> {
+  async createGKECluster(clusterName: string, region: string, config?: unknown): Promise<void> {
     const defaultConfig = {
       name: clusterName,
       location: region,
@@ -565,7 +565,7 @@ export class GCPInfraManager {
   }
 
   // Resource Tracking
-  private trackResource(resourceType: string, resourceId: string, status: ResourceStatus['status'], metadata?: any): void {
+  private trackResource(resourceType: string, resourceId: string, status: ResourceStatus['status'], metadata?: unknown): void {
     this.resourceTracking.set(`${resourceType}:${resourceId}`, {
       resourceType,
       resourceId,
@@ -626,7 +626,7 @@ export class GCPInfraManager {
   }
 
   private async cleanupGKEClusters(): Promise<void> {
-    for (const [key, resource] of this.resourceTracking) {
+    for (const [_key, resource] of this.resourceTracking) {
       if (resource.resourceType === 'GKE_CLUSTER') {
         try {
           await this.containerClient.deleteCluster({
@@ -726,8 +726,8 @@ export class GCPInfraManager {
   }
 
   // Monitoring and Health Checks
-  async getResourceHealth(): Promise<Record<string, any>> {
-    const health: Record<string, any> = {
+  async getResourceHealth(): Promise<Record<string, unknown>> {
+    const health: Record<string, unknown> = {
       timestamp: new Date().toISOString(),
       resources: {}
     };
@@ -743,7 +743,7 @@ export class GCPInfraManager {
   }
 
   // Cost Optimization
-  async analyzeCosts(): Promise<any> {
+  async analyzeCosts(): Promise<unknown> {
     // Implementation would integrate with Cloud Billing API
     // This is a placeholder for cost analysis logic
     return {

@@ -4,13 +4,13 @@
  * 単体テストと統合テストを含む包括的なテストケース
  */
 
-const { OptimizedShopifyGraphQLClient, Queries } = require('../optimized-client');
-const { gql } = require('@apollo/client');
-const Redis = require('ioredis-mock');
-const nock = require('nock');
+import { OptimizedShopifyGraphQLClient, Queries  } from '../optimized-client';
+import { gql  } from '@apollo/client';
+// import _Redis from 'ioredis-mock';
+import nock from 'nock';
 
 // Redisモックを使用
-jest.mock('ioredis', () => require('ioredis-mock'));
+jest.mock('ioredis', () => import('ioredis-mock'));
 
 describe('OptimizedShopifyGraphQLClient', () => {
   let client;

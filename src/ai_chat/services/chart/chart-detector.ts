@@ -8,7 +8,7 @@ import { validateChartData } from '../../utils/security';
 
 export interface ChartCommand {
   command: string;
-  data: any;
+  data: unknown;
 }
 
 export class ChartCommandDetector {
@@ -61,7 +61,7 @@ export class ChartCommandDetector {
    * @param chartData Chart data to validate
    * @returns True if valid, false otherwise
    */
-  validateChartData(chartData: any): boolean {
+  validateChartData(chartData: unknown): boolean {
     // First perform basic validation
     // Basic validation to ensure we have necessary properties
     if (!chartData || typeof chartData !== 'object') {

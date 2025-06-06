@@ -319,7 +319,7 @@ export const checkAuthStatus = async (): Promise<boolean> => {
     try {
       await refreshAccessToken();
       return true;
-    } catch (error) {
+    } catch (_error) {
       // リフレッシュに失敗した場合
       clearAuthTokens();
       return false;

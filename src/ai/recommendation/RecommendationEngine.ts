@@ -3,7 +3,8 @@
  * @module ai/recommendation
  */
 
-import { Product, User, PurchaseHistory } from '../types';
+import { Product } from '../types';
+// Note: User and PurchaseHistory types reserved for future implementation
 import { MLModel } from '../ml-models/MLModel';
 
 export class RecommendationEngine {
@@ -17,8 +18,8 @@ export class RecommendationEngine {
    * ユーザーに商品を推薦
    */
   async recommendProducts(
-    userId: string, 
-    options?: {
+    _userId: string, 
+    _options?: {
       limit?: number;
       category?: string;
       priceRange?: { min: number; max: number };
@@ -32,7 +33,7 @@ export class RecommendationEngine {
   /**
    * 協調フィルタリング
    */
-  async collaborativeFiltering(userId: string): Promise<Product[]> {
+  async collaborativeFiltering(_userId: string): Promise<Product[]> {
     // 実装予定
     return [];
   }
@@ -40,7 +41,7 @@ export class RecommendationEngine {
   /**
    * コンテンツベースフィルタリング
    */
-  async contentBasedFiltering(product: Product): Promise<Product[]> {
+  async contentBasedFiltering(_product: Product): Promise<Product[]> {
     // 実装予定
     return [];
   }
@@ -49,8 +50,8 @@ export class RecommendationEngine {
    * ハイブリッド推薦
    */
   async hybridRecommendation(
-    userId: string, 
-    currentProduct?: Product
+    _userId: string, 
+    _currentProduct?: Product
   ): Promise<Product[]> {
     // 実装予定
     return [];

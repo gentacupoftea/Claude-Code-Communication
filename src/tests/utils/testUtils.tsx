@@ -12,18 +12,20 @@ import React, { ReactNode } from 'react';
  * TODO: Add React Query and Redux providers when dependencies are available
  */
 export function createWrapper() {
-  return ({ children }: { children: ReactNode }) => (
+  const Wrapper = ({ children }: { children: ReactNode }) => (
     <div data-testid="test-wrapper">
       {children}
     </div>
   );
+  Wrapper.displayName = 'TestWrapper';
+  return Wrapper;
 }
 
 /**
  * A utility function to create a test store - simplified version
  * TODO: Add Redux store configuration when dependencies are available
  */
-export function createTestStore(preloadedState?: any) {
+export function createTestStore(preloadedState?: Record<string, unknown>) {
   // Mock store for now
   const mockStore = {
     getState: () => preloadedState || {},
@@ -85,7 +87,12 @@ export const mockLocalStorage = () => {
  * Helper to simulate a failed API response for testing error handling
  */
 export const createErrorResponse = (status = 500, message = 'Internal Server Error') => {
-  const error = new Error(message) as any;
+  const error = new Error(message) as Error & {
+    response?: {
+      status: number;
+      data: { message: string };
+    };
+  };
   error.response = {
     status,
     data: { message }

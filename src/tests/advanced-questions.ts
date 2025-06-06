@@ -5,7 +5,7 @@ export interface AdvancedQuestion {
   category: string;
   difficulty: 'basic' | 'intermediate' | 'advanced' | 'expert';
   question: string;
-  context?: any;
+  context?: unknown;
   expectedElements: string[];
   evaluationCriteria: {
     mustInclude: string[];

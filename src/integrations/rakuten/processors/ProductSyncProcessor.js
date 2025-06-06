@@ -3,12 +3,12 @@
  * 楽天商品同期処理
  */
 
-const RakutenAPIClient = require('../client/RakutenAPIClient');
-const RakutenProduct = require('../models/Product');
-const { logger } = require('../../../utils/logger');
-const { cache } = require('../../../utils/cache');
-const { queue } = require('../../../utils/queue');
-const BatchProcessor = require('../../../utils/BatchProcessor');
+import RakutenAPIClient from '../client/RakutenAPIClient';
+import RakutenProduct from '../models/Product';
+import { logger  } from '../../../utils/logger';
+import { cache  } from '../../../utils/cache';
+import { queue  } from '../../../utils/queue';
+import BatchProcessor from '../../../utils/BatchProcessor';
 
 class ProductSyncProcessor {
   constructor(config) {

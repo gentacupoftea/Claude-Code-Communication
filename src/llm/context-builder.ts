@@ -4,15 +4,51 @@ import * as ecKnowledgeBase from '../knowledge/ec-knowledge-base.json';
 import * as industryBenchmarks from '../knowledge/industry-benchmarks.json';
 import * as bestPractices from '../knowledge/best-practices.json';
 
+export interface KnowledgeCategoryData {
+  concepts?: string[];
+  formulas?: string[];
+  examples?: string[];
+  best_practices?: string[];
+  kpis?: string[];
+}
+
+export interface PracticeCategoryData {
+  quickWins?: Array<{ practice: string }>;
+  longTerm?: Array<{ practice: string }>;
+  quick_wins?: Array<{ practice: string }>;
+  advanced_strategies?: Array<{ practice: string }>;
+}
+
+export interface RelevantBenchmarks {
+  conversionRates?: {
+    overall?: unknown;
+    industry?: unknown;
+    byDevice?: unknown;
+  };
+  aov?: {
+    overall?: unknown;
+    industry?: unknown;
+    byDevice?: unknown;
+  };
+  cart_abandonment?: {
+    overall?: unknown;
+    industry?: unknown;
+  };
+  customer_lifetime_value?: {
+    industry?: unknown;
+  };
+  [key: string]: unknown;
+}
+
 export interface EnrichedContext {
-  originalContext: any;
+  originalContext: unknown;
   relevantKnowledge: {
     concepts: string[];
     formulas: string[];
     bestPractices: string[];
     kpis: string[];
   };
-  industryBenchmarks: any;
+  industryBenchmarks: RelevantBenchmarks;
   suggestedApproaches: string[];
 }
 
@@ -23,7 +59,7 @@ export class ContextBuilder {
 
   buildEnrichedContext(
     question: string,
-    baseContext: any,
+    baseContext: unknown,
     analysisType: string
   ): EnrichedContext {
     const relevantKnowledge = this.extractRelevantKnowledge(question, analysisType);
@@ -53,7 +89,7 @@ export class ContextBuilder {
     const knowledgeCategories = this.identifyRelevantCategories(question, analysisType);
     
     knowledgeCategories.forEach(category => {
-      const categoryData = (this.knowledgeBase as any)[category];
+      const categoryData = (this.knowledgeBase as Record<string, KnowledgeCategoryData>)[category];
       if (categoryData) {
         knowledge.concepts.push(...(categoryData.concepts || []));
         knowledge.formulas.push(...(categoryData.formulas || []));
@@ -99,8 +135,8 @@ export class ContextBuilder {
     return categories.length > 0 ? categories : ['sales_analysis']; // デフォルト
   }
 
-  private extractRelevantBenchmarks(question: string, context: any): any {
-    const relevantBenchmarks: any = {};
+  private extractRelevantBenchmarks(question: string, context: unknown): RelevantBenchmarks {
+    const relevantBenchmarks: RelevantBenchmarks = {};
 
     // 業界の特定
     const industry = this.detectIndustry(question, context);
@@ -145,10 +181,13 @@ export class ContextBuilder {
     return relevantBenchmarks;
   }
 
-  private detectIndustry(question: string, context: any): string | null {
+  private detectIndustry(question: string, context: unknown): string | null {
     // コンテキストから業界を検出
-    if (context?.industry) {
-      return this.normalizeIndustry(context.industry);
+    if (context && typeof context === 'object' && 'industry' in context) {
+      const industry = (context as { industry: unknown }).industry;
+      if (typeof industry === 'string') {
+        return this.normalizeIndustry(industry);
+      }
     }
 
     // 質問文から業界を推測
@@ -187,23 +226,23 @@ export class ContextBuilder {
     return normalizationMap[industry] || industry.toLowerCase();
   }
 
-  private suggestApproaches(question: string, analysisType: string): string[] {
+  private suggestApproaches(question: string, _analysisType: string): string[] {
     const approaches: string[] = [];
 
     // ベストプラクティスから関連するアプローチを抽出
     const practiceCategories = this.identifyPracticeCategories(question);
     
     practiceCategories.forEach(category => {
-      const categoryData = (this.practices as any)[category];
+      const categoryData = (this.practices as Record<string, PracticeCategoryData>)[category];
       if (categoryData) {
         // クイックウィンを優先的に提案
         if (categoryData.quick_wins) {
-          approaches.push(...categoryData.quick_wins.map((qw: any) => qw.practice));
+          approaches.push(...categoryData.quick_wins.map(qw => qw.practice));
         }
         
         // 高度な戦略も含める
         if (categoryData.advanced_strategies && question.includes('高度')) {
-          approaches.push(...categoryData.advanced_strategies.map((as: any) => as.practice));
+          approaches.push(...categoryData.advanced_strategies.map(as => as.practice));
         }
       }
     });
@@ -235,7 +274,7 @@ export class ContextBuilder {
 
   // 時系列データの文脈を構築
   buildTimeSeriesContext(
-    data: any[],
+    data: unknown[],
     period: string,
     granularity: string
   ): string {
@@ -249,11 +288,15 @@ export class ContextBuilder {
 `;
   }
 
-  private calculateTrend(data: any[]): string {
+  private calculateTrend(data: unknown[]): string {
     if (data.length < 2) return '不明';
     
-    const recent = data.slice(-5);
-    const older = data.slice(-10, -5);
+    // 数値配列にフィルタリング
+    const numericData = data.filter((item): item is number => typeof item === 'number');
+    if (numericData.length < 2) return '不明';
+    
+    const recent = numericData.slice(-5);
+    const older = numericData.slice(-10, -5);
     
     const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
     const olderAvg = older.reduce((a, b) => a + b, 0) / older.length;
@@ -267,8 +310,8 @@ export class ContextBuilder {
 
   // 競合比較の文脈を構築
   buildCompetitiveContext(
-    ownMetrics: any,
-    competitorMetrics: any[],
+    ownMetrics: unknown,
+    competitorMetrics: unknown[],
     focusAreas: string[]
   ): string {
     return `

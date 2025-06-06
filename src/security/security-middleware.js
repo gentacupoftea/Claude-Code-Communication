@@ -4,11 +4,11 @@
  * 包括的なセキュリティミドルウェアの実装
  */
 
-const helmet = require('helmet');
-const cors = require('cors');
-const { v4: uuidv4 } = require('uuid');
-const SecurityManager = require('./security-manager');
-const Joi = require('joi');
+import helmet from 'helmet';
+import cors from 'cors';
+import { v4: uuidv4  } from 'uuid';
+import _SecurityManager from './security-manager';
+import _Joi from 'joi';
 
 /**
  * セキュリティミドルウェアファクトリー
@@ -84,7 +84,7 @@ class SecurityMiddleware {
   /**
    * JWT認証ミドルウェア
    */
-  authenticate(options = {}) {
+  authenticate(_options = {}) {
     return async (req, res, next) => {
       try {
         // トークンの取得
@@ -250,7 +250,7 @@ class SecurityMiddleware {
   csrfProtection(options = {}) {
     const {
       excludePaths = [],
-      cookie = false
+      _cookie = false
     } = options;
     
     return async (req, res, next) => {
@@ -544,7 +544,7 @@ class SecurityMiddleware {
    * エラーハンドラー
    */
   errorHandler() {
-    return async (err, req, res, next) => {
+    return async (err, req, res, _next) => {
       // ログ記録
       await this.securityManager.logSecurityEvent({
         type: 'error',

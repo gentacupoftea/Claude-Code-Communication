@@ -175,8 +175,8 @@ export class ResourceMonitor extends EventEmitter {
     const metrics: PerformanceMetrics = {
       timestamp: Date.now(),
       cpuUsage: process.cpuUsage(),
-      activeHandles: (process as any)._getActiveHandles?.().length,
-      activeRequests: (process as any)._getActiveRequests?.().length
+      activeHandles: (process as NodeJS.Process & { _getActiveHandles?: () => unknown[] })._getActiveHandles?.().length || 0,
+      activeRequests: (process as NodeJS.Process & { _getActiveRequests?: () => unknown[] })._getActiveRequests?.().length || 0
     };
     
     this.performanceMetrics.push(metrics);

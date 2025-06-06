@@ -171,7 +171,7 @@ export class ServiceGateway {
         }
 
         // Add user info to request
-        (req as any).user = {
+        (req as Request & { user: { id: string; email: string; verified: boolean } }).user = {
           id: payload.sub,
           email: payload.email,
           verified: payload.email_verified,
@@ -277,8 +277,8 @@ export class ServiceGateway {
     });
   }
 
-  private async proxyRequest(req: Request, service: ServiceEndpoint): Promise<any> {
-    const axios = require('axios').default;
+  private async proxyRequest(req: Request, service: ServiceEndpoint): Promise<unknown> {
+    const axios = (await import('axios')).default;
     const urlPath = req.path.replace(`/${service.name}`, '');
     const targetUrl = `${service.url}${urlPath}`;
 
@@ -299,7 +299,7 @@ export class ServiceGateway {
     };
 
     // Retry logic
-    let lastError: any;
+    let lastError: unknown;
     for (let attempt = 0; attempt <= service.retries; attempt++) {
       try {
         const response = await axios(config);
@@ -349,11 +349,11 @@ export class ServiceGateway {
   }
 
   private async performHealthChecks(): Promise<void> {
-    const axios = require('axios').default;
+    const axios = (await import('axios')).default;
 
     for (const service of this.config.services) {
       try {
-        const response = await axios({
+        const _response = await axios({
           method: 'GET',
           url: `${service.url}${service.healthCheck}`,
           timeout: 5000,
@@ -369,8 +369,8 @@ export class ServiceGateway {
     }
   }
 
-  private getHealthStatus(): any {
-    const services: any = {};
+  private getHealthStatus(): unknown {
+    const services: unknown = {};
     let overallHealth = true;
 
     for (const service of this.config.services) {
@@ -394,7 +394,7 @@ export class ServiceGateway {
     };
   }
 
-  private async sendMetrics(data: any): Promise<void> {
+  private async sendMetrics(data: unknown): Promise<void> {
     try {
       const dataPoint = {
         interval: {
@@ -430,7 +430,7 @@ export class ServiceGateway {
     }
   }
 
-  private async getMetrics(): Promise<any> {
+  private async getMetrics(): Promise<unknown> {
     // Implement metrics collection
     // This would integrate with Cloud Monitoring API
     return {

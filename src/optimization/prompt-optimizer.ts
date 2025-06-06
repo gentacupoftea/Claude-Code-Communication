@@ -3,11 +3,23 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
+interface PromptTemplate {
+  systemPrompt?: string;
+  responseFormat?: string;
+  examples?: string[];
+  context?: string;
+  systemInstruction?: string;
+  examplePairs?: unknown[];
+  outputGuidelines?: string;
+  systemMessage?: string;
+  [key: string]: unknown;
+}
+
 interface OptimizationResult {
   provider: string;
   category: string;
-  originalPrompt: any;
-  optimizedPrompt: any;
+  originalPrompt: PromptTemplate;
+  optimizedPrompt: PromptTemplate;
   improvements: string[];
   testResults?: {
     before: number;
@@ -20,7 +32,7 @@ export class PromptOptimizer {
   private optimizationHistory: OptimizationResult[] = [];
 
   async optimizePrompts(
-    failureAnalysis: any,
+    failureAnalysis: unknown,
     targetCategories?: string[]
   ): Promise<void> {
     console.log('\n🔧 プロンプト最適化開始\n');
@@ -57,7 +69,7 @@ export class PromptOptimizer {
   private async optimizeProviderPrompt(
     provider: string,
     category: string,
-    failureAnalysis: any
+    failureAnalysis: unknown
   ): Promise<OptimizationResult | null> {
     // プロンプトファイルの読み込み
     const promptPath = path.join(
@@ -102,12 +114,12 @@ export class PromptOptimizer {
   }
 
   private applyOptimizations(
-    prompt: any,
+    prompt: PromptTemplate,
     provider: string,
     category: string,
-    failureAnalysis: any
-  ): any {
-    const optimized = JSON.parse(JSON.stringify(prompt)); // Deep copy
+    failureAnalysis: unknown
+  ): PromptTemplate {
+    const optimized = JSON.parse(JSON.stringify(prompt)) as PromptTemplate; // Deep copy
 
     // プロバイダー固有の最適化
     switch (provider) {
@@ -123,10 +135,10 @@ export class PromptOptimizer {
   }
 
   private optimizeClaudePrompt(
-    prompt: any,
+    prompt: PromptTemplate,
     category: string,
-    failureAnalysis: any
-  ): any {
+    _failureAnalysis: unknown
+  ): PromptTemplate {
     // システムプロンプトの強化
     if (prompt.systemPrompt) {
       // より具体的な指示を追加
@@ -167,10 +179,10 @@ export class PromptOptimizer {
   }
 
   private optimizeGeminiPrompt(
-    prompt: any,
-    category: string,
-    failureAnalysis: any
-  ): any {
+    prompt: PromptTemplate,
+    _category: string,
+    _failureAnalysis: unknown
+  ): PromptTemplate {
     // 創造性を引き出しつつ、実用性を確保
     if (prompt.systemInstruction) {
       prompt.systemInstruction = `${prompt.systemInstruction}
@@ -201,10 +213,10 @@ export class PromptOptimizer {
   }
 
   private optimizeGPT4Prompt(
-    prompt: any,
-    category: string,
-    failureAnalysis: any
-  ): any {
+    prompt: PromptTemplate,
+    _category: string,
+    _failureAnalysis: unknown
+  ): PromptTemplate {
     // 分析的な深さを維持しつつ、実用性を向上
     if (prompt.systemMessage) {
       prompt.systemMessage = `${prompt.systemMessage}
@@ -219,7 +231,7 @@ export class PromptOptimizer {
     // ユーザーメッセージビルダーの改善
     if (prompt.userMessageBuilder && typeof prompt.userMessageBuilder === 'function') {
       const originalBuilder = prompt.userMessageBuilder;
-      prompt.userMessageBuilder = (context: any) => {
+      prompt.userMessageBuilder = (context: unknown) => {
         const baseMessage = originalBuilder(context);
         return `${baseMessage}
 
@@ -235,8 +247,8 @@ export class PromptOptimizer {
   }
 
   private identifyImprovements(
-    original: any,
-    optimized: any
+    original: unknown,
+    optimized: unknown
   ): string[] {
     const improvements: string[] = [];
 
@@ -355,10 +367,10 @@ export class PromptOptimizer {
 
   // A/Bテスト用のプロンプトバリエーション生成
   generateABTestVariants(
-    basePrompt: any,
+    basePrompt: unknown,
     testFactors: string[]
-  ): any[] {
-    const variants: any[] = [basePrompt];
+  ): unknown[] {
+    const variants: unknown[] = [basePrompt];
 
     testFactors.forEach(factor => {
       switch (factor) {
@@ -379,7 +391,7 @@ export class PromptOptimizer {
     return variants;
   }
 
-  private adjustTone(prompt: any, tone: 'formal' | 'casual'): any {
+  private adjustTone(prompt: unknown, tone: 'formal' | 'casual'): unknown {
     const adjusted = JSON.parse(JSON.stringify(prompt));
     
     if (tone === 'formal') {
@@ -397,7 +409,7 @@ export class PromptOptimizer {
     return adjusted;
   }
 
-  private adjustStructure(prompt: any, style: 'detailed' | 'concise'): any {
+  private adjustStructure(prompt: unknown, style: 'detailed' | 'concise'): unknown {
     const adjusted = JSON.parse(JSON.stringify(prompt));
     
     if (style === 'detailed' && adjusted.responseFormat) {
@@ -409,7 +421,7 @@ export class PromptOptimizer {
     return adjusted;
   }
 
-  private addExamples(prompt: any): any {
+  private addExamples(prompt: unknown): unknown {
     const adjusted = JSON.parse(JSON.stringify(prompt));
     
     if (!adjusted.examples) {

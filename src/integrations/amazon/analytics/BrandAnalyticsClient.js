@@ -3,9 +3,9 @@
  * ブランド分析・アクセスデータクライアント
  */
 
-const AmazonAPIClient = require('../client/AmazonAPIClient');
-const { logger } = require('../../../utils/logger');
-const { cache } = require('../../../utils/cache');
+import AmazonAPIClient from '../client/AmazonAPIClient';
+import { logger  } from '../../../utils/logger';
+import { cache  } from '../../../utils/cache';
 
 class BrandAnalyticsClient extends AmazonAPIClient {
   constructor(config) {

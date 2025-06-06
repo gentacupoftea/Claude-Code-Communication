@@ -8,12 +8,12 @@ interface TestResult {
   scores?: {
     overall: number;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface ComparisonResult {
-  baseline: any;
-  improved: any;
+  baseline: unknown;
+  improved: unknown;
   improvements: {
     overallPassRate: number;
     categoryImprovements: Record<string, number>;
@@ -51,9 +51,11 @@ export class ResultsComparator {
     };
   }
 
-  private calculateImprovements(baseline: any, improved: any): ComparisonResult['improvements'] {
-    const baselineMetrics = baseline.aggregateMetrics;
-    const improvedMetrics = improved.aggregateMetrics;
+  private calculateImprovements(baseline: unknown, improved: unknown): ComparisonResult['improvements'] {
+    const baselineData = baseline as any;
+    const improvedData = improved as any;
+    const baselineMetrics = baselineData.aggregateMetrics;
+    const improvedMetrics = improvedData.aggregateMetrics;
 
     // 全体的な合格率の改善
     const overallPassRate = improvedMetrics.passRate - baselineMetrics.passRate;
@@ -90,15 +92,20 @@ export class ResultsComparator {
     };
   }
 
-  private identifyRegressions(baseline: any, improved: any): string[] {
+  private identifyRegressions(baseline: unknown, improved: unknown): string[] {
     const regressions: string[] = [];
+    const baselineData = baseline as any;
+    const improvedData = improved as any;
     
     // 個別の質問で後退したものを特定
     const baselineResults = new Map(
-      baseline.results.map((r: any) => [r.questionId, r])
+      baselineData.results.map((r: unknown) => {
+        const result = r as any;
+        return [result.questionId, result];
+      })
     );
     
-    improved.results.forEach((improvedResult: TestResult) => {
+    improvedData.results.forEach((improvedResult: TestResult) => {
       const baselineResult = baselineResults.get(improvedResult.questionId) as TestResult;
       if (baselineResult && improvedResult.scores?.overall && baselineResult.scores?.overall && 
           improvedResult.scores.overall < baselineResult.scores.overall) {
@@ -203,19 +210,19 @@ export class ResultsComparator {
       '',
       '### ベースライン統計',
       '```json',
-      JSON.stringify(comparison.baseline.aggregateMetrics, null, 2),
+      JSON.stringify((comparison.baseline as any).aggregateMetrics, null, 2),
       '```',
       '',
       '### 改善後統計',
       '```json',
-      JSON.stringify(comparison.improved.aggregateMetrics, null, 2),
+      JSON.stringify((comparison.improved as any).aggregateMetrics, null, 2),
       '```',
       '',
       '## 個別質問の改善度TOP10',
-      ...this.getTopImprovements(comparison.baseline.results, comparison.improved.results),
+      ...this.getTopImprovements((comparison.baseline as any).results, (comparison.improved as any).results),
       '',
       '## 改善が必要な質問TOP10',
-      ...this.getBottomPerformers(comparison.improved.results)
+      ...this.getBottomPerformers((comparison.improved as any).results)
     ].join('\\n');
 
     await fs.writeFile(outputPath, report);
@@ -223,23 +230,27 @@ export class ResultsComparator {
   }
 
   private getTopImprovements(
-    baselineResults: any[],
-    improvedResults: any[]
+    baselineResults: unknown[],
+    improvedResults: unknown[]
   ): string[] {
     const baselineMap = new Map(
-      baselineResults.map(r => [r.questionId, r])
+      baselineResults.map(r => {
+        const result = r as any;
+        return [result.questionId, result];
+      })
     );
 
     const improvements = improvedResults
       .map(improved => {
-        const baseline = baselineMap.get(improved.questionId);
+        const improvedResult = improved as any;
+        const baseline = baselineMap.get(improvedResult.questionId);
         if (!baseline) return null;
         
         return {
-          questionId: improved.questionId,
-          category: improved.category,
-          improvement: (improved.scores?.overall || 0) - (baseline.scores?.overall || 0),
-          newScore: improved.scores?.overall || 0
+          questionId: improvedResult.questionId,
+          category: improvedResult.category,
+          improvement: (improvedResult.scores?.overall || 0) - (baseline.scores?.overall || 0),
+          newScore: improvedResult.scores?.overall || 0
         };
       })
       .filter(Boolean)
@@ -252,12 +263,12 @@ export class ResultsComparator {
     );
   }
 
-  private getBottomPerformers(results: any[]): string[] {
+  private getBottomPerformers(results: unknown[]): string[] {
     const bottom = results
-      .sort((a, b) => (a.scores?.overall || 0) - (b.scores?.overall || 0))
+      .sort((a: any, b: any) => (a.scores?.overall || 0) - (b.scores?.overall || 0))
       .slice(0, 10);
 
-    return bottom.map((item, index) => 
+    return bottom.map((item: any, index) => 
       `${index + 1}. ${item.category} (${item.questionId}): ` +
       `${((item.scores?.overall || 0) * 100).toFixed(1)}% ${item.passed ? '' : '❌'}`
     );

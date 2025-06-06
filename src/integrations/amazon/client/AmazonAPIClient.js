@@ -3,12 +3,12 @@
  * Selling Partner APIクライアント実装
  */
 
-const axios = require('axios');
-const axiosRetry = require('axios-retry');
-const AmazonAuth = require('../auth/AmazonAuth');
-const { logger } = require('../../../utils/logger');
-const { performanceMonitor } = require('../../../utils/performance');
-const ErrorHandler = require('../utils/ErrorHandler');
+import axios from 'axios';
+import axiosRetry from 'axios-retry';
+import AmazonAuth from '../auth/AmazonAuth';
+import { logger  } from '../../../utils/logger';
+import { performanceMonitor  } from '../../../utils/performance';
+import ErrorHandler from '../utils/ErrorHandler';
 
 class AmazonAPIClient {
   constructor(config) {

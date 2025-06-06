@@ -50,7 +50,7 @@ export function renderWithProviders(
     forceRedirect: false
   };
 
-  function Wrapper({ children }: PropsWithChildren<{}>): JSX.Element {
+  function Wrapper({ children }: PropsWithChildren): JSX.Element {
     return (
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
@@ -111,7 +111,7 @@ export function renderWithBrowserRouter(
     forceRedirect: false
   };
 
-  function Wrapper({ children }: PropsWithChildren<{}>): JSX.Element {
+  function Wrapper({ children }: PropsWithChildren): JSX.Element {
     return (
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>

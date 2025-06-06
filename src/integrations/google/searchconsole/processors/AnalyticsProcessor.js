@@ -6,11 +6,12 @@
  * @requires events
  */
 
-const { EventEmitter } = require('events');
-const logger = require('../../../utils/logger').child({ module: 'GSCAnalyticsProcessor' });
-const QueryData = require('../models/QueryData');
-const PerformanceData = require('../models/PerformanceData');
-const cache = require('../../../utils/cache');
+import { EventEmitter  } from 'events';
+import { logger } from '../../../utils/logger';
+const _analyticsLogger = logger.child({ module: 'GSCAnalyticsProcessor' });
+import QueryData from '../models/QueryData';
+import PerformanceData from '../models/PerformanceData';
+import cache from '../../../utils/cache';
 
 /**
  * SEO分析プロセッサークラス
@@ -56,11 +57,11 @@ class AnalyticsProcessor extends EventEmitter {
    */
   async performComprehensiveAnalysis(params) {
     const {
-      siteUrl,
-      startDate,
-      endDate,
-      previousStartDate,
-      previousEndDate
+      _siteUrl,
+      _startDate,
+      _endDate,
+      _previousStartDate,
+      _previousEndDate
     } = params;
     
     try {
