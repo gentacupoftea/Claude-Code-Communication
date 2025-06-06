@@ -36,12 +36,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          # ボット名をリポジトリ変数から取得し、なければ'claude-bot'をデフォルト値とする
+          BOT_NAME: ${{ vars.AI_BOT_NAME || 'claude-bot' }}
         run: |
-          # 注意: botの正確なアカウント名が異なる場合は'claude-bot'などを指定してください
-          COMMENT_BODY=$(gh pr view $PR_NUMBER --json comments --jq '.comments[] | select(.author.login == "claude-bot") | .body' | tail -n 1)
+          # スクリプトがエラーで停止するように設定を追加
+          set -euo pipefail
+
+          # jqに安全に変数を渡すために--argを使用
+          COMMENT_BODY=$(gh pr view $PR_NUMBER --json comments --jq --arg BOT_NAME "$BOT_NAME" '.comments[] | select(.author.login == $BOT_NAME) | .body' | tail -n 1)
           
           if [ -z "$COMMENT_BODY" ]; then
-            echo "❌ Could not find a review comment from the AI bot."
+            echo "❌ Could not find a review comment from the AI bot ($BOT_NAME)."
             exit 1
           fi
 
@@ -61,9 +66,11 @@ jobs:
     # 【最重要】AIレビューと、"必須"のCIジョブがすべて完了するのを待つ
     needs: 
       - ai_review_gatekeeper
-      # 必須のCIジョブ名（実際のワークフローより）
-      - frontend-validation
-      - e2e-tests
+      # --- ▼ ここに必須のCIジョブ名を追加してください ▼ ---
+      # 例：E2EテストやLintチェックなど。実際のジョブ名に合わせてください。
+      # - 'E2E Validation / e2e-tests'
+      # - 'PR Validation / frontend-validation'
+      # --- ▲ ここまで ▲ ---
 
     # 先行するすべてのジョブが成功した場合のみ、このジョブを実行
     if: success()
