@@ -12,7 +12,7 @@ export default function SettingsPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { logout } = useAuth();
   const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(true);
+  const [_darkMode, _setDarkMode] = useState(true);
 
   return (
     <ProtectedRoute>
@@ -215,8 +215,12 @@ export default function SettingsPage() {
                         className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-l-lg focus:outline-none focus:border-[#1ABC9C] transition-colors"
                         defaultValue="sk-xxxxxxxxxxxxxxxx"
                         readOnly
+                        data-testid="api-key-input"
                       />
-                      <button className="px-4 py-2 bg-[#1ABC9C] rounded-r-lg hover:bg-[#16A085] transition-colors">
+                      <button 
+                        className="px-4 py-2 bg-[#1ABC9C] rounded-r-lg hover:bg-[#16A085] transition-colors"
+                        data-testid="save-api-key-button"
+                      >
                         再生成
                       </button>
                     </div>

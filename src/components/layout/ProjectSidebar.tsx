@@ -326,6 +326,7 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                 onClick={logout}
                 className="w-full flex items-center px-3 py-2 text-gray-300 hover:text-white
                          hover:bg-white/5 rounded-lg transition-colors"
+                data-testid="logout-button"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 ログアウト
@@ -344,6 +345,7 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                 onClick={logout}
                 className="w-full p-3 hover:bg-white/10 rounded-lg transition-colors"
                 title="ログアウト"
+                data-testid="logout-button"
               >
                 <LogOut className="w-5 h-5 text-gray-400 mx-auto" />
               </button>

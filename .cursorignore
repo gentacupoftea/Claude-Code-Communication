@@ -1,0 +1,47 @@
+# Cursor AI ignore file
+# This file tells Cursor which files to ignore when indexing
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+.nyc_output/
+
+# Production builds
+dist/
+build/
+out/
+.next/
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env*.local
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS Files
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Keep configuration files
+!.cursorrules
+!.claude-code-config.json
+!CLAUDE.md

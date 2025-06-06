@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
+// import { motion } from 'framer-motion';
 import { 
   BarChart3, 
   Calendar, 
@@ -93,13 +93,11 @@ export const WidgetLibrary: React.FC<WidgetLibraryProps> = ({ onDragStart, gener
 
       <div className="grid grid-cols-2 gap-3">
         {widgetTemplates.map((template) => (
-          <motion.div
+          <div
             key={template.id}
             draggable
-            onDragStart={(e) => handleDragStart(e as any, template)}
-            className="group cursor-grab active:cursor-grabbing bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg p-3 transition-all duration-200 hover:scale-105"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            onDragStart={(e) => handleDragStart(e, template)}
+            className="group cursor-grab active:cursor-grabbing bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg p-3 transition-all duration-200 hover:scale-105 hover:animate-pulse"
           >
             <div className="flex items-center space-x-2 mb-2">
               <div className="text-[#1ABC9C]">
@@ -111,7 +109,7 @@ export const WidgetLibrary: React.FC<WidgetLibraryProps> = ({ onDragStart, gener
             <p className="text-xs text-gray-400">
               {template.defaultSize.width}×{template.defaultSize.height}
             </p>
-          </motion.div>
+          </div>
         ))}
       </div>
 
@@ -124,13 +122,11 @@ export const WidgetLibrary: React.FC<WidgetLibraryProps> = ({ onDragStart, gener
           </div>
           <div className="grid grid-cols-1 gap-3">
             {generatedWidgets.map((widget) => (
-              <motion.div
+              <div
                 key={widget.id}
                 draggable
-                onDragStart={(e) => handleDragStart(e as any, widget)}
-                className="group cursor-grab active:cursor-grabbing bg-gradient-to-r from-[#1ABC9C]/20 to-[#3498DB]/20 border border-[#1ABC9C]/30 rounded-lg p-3 transition-all duration-200 hover:scale-105"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                onDragStart={(e) => handleDragStart(e, widget)}
+                className="group cursor-grab active:cursor-grabbing bg-gradient-to-r from-[#1ABC9C]/20 to-[#3498DB]/20 border border-[#1ABC9C]/30 rounded-lg p-3 transition-all duration-200 hover:scale-105 hover:animate-pulse"
               >
                 <div className="flex items-center space-x-2 mb-2">
                   <Sparkles className="w-4 h-4 text-[#1ABC9C]" />
@@ -140,7 +136,7 @@ export const WidgetLibrary: React.FC<WidgetLibraryProps> = ({ onDragStart, gener
                 <p className="text-xs text-[#1ABC9C]">
                   AI生成 • {widget.defaultSize.width}×{widget.defaultSize.height}
                 </p>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>

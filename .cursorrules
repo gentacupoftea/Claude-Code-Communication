@@ -1,0 +1,74 @@
+# 開発憲法 - Claude Code Action対応版
+
+このファイルは、Claude Code ActionおよびCursor AIに開発ガイドラインを適用します。
+
+## 🚀 必須初期動作
+
+AIアシスタントは必ず以下を実行してください：
+
+1. **開発憲法の遵守**: `docs/prompts/project_guidelines/comprehensive_development_guidelines.md`の内容を厳守
+2. **品質保証の3つの柱**を常に意識：
+   - 開発者責務（PRチェックリスト遵守）
+   - CI自動検証（全テストパス必須）
+   - AI開発支援（最高品質コード生成）
+
+## ⚠️ 絶対的禁止事項
+
+- `any`型の使用禁止
+- `@ts-ignore`による型エラー無視禁止
+- mainブランチへの直接コミット禁止
+- CI失敗状態でのマージ禁止
+
+## 🔐 大規模変更の承認義務
+
+以下の変更は**事前にげんたさんの承認が必須**：
+- ファイルの広範囲削除
+- 複数ファイルの大規模リファクタリング
+- プロジェクト構造の変更
+
+## 💻 コード生成規則
+
+### TypeScript
+```typescript
+// ❌ 禁止
+const data: any = fetchData();
+// @ts-ignore
+const result = processData(data);
+
+// ✅ 推奨
+interface DataType {
+  id: string;
+  value: number;
+}
+const data: DataType = fetchData();
+const result = processData(data);
+```
+
+### ブランチ戦略
+```bash
+# ❌ 禁止
+git checkout main
+git commit -m "直接コミット"
+
+# ✅ 推奨
+git checkout -b feature/new-functionality
+git commit -m "feat: 新機能の実装"
+```
+
+## 🤖 AIレビュー対応
+
+PRに`@claude`メンションがあった場合：
+1. 開発憲法に基づく厳格なレビュー実施
+2. 具体的な修正提案を含むフィードバック
+3. セキュリティ、パフォーマンス、保守性を重視
+
+## 📋 品質チェックリスト
+
+すべてのコード生成時に確認：
+- [ ] TypeScript型定義が完全か
+- [ ] テストコードが含まれているか
+- [ ] ESLintエラーがないか
+- [ ] 既存コードとの整合性があるか
+- [ ] ドキュメントが更新されているか
+
+このルールセットにより、Claude Code Actionは常に高品質なコードを生成します。

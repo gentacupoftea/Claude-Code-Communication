@@ -1,4 +1,5 @@
 // Cypress E2E support file
+import 'cypress-plugin-tab'
 // Import commands.ts using ES2015 syntax:
 import './commands'
 import './error-simulation'

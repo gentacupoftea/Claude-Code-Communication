@@ -1,0 +1,55 @@
+{
+  "projectName": "conea-integration",
+  "version": "1.0.0",
+  "initializationSequence": {
+    "enabled": true,
+    "steps": [
+      {
+        "action": "readFile",
+        "path": "docs/prompts/project_guidelines/comprehensive_development_guidelines.md",
+        "description": "Load comprehensive development guidelines"
+      },
+      {
+        "action": "announce",
+        "message": "開発憲法を読み込みました。",
+        "required": true
+      },
+      {
+        "action": "applyGuidelines",
+        "strictMode": true
+      }
+    ]
+  },
+  "codeQualityRules": {
+    "typescript": {
+      "strictTypeChecking": true,
+      "noAnyType": true,
+      "noTsIgnore": true
+    },
+    "branching": {
+      "directMainCommits": false,
+      "featureBranchPrefix": "feature/",
+      "requireCIPass": true
+    },
+    "testing": {
+      "requireTestsForChanges": true,
+      "unitTestCoverage": 80
+    }
+  },
+  "approvalProcess": {
+    "largeChanges": {
+      "requireApproval": true,
+      "approver": "gentacupoftea",
+      "criteria": [
+        "Wide-range file deletion",
+        "Large-scale refactoring across multiple files",
+        "Project structure changes"
+      ]
+    }
+  },
+  "aiReviewSystem": {
+    "triggerMention": "@claude",
+    "autoReviewEnabled": true,
+    "guidelineCompliance": "strict"
+  }
+}

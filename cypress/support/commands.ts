@@ -2,9 +2,11 @@
 
 // Custom Cypress commands for Conea AI Platform E2E tests
 
+// Add tab command support
 declare global {
   namespace Cypress {
     interface Chainable {
+      tab(options?: { shift?: boolean }): Chainable<JQuery<HTMLElement>>
       // Authentication commands
       login(email?: string, password?: string): Chainable<void>
       logout(): Chainable<void>
@@ -57,7 +59,7 @@ Cypress.Commands.add('login', (email = 'test@example.com', password = 'password1
   cy.getByTestId('password-input').type(password)
   cy.getByTestId('login-button').click()
   
-  cy.waitForApiResponse('@loginRequest', 10000)
+  // Wait for navigation instead of API response in demo mode
   cy.url().should('include', '/dashboard')
   cy.waitForPageLoad()
 })
@@ -123,7 +125,8 @@ Cypress.Commands.add('submitForm', (formSelector = 'form') => {
 // API commands
 Cypress.Commands.add('mockApiResponse', (endpoint: string, response: any, alias?: string) => {
   const aliasName = alias || `${endpoint.replace(/[^a-zA-Z0-9]/g, '')}_success`
-  cy.intercept('GET', `**/${endpoint}`, {
+  // Support both GET and POST requests
+  cy.intercept('*', `**/${endpoint}`, {
     statusCode: 200,
     body: response
   }).as(aliasName)
@@ -131,7 +134,8 @@ Cypress.Commands.add('mockApiResponse', (endpoint: string, response: any, alias?
 
 Cypress.Commands.add('mockApiError', (endpoint: string, statusCode: number, error: any, alias?: string) => {
   const aliasName = alias || `${endpoint.replace(/[^a-zA-Z0-9]/g, '')}_error`
-  cy.intercept('GET', `**/${endpoint}`, {
+  // Support both GET and POST requests
+  cy.intercept('*', `**/${endpoint}`, {
     statusCode,
     body: error
   }).as(aliasName)
@@ -190,5 +194,16 @@ Cypress.Commands.add('restoreAppState', (stateName: string) => {
     Object.entries(state.sessionStorage).forEach(([key, value]) => {
       window.sessionStorage.setItem(key, value as string)
     })
+  })
+})
+
+// Tab command implementation
+Cypress.Commands.add('tab', { prevSubject: 'optional' }, (subject, options = {}) => {
+  const el = subject ? cy.wrap(subject) : cy.focused()
+  
+  return el.trigger('keydown', {
+    keyCode: 9,
+    which: 9,
+    shiftKey: options.shift || false
   })
 })

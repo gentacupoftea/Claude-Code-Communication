@@ -92,6 +92,7 @@ export default function LoginPage() {
                   placeholder="your@email.com"
                   required
                   aria-label="メールアドレス"
+                  data-testid="email-input"
                 />
               </div>
             </div>
@@ -110,6 +111,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   required
                   aria-label="パスワード"
+                  data-testid="password-input"
                 />
               </div>
             </div>
@@ -130,6 +132,7 @@ export default function LoginPage() {
                 href="#" 
                 className="text-sm text-[#1ABC9C] hover:underline focus:outline-none focus:ring-2 focus:ring-[#1ABC9C] focus:ring-offset-2 focus:ring-offset-gray-900 rounded px-1 py-1"
                 aria-label="パスワードリセットページへ移動"
+                data-testid="forgot-password-link"
               >
                 パスワードを忘れた？
               </Link>
@@ -140,6 +143,7 @@ export default function LoginPage() {
                 className="bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-red-200 text-sm"
                 role="alert"
                 aria-live="polite"
+                data-testid="error-message"
               >
                 {error}
               </div>
@@ -150,9 +154,10 @@ export default function LoginPage() {
               disabled={isLoading}
               className="w-full bg-[#1ABC9C] py-3 rounded-lg font-semibold hover:bg-[#16A085] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#1ABC9C] focus:ring-offset-2 focus:ring-offset-gray-900"
               aria-label={isLoading ? "ログイン処理中..." : "ログインボタン"}
+              data-testid="login-button"
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" data-testid="loading-spinner" />
               ) : (
                 <>
                   ログイン
@@ -166,7 +171,7 @@ export default function LoginPage() {
             <p className="text-gray-400">
               アカウントをお持ちでない方は
             </p>
-            <Link href="#" className="text-[#1ABC9C] hover:underline">
+            <Link href="#" className="text-[#1ABC9C] hover:underline" data-testid="signup-link">
               新規登録はこちら
             </Link>
           </div>

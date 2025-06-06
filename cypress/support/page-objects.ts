@@ -158,7 +158,7 @@ export class MultiLLMChatPage extends BasePage {
   }
   
   visit(): void {
-    super.visit('/multillm-chat')
+    super.visit('/dashboard')
   }
   
   selectProvider(provider: 'openai' | 'anthropic' | 'google'): void {
@@ -278,7 +278,7 @@ export class APISettingsPage extends BasePage {
   }
   
   visit(): void {
-    super.visit('/settings/api')
+    super.visit('/settings')
   }
   
   addApiKey(provider: string, apiKey: string): void {

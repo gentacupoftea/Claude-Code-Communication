@@ -26,8 +26,33 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+      - name: Build project
+        run: npm run build
+
+      - name: Verify Cypress
+        run: npx cypress verify
+
+      - name: Start server
+        run: npm run start &
+        env:
+          PORT: 3000
+
+      - name: Wait for server
+        run: |
+          echo "Waiting for server to start..."
+          timeout=60
+          while ! curl -s http://localhost:3000 > /dev/null; do
+            timeout=$((timeout - 1))
+            if [ $timeout -eq 0 ]; then
+              echo "Server failed to start"
+              exit 1
+            fi
+            echo "Waiting for server... ($timeout seconds remaining)"
+            sleep 1
+          done
+          echo "Server is ready!"
 
       - name: Run E2E tests
-        run: npx playwright test
+        run: npm run cypress:run
+        env:
+          CYPRESS_RECORD: false

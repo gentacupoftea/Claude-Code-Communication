@@ -1,0 +1,37 @@
+name: Claude PR Reviewer
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  claude-review:
+    # PRのコメントで、Bot以外のユーザーが @claude とメンションした場合のみ実行
+    if: |
+      github.event.issue.pull_request &&
+      github.event.sender.type != 'Bot' &&
+      contains(github.event.comment.body, '@claude')
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write       # コードのチェックアウトと修正提案のため
+      pull-requests: write  # PRへのコメントのため
+      issues: write         # Issue(PR)コメントの読み書きのため
+      id-token: write       # OAuth認証のため
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+            # PRブランチの全履歴を取得するため
+            fetch-depth: 0
+
+      - name: Run Claude Code Review
+        id: claude
+        uses: gentacupoftea/claude-code-action@main
+        with:
+          use_oauth: 'true'
+          claude_access_token: ${{ secrets.CLAUDE_ACCESS_TOKEN }}
+          claude_refresh_token: ${{ secrets.CLAUDE_REFRESH_TOKEN }}
+          claude_expires_at: ${{ secrets.CLAUDE_EXPIRES_AT }}
+          # system_prompt は不要！エディタ側の設定で読み込まれるため 

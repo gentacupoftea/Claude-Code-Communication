@@ -274,7 +274,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
 
       {/* メッセージエリア */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4" data-testid="chat-messages">
         <AnimatePresence>
           {messages.map((message) => (
             <motion.div
@@ -396,6 +396,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 pr-12 text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-[#1ABC9C] backdrop-blur-lg"
               rows={1}
               style={{ minHeight: '44px', maxHeight: '120px' }}
+              data-testid="chat-input"
             />
             {enableFileUpload && (
               <button
@@ -418,6 +419,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             onClick={handleSendMessage}
             disabled={!inputText.trim() || isLoading}
             className="bg-[#1ABC9C] hover:bg-[#16A085] disabled:bg-gray-600 disabled:cursor-not-allowed p-3 rounded-lg transition-colors"
+            data-testid="send-message-button"
           >
             <Send className="w-5 h-5 text-white" />
           </button>
