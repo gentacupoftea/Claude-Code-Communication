@@ -3,16 +3,16 @@
 
 # Dependencies
 node_modules/
+dist/
+build/
+coverage/
+*.lock
+
+# Testing
 .pnp
 .pnp.js
 
-# Testing
-coverage/
-.nyc_output/
-
 # Production builds
-dist/
-build/
 out/
 .next/
 
@@ -45,3 +45,33 @@ Thumbs.db
 !.cursorrules
 !.claude-code-config.json
 !CLAUDE.md
+
+# Additional files and directories
+*.env
+*.db
+*.sqlite3
+*.bak
+*.swp
+*.zip
+*.tar.gz
+
+# Logs
+logs/
+
+# Deployment artifacts
+deploy_artifacts/
+
+# Firebase
+firebase-12ed7a-correct/
+
+# Public
+public/
+
+# Reports
+reports/
+
+# Test results
+test_results/
+
+# Tests temporary
+tests-temp/
