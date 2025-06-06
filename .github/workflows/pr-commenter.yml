@@ -13,6 +13,7 @@ jobs:
       - name: 'Comment @claude to trigger review'
         uses: peter-evans/create-or-update-comment@v4
         with:
+          token: ${{ secrets.GENTA_PAT }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
             @claude review requested.
