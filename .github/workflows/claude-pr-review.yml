@@ -26,11 +26,12 @@ jobs:
 
       - name: 'Claude Review Action'
         uses: zbeekman/claude-pr-review-action@v1
+        env:
+          # 既存のアクセストークンを、Actionが要求するAPIキーとして渡す
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_ACCESS_TOKEN }}
         with:
           # GitHubコンテキストからPR番号を自動で取得
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # AnthropicのAPIキーをシークレットから読み込む
-          CLAUDE_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           # レビューの指針となるガイドラインファイルのパス
           PROMPT_FILE_PATH: 'docs/prompts/project_guidelines/comprehensive_development_guidelines.md'
           # レビュー対象のファイル拡張子を指定
