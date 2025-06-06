@@ -1,37 +1,39 @@
-name: Claude PR Reviewer
+name: 'Claude PR Reviewer'
+
 on:
   issue_comment:
     types: [created]
 
 jobs:
-  claude-review:
-    # PRのコメントで、Bot以外のユーザーが @claude とメンションした場合のみ実行
-    if: |
-      github.event.issue.pull_request &&
-      github.event.sender.type != 'Bot' &&
-      contains(github.event.comment.body, '@claude')
-
+  review:
+    # コメントがPRに対するもので、かつ内容に「@claude」が含まれている場合のみジョブを実行
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '@claude')
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: write       # コードのチェックアウトと修正提案のため
-      pull-requests: write  # PRへのコメントのため
-      issues: write         # Issue(PR)コメントの読み書きのため
-      id-token: write       # OAuth認証のため
-
     steps:
-      - name: Checkout repository
+      - name: 'Checkout code'
         uses: actions/checkout@v4
         with:
-            # PRブランチの全履歴を取得するため
-            fetch-depth: 0
+          # PRのブランチをチェックアウトする
+          ref: ${{ github.event.issue.pull_request.head.ref }}
+          # 履歴をすべて取得して差分比較を可能にする
+          fetch-depth: 0 
 
-      - name: Run Claude Code Review
-        id: claude
-        uses: gentacupoftea/claude-code-action@main
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
         with:
-          use_oauth: 'true'
-          claude_access_token: ${{ secrets.CLAUDE_ACCESS_TOKEN }}
-          claude_refresh_token: ${{ secrets.CLAUDE_REFRESH_TOKEN }}
-          claude_expires_at: ${{ secrets.CLAUDE_EXPIRES_AT }}
-          # system_prompt は不要！エディタ側の設定で読み込まれるため 
+          node-version: '20'
+
+      - name: 'Claude Review Action'
+        uses: zbeekman/claude-pr-review-action@v1
+        with:
+          # GitHubコンテキストからPR番号を自動で取得
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # AnthropicのAPIキーをシークレットから読み込む
+          CLAUDE_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # レビューの指針となるガイドラインファイルのパス
+          PROMPT_FILE_PATH: 'docs/prompts/project_guidelines/comprehensive_development_guidelines.md'
+          # レビュー対象のファイル拡張子を指定
+          INCLUDE_GLOBS: |
+            src/**/*.{ts,tsx,js,jsx}
+            *.{js,ts,json}
