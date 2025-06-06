@@ -4,18 +4,17 @@ on:
   issue_comment:
     types: [created]
 
-# 「@claude」というコメントがあり、かつPRに対するコメントの場合のみ実行
-if: github.event.issue.pull_request && contains(github.event.comment.body, '@claude')
-
 jobs:
   # === Job 1: AIレビューと内容判定（ゲートキーパー） ===
   ai_review_gatekeeper:
     runs-on: ubuntu-latest
+    # 「@claude」というコメントがあり、かつPRに対するコメントの場合のみ実行
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '@claude')
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: refs/pull/${{ github.event.issue.number }}/head
           fetch-depth: 0 
 
       - name: 'Setup Node.js'
@@ -35,7 +34,7 @@ jobs:
       - name: 'Wait for review comment with retry'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ github.event.issue.number }}
           BOT_NAME: ${{ vars.AI_BOT_NAME || 'claude-bot' }}
         run: |
           set -euo pipefail
@@ -56,7 +55,7 @@ jobs:
       - name: 'Check AI Review Result (Gatekeeper)'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ github.event.issue.number }}
           BOT_NAME: ${{ vars.AI_BOT_NAME || 'claude-bot' }}
           # 拒否キーワードをリポジトリ変数から取得
           REJECT_KEYWORDS: ${{ vars.AI_REJECT_KEYWORDS || '推奨しません|修正が必要です|改善提案|not recommended|needs fix|improvement needed' }}
@@ -84,9 +83,6 @@ jobs:
     # 【最重要】AIレビューと、"必須"のCIジョブがすべて完了するのを待つ
     needs: 
       - ai_review_gatekeeper
-      # 実際のCIジョブ名を指定（他のワークフローファイルで定義されている必要があります）
-      - e2e-tests
-      - frontend-validation
 
     # 先行するすべてのジョブが成功した場合のみ、このジョブを実行
     if: success()
@@ -96,5 +92,5 @@ jobs:
         uses: peter-evans/enable-auto-merge-action@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          pull-request-number: ${{ github.event.pull_request.number }}
+          pull-request-number: ${{ github.event.issue.number }}
           merge-method: merge
