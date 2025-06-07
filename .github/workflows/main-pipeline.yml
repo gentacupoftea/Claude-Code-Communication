@@ -1,0 +1,307 @@
+name: Conea Master CI/CD Pipeline
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+env:
+  GATEKEEPER_TIMEOUT_MINUTES: 180
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  # Job 1: AIレビュワーの呼び出し（リクエストマーカー方式）
+  claude_caller:
+    name: Claude Caller (Request Marker)
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    outputs:
+      request_id: ${{ github.run_id }}
+    steps:
+      - name: 'Post @claude mention comment with Request ID'
+        id: caller_comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GENTA_PAT }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            @claude review requested.
+            REQUEST_ID: ${{ github.run_id }}
+
+  # Job 2: gatekeeper (AIレビュー結果の検証)
+  gatekeeper:
+    name: Gatekeeper (Request Marker Chronological)
+    runs-on: ubuntu-latest
+    needs: claude_caller
+    outputs:
+      review_approved: ${{ steps.check_review.outputs.approved }}
+    steps:
+      - name: 'Wait for and Verify AI Review'
+        id: check_review
+        uses: actions/github-script@v7
+        env:
+          TIMEOUT_MINUTES: ${{ env.GATEKEEPER_TIMEOUT_MINUTES }}
+          REQUEST_ID: ${{ needs.claude_caller.outputs.request_id }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.issue;
+            const prNumber = context.issue.number;
+            const requestId = process.env.REQUEST_ID;
+            const timeoutMinutes = parseInt(process.env.TIMEOUT_MINUTES) || 180;
+            const pollIntervalSeconds = 30;
+            const startTime = Date.now();
+
+            console.log(`🚀 Starting Request Marker Gatekeeper for PR #${prNumber}`);
+            console.log(`🎯 Target Request ID: ${requestId}`);
+            console.log(`⏰ Timeout: ${timeoutMinutes} minutes`);
+
+            // キーワード定義（優先度順）
+            const rejectionKeywords = [
+              'STATUS: REJECTED', '却下', 'リジェクト', 'REJECT', 'NG', '承認できません',
+              '問題があります', 'FAIL', 'FAILURE', '修正が必要', 'NOT APPROVED'
+            ];
+            
+            const approvalKeywords = [
+              'STATUS: APPROVED', '承認', 'APPROVE', 'OK', 'LGTM', '問題なし',
+              'マージ可能', 'GOOD TO MERGE', 'APPROVED', '✅', 'PASS'
+            ];
+
+            // Step 1: リクエストマーカーコメントの検索
+            let markerTimestamp = null;
+            
+            try {
+              const { data: comments } = await github.rest.issues.listComments({
+                owner,
+                repo,
+                issue_number: prNumber,
+              });
+
+              const markerComment = comments.find(comment => 
+                comment.body.includes(`REQUEST_ID: ${requestId}`)
+              );
+
+              if (!markerComment) {
+                core.setFailed(`🚫 Request marker not found for ID: ${requestId}`);
+                return;
+              }
+
+              markerTimestamp = new Date(markerComment.created_at);
+              console.log(`📍 Request marker found at: ${markerComment.created_at}`);
+              console.log(`📝 Marker content: ${markerComment.body.substring(0, 100)}...`);
+              
+            } catch (error) {
+              core.setFailed(`❌ Failed to fetch initial comments: ${error.message}`);
+              return;
+            }
+
+            // Step 2: 時系列検索によるAI応答の待機
+            console.log(`🔍 Starting chronological search for Claude response after ${markerTimestamp.toISOString()}...`);
+
+            while (Date.now() - startTime < timeoutMinutes * 60 * 1000) {
+              try {
+                const { data: comments } = await github.rest.issues.listComments({
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                });
+
+                // Step 3: マーカータイムスタンプ以降のClaude応答を検索
+                const claudeResponsesAfterMarker = comments
+                  .filter(comment => 
+                    (comment.user.login === 'claude[bot]' || comment.user.login === 'claude') &&
+                    new Date(comment.created_at) > markerTimestamp
+                  )
+                  .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+                if (claudeResponsesAfterMarker.length > 0) {
+                  const firstResponse = claudeResponsesAfterMarker[0];
+                  console.log(`✨ Found Claude response after marker timestamp:`);
+                  console.log(`🕐 Response time: ${firstResponse.created_at}`);
+                  console.log(`📄 Response content: ${firstResponse.body.substring(0, 200)}...`);
+
+                  // Step 4: キーワード解析（拒否キーワードを優先）
+                  for (const keyword of rejectionKeywords) {
+                    if (firstResponse.body.includes(keyword)) {
+                      console.log(`❌ REJECTION detected with keyword: "${keyword}"`);
+                      core.setOutput('approved', 'false');
+                      core.setFailed(`PR rejected by AI reviewer. Keyword found: "${keyword}"`);
+                      return;
+                    }
+                  }
+
+                  for (const keyword of approvalKeywords) {
+                    if (firstResponse.body.includes(keyword)) {
+                      console.log(`✅ APPROVAL detected with keyword: "${keyword}"`);
+                      console.log(`🎉 Gatekeeper check passed! Proceeding to tests...`);
+                      core.setOutput('approved', 'true');
+                      return;
+                    }
+                  }
+
+                  console.log(`⚠️ Claude response found but no decisive keywords detected.`);
+                  console.log(`🔄 Continuing to monitor for more responses...`);
+                }
+
+              } catch (error) {
+                console.error(`⚠️ API Error during polling:`, error);
+                // Continue polling even if API fails temporarily
+              }
+
+              console.log(`⏳ No Claude response after marker yet. Waiting ${pollIntervalSeconds}s...`);
+              await new Promise(resolve => setTimeout(resolve, pollIntervalSeconds * 1000));
+            }
+
+            core.setOutput('approved', 'false');
+            core.setFailed(`⏰ TIMEOUT: No decisive Claude response found within ${timeoutMinutes} minutes after request marker.`);
+
+  # Job 3: フロントエンド検証
+  frontend-validation:
+    name: frontend-validation
+    runs-on: ubuntu-latest
+    needs: gatekeeper
+    if: success() && needs.gatekeeper.outputs.review_approved == 'true'
+    defaults:
+      run:
+        working-directory: ./
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Build project
+        run: npm run build
+
+      - name: Run tests
+        run: npm run test -- --watchAll=false
+
+  # Job 4: E2Eテスト
+  e2e-tests:
+    name: e2e-tests
+    runs-on: ubuntu-latest
+    needs: gatekeeper
+    if: success() && needs.gatekeeper.outputs.review_approved == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Verify Cypress
+        run: npx cypress verify
+
+      - name: Start server
+        run: npm run start &
+        env:
+          PORT: 3000
+
+      - name: Wait for server
+        run: |
+          echo "Waiting for server to start..."
+          timeout=60
+          while ! curl -s http://localhost:3000 > /dev/null; do
+            timeout=$((timeout - 1))
+            if [ $timeout -eq 0 ]; then
+              echo "Server failed to start"
+              exit 1
+            fi
+            echo "Waiting for server... ($timeout seconds remaining)"
+            sleep 1
+          done
+          echo "Server is responding!"
+          
+          # Wait for the login page to be fully loaded
+          echo "Waiting for app to be ready..."
+          timeout=30
+          while ! curl -s http://localhost:3000/login | grep -q "Conea AI"; do
+            timeout=$((timeout - 1))
+            if [ $timeout -eq 0 ]; then
+              echo "App failed to become ready"
+              exit 1
+            fi
+            echo "Waiting for app... ($timeout seconds remaining)"
+            sleep 1
+          done
+          echo "App is ready!"
+
+      - name: Test app accessibility
+        run: |
+          echo "Testing app endpoints..."
+          curl -I http://localhost:3000/
+          curl -I http://localhost:3000/login
+          echo "App is accessible!"
+
+      - name: Run E2E tests
+        run: npx cypress run --config baseUrl=http://localhost:3000
+        env:
+          CYPRESS_RECORD: false
+
+      - name: Upload test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-artifacts
+          path: |
+            cypress/screenshots
+            cypress/videos
+          retention-days: 7
+
+  # Job 5: 自動マージ
+  automerge:
+    name: Automerge
+    runs-on: ubuntu-latest
+    needs: [frontend-validation, e2e-tests]
+    if: success()
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - name: Enable auto-merge for PR
+        run: gh pr merge --auto --merge "${{ github.event.pull_request.number }}"
+        env:
+          GH_TOKEN: ${{ secrets.GENTA_PAT }}
+
+      - name: Post success notification
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🎉 **自動マージが有効化されました！**
+
+            ✅ AIレビュー承認
+            ✅ フロントエンド検証通過
+            ✅ E2Eテスト通過
+
+            PRは自動的にマージされます。`
+            })
