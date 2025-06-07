@@ -90,4 +90,16 @@ Before generating or suggesting any code, the AI must mentally verify the follow
 -   [ ] **Consistency:** Does the code align with the existing codebase's style and patterns?
 -   [ ] **Documentation:** Are comments, JSDoc, or related documentation updated?
 
-This constitution is not just a set of rules; it is a commitment to excellence. By following it, we build a robust, maintainable, and high-quality product. 
+This constitution is not just a set of rules; it is a commitment to excellence. By following it, we build a robust, maintainable, and high-quality product.
+
+---
+
+## 7. Communication Protocol
+
+### Guiding Principle: Japanese First
+
+To ensure smooth communication and eliminate misunderstandings, all communication on this project will be conducted primarily in **Japanese**.
+
+-   **Pull Requests:** Titles, descriptions, and all comments must be written in Japanese.
+-   **Commit Messages:** Follow the conventional commits standard, but the description should be in Japanese (e.g., `docs: 開発憲法にコミュニケーションルールを追記`).
+-   **CI/CD Triggers:** Keywords required for CI/CD automation (e.g., `STATUS: APPROVED`, `STATUS: REJECTED`) are the only exception and **must** be written in English as specified in the workflow files. 

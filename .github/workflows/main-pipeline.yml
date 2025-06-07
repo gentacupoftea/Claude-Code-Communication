@@ -160,7 +160,7 @@ jobs:
 
   # Job 3: フロントエンド検証
   frontend-validation:
-    name: Frontend Validation
+    name: frontend-validation
     runs-on: ubuntu-latest
     needs: gatekeeper
     if: success() && needs.gatekeeper.outputs.review_approved == 'true'
@@ -192,7 +192,7 @@ jobs:
 
   # Job 4: E2Eテスト
   e2e-tests:
-    name: E2E Tests
+    name: e2e-tests
     runs-on: ubuntu-latest
     needs: gatekeeper
     if: success() && needs.gatekeeper.outputs.review_approved == 'true'
@@ -282,14 +282,13 @@ jobs:
       pull-requests: write
       contents: write
     steps:
-      - name: 'Enable auto-merge for PR'
-        uses: peter-evans/enable-auto-merge-action@v4
-        with:
-          token: ${{ secrets.GENTA_PAT }}
-          pull-request-number: ${{ github.event.pull_request.number }}
-          merge-method: merge
+      - name: Enable auto-merge for PR
+        run: gh pr merge --auto --merge "${{ github.event.pull_request.number }}"
+        env:
+          GH_TOKEN: ${{ secrets.GENTA_PAT }}
 
-      - name: 'Post success notification'
+      - name: Post success notification
+        if: success()
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
