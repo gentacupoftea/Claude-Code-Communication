@@ -66,9 +66,21 @@ git commit -m "feat: Implement the new cool feature"
 # Push and create a Pull Request
 ```
 
+### Development Workflow Principles
+
+- **Micro Commits & Small PRs:** For large-scale development tasks, work must be broken down into logical, small, incremental commits. Pull Requests should also be kept small and focused on a single concern. This is mandatory to minimize merge conflicts and simplify code reviews.
+
 ---
 
-## 5. 🤖 AI-Powered PR Review (`@claude` Mention)
+## 5. 📝 Issue and Pull Request Process
+
+### Issue Creation
+All new development tasks must start from a GitHub Issue. When creating an issue, you **must** use the `Conea 開発タスクプロンプト` template available in the repository. This ensures that the AI developer receives all necessary information in a structured format.
+
+### Pull Request Creation
+When you create a Pull Request, the description must clearly link back to the issue it resolves (e.g., `Closes #123`). The PR description should summarize the changes and explain how they were tested.
+
+## 6. 🤖 AI-Powered PR Review (`@claude` Mention)
 
 When a Pull Request comment contains a mention (`@claude`), the AI assistant will perform a strict code review based on this constitution. The review must be:
 
@@ -80,7 +92,7 @@ The AI will act as the ultimate gatekeeper of code quality.
 
 ---
 
-## 6. 📋 Pre-Generation Quality Checklist
+## 7. 📋 Pre-Generation Quality Checklist
 
 Before generating or suggesting any code, the AI must mentally verify the following:
 
@@ -90,16 +102,4 @@ Before generating or suggesting any code, the AI must mentally verify the follow
 -   [ ] **Consistency:** Does the code align with the existing codebase's style and patterns?
 -   [ ] **Documentation:** Are comments, JSDoc, or related documentation updated?
 
-This constitution is not just a set of rules; it is a commitment to excellence. By following it, we build a robust, maintainable, and high-quality product.
-
----
-
-## 7. Communication Protocol
-
-### Guiding Principle: Japanese First
-
-To ensure smooth communication and eliminate misunderstandings, all communication on this project will be conducted primarily in **Japanese**.
-
--   **Pull Requests:** Titles, descriptions, and all comments must be written in Japanese.
--   **Commit Messages:** Follow the conventional commits standard, but the description should be in Japanese (e.g., `docs: 開発憲法にコミュニケーションルールを追記`).
--   **CI/CD Triggers:** Keywords required for CI/CD automation (e.g., `STATUS: APPROVED`, `STATUS: REJECTED`) are the only exception and **must** be written in English as specified in the workflow files. 
+This constitution is not just a set of rules; it is a commitment to excellence. By following it, we build a robust, maintainable, and high-quality product. 
