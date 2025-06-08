@@ -66,9 +66,21 @@ git commit -m "feat: Implement the new cool feature"
 # Push and create a Pull Request
 ```
 
+### Development Workflow Principles
+
+- **Micro Commits & Small PRs:** For large-scale development tasks, work must be broken down into logical, small, incremental commits. Pull Requests should also be kept small and focused on a single concern. This is mandatory to minimize merge conflicts and simplify code reviews.
+
 ---
 
-## 5. 🤖 AI-Powered PR Review (`@claude` Mention)
+## 5. 📝 Issue and Pull Request Process
+
+### Issue Creation
+All new development tasks must start from a GitHub Issue. When creating an issue, you **must** use the `Conea 開発タスクプロンプト` template available in the repository. This ensures that the AI developer receives all necessary information in a structured format.
+
+### Pull Request Creation
+When you create a Pull Request, the description must clearly link back to the issue it resolves (e.g., `Closes #123`). The PR description should summarize the changes and explain how they were tested.
+
+## 6. 🤖 AI-Powered PR Review (`@claude` Mention)
 
 When a Pull Request comment contains a mention (`@claude`), the AI assistant will perform a strict code review based on this constitution. The review must be:
 
@@ -80,7 +92,7 @@ The AI will act as the ultimate gatekeeper of code quality.
 
 ---
 
-## 6. 📋 Pre-Generation Quality Checklist
+## 7. 📋 Pre-Generation Quality Checklist
 
 Before generating or suggesting any code, the AI must mentally verify the following:
 
