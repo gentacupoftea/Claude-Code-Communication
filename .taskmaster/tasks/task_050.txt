@@ -1,0 +1,11 @@
+# Task ID: 50
+# Title: Project Chimera - Task 6: Slack通知フローの整備
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: 自動化システムの進行状況を、げんたさんがリアルタイムで、かつストレスなく把握できる通知システムを構築する。
+# Details:
+プロンプト作成方針: 1. 既存アクションの調査: 実績のあるSlack通知用GitHub Actionを調査。 2. ワークフローへの組み込み: main-pipeline.ymlとTask 5のワークフローに通知ステップを追加。if: always() を使用。 3. メッセージの整形: 成功、失敗、スキップで色や絵文字を変更し、詳細へのリンクを含める。
+
+# Test Strategy:
+

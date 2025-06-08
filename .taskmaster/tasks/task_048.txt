@@ -1,0 +1,11 @@
+# Task ID: 48
+# Title: Project Chimera - Task 4: CLAUDE.mdのアップデート
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Claude Codeが安全かつ高品質な開発を行うための、厳格な「行動規範」を定義し、それをCLAUDE.mdに明記する。
+# Details:
+プロンプト作成方針: 既存のCLAUDE.mdにルールを追記・強化する。 1. ブランチ戦略の厳守（feature/issue-番号）。 2. マイクロコミットの徹底（一つのPRに、一つの関心事）。 3. 大規模削除の禁止（人間の承認必須）。
+
+# Test Strategy:
+
