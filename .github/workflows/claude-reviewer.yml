@@ -37,6 +37,7 @@ jobs:
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: 'Run Claude Code Review'
+        id: claude-code
         uses: anthropics/claude-code-action@beta
         with:
           github_token: ${{ steps.app-token.outputs.token }}
@@ -46,3 +47,10 @@ jobs:
         env:
           CLOUD_ML_REGION: "us-east5"
           ANTHROPIC_VERTEX_PROJECT_ID: ${{ steps.auth.outputs.project_id }}
+
+      - name: Display Claude Execution Output
+        if: always()
+        run: |
+          echo "Claude execution output file path is ${{ steps.claude-code.outputs.execution_file }}"
+          echo "-------------------------------------"
+          cat ${{ steps.claude-code.outputs.execution_file }}
