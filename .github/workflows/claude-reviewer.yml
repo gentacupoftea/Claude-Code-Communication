@@ -45,3 +45,4 @@ jobs:
           trigger_phrase: '@claude'
         env:
           CLOUD_ML_REGION: "us-east5"
+          ANTHROPIC_VERTEX_PROJECT_ID: ${{ steps.auth.outputs.project_id }}
