@@ -7,37 +7,61 @@ on:
 permissions:
   contents: 'write'
   pull-requests: 'write'
-  id-token: 'write' # OIDC認証のために必要
+  issues: 'write'
+  id-token: 'write'
 
 jobs:
   claude_reviewer:
-    # コメントがPRにあり、'@claude' を含み、ボットによるものではないことを確認
+    # ボットからのコメントは無視し、コメントに '@claude' が含まれている場合のみ実行
     if: |
-      github.event.issue.pull_request &&
-      contains(github.event.comment.body, '@claude') &&
-      github.event.sender.type != 'Bot'
+      github.event.sender.type != 'Bot' &&
+      contains(github.event.comment.body, '@claude')
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: 'Authenticate to Google Cloud'
-        id: 'auth'
-        uses: 'google-github-actions/auth@v2'
+      # 1. GitHub Appを使って一時的なトークンを生成
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      # 2. GCPへ認証
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
+      # 3. Claudeアクションを実行
       - name: 'Run Claude Code Review'
-        id: claude
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@beta # 公式の正しいアクション
         with:
-          use_vertex: "true"
-          model: "claude-sonnet-4@20250514"
-          trigger_phrase: "@claude"
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ steps.app-token.outputs.token }} # 生成したトークンを使用
+          use_vertex: "true" # Vertex AI を使用
+          model: "claude-3.5-sonnet@20240620" # 最新モデル
+          trigger_phrase: '@claude'
         env:
-          CLOUD_ML_REGION: "us-east5" 
+          CLOUD_ML_REGION: "us-east5"
+
+      - name: 'Run Claude Code Review'
+        uses: anthropic-ai/claude-code-reviewer-action@v1 # 正しいアクションを指定
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: "unused" # Workload Identityを使用するため不要
+          CLOUD_ML_REGION: "us-east5"
+        with:
+          # 最新の高性能モデルを指定
+          model_name: "claude-3.5-sonnet@20240620"
+          # PRへのコメントか、Issueへのコメントかで動作を分岐
+          review_rules_pr: |
+            respond_only_if_code_changes: true
+            approve_if_no_changes: true
+          create_pr_from_issue: true # Issueの場合、PRを自動作成
+          trigger_phrase: '@claude' 
