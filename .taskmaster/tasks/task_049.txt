@@ -1,0 +1,11 @@
+# Task ID: 49
+# Title: Project Chimera - Task 5: PRリジェクト時の自動修正ワークフロー
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: 人間やCIによってPRがリジェクトされた際に、その修正を依頼するIssueを、AIが自動で起票する「自己修復ループ」を構築する。
+# Details:
+プロンプト作成方針: 1. トリガーの定義: PRが「クローズされた」かつ「マージされていない」ことをトリガーとするGitHub Actionsワークフローを作成。 2. 情報収集: gh CLIを使い、PRのタイトル、本文、リジェクト理由コメントを取得。 3. Issue自動起票: 収集した情報を元に「修正依頼Issue」を自動で作成。
+
+# Test Strategy:
+

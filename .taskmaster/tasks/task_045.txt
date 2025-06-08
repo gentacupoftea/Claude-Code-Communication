@@ -1,0 +1,11 @@
+# Task ID: 45
+# Title: Project Chimera - Task 1: GitHub MCPの実装
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: 開発者（げんたさん）が愛用するエディタ（Cursor）から、直接、シームレスにGitHub Issueを起票できる機能を実装する。これは、自動化サイクルの最初のトリガーとなる。
+# Details:
+プロンプト作成方針: 1. AIにhttps://github.com/github/github-mcp-serverのリポジトリを深く分析させ、その目的、アーキテクチャ、セットアップ方法を完全に理解させる。 2. ステップ・バイ・ステップの実装指示: git clone、環境構築、ローカルサーバー起動、テスト関数実装。 3. 成果物の明確化: 最終的に、引数を渡せばIssueを作成できる単一の実行可能スクリプト、または関数が成果物となることを明確に指示する。
+
+# Test Strategy:
+

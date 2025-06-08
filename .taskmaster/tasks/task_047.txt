@@ -1,0 +1,11 @@
+# Task ID: 47
+# Title: Project Chimera - Task 3: Claude Codeによる自動PR作成パイプライン
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Claude CodeがIssueに基づいて開発した成果物を、自動でコミットし、プルリクエストを作成するパイプラインを構築する。
+# Details:
+プロンプト作成方針: 1. 機能検証: claude-code-actionの公式ドキュメントやリポジトリをAIに調査させ、PR作成機能の有無と、その使い方を報告させる。 2. 既存機能の活用: もし機能があれば、Task 4でその機能を正しく呼び出すための指示を追記する。 3. 新規開発: もし機能がなければ、gitコマンドとgh CLIを組み合わせ、一連のシェルスクリプトを実装させる。
+
+# Test Strategy:
+

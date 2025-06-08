@@ -1,0 +1,15 @@
+# Task ID: 51
+# Title: 決済機能の実装: Stripe Connectの導入
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Stripe Connectを導入し、プラットフォームビジネス向けの高度な決済機能を実装する。Expressアカウントを利用した迅速なアカウント連携、Destination Charges方式での入金フロー、および関連するAPIとWebhookの整備を含む。
+# Details:
+- **アカウント作成:** Stripeの埋め込みコンポーネントまたはOAuthを利用し、ユーザーが迅速にExpressアカウントを作成・連携できるプロセスを実装する。
+- **入金フロー:** プラットフォームが手数料を徴収した後、連結アカウントに送金する `Destination Charges` 方式を採用する。
+- **APIとWebhook:** アカウント管理、支払い、送金、返金のためのバックエンドAPIと、Stripeからのイベントを処理するWebhookを構築する。
+- **技術スタック:** Node.js, Express, PostgreSQL, stripe-node SDK.
+- **ファイル構造:** `backend/src/services/stripe.service.js`, `backend/src/routes/stripe.routes.js` などに実装する。
+
+# Test Strategy:
+

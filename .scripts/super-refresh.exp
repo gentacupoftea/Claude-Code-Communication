@@ -1,0 +1,75 @@
+#!/usr/bin/expect -f
+
+# キメラ・リボーン Mk-II (v6)
+# "正気を取り戻せ" 作戦
+# `stty sane` を設定して、ターミナルの挙動を人間に近づける
+
+# --- 設定 ---
+set claude_path "/Users/mourigenta/.nvm/versions/node/v22.15.0/bin/claude"
+set timeout 30
+
+# このおまじないで、相手のターミナルを「正気」にさせる
+set stty_init sane
+
+# --- メイン処理 ---
+send_user -- "--- キメラ・リボーン Mk-II (v6) 起動 ---\n"
+
+# claude CLIを起動
+spawn $claude_path
+
+# プロンプトを待つ
+expect ">"
+
+# --- ログアウト処理 ---
+send_user -- "--- ステップ1: 自動ログアウト処理を開始します ---\n"
+send -- "/logout\r"
+expect {
+    "Successfully logged out" {
+        send_user -- "   => 自動ログアウト成功\n"
+    }
+    "You are not logged in" {
+        send_user -- "   => すでにログアウト済みです。処理を続行します。\n"
+    }
+    timeout {
+        send_user -- "   => ログアウト処理がタイムアウトしました。スクリプトを終了します。\n"
+        exit 1
+    }
+}
+
+# 再びプロンプトを待つ
+expect ">"
+
+# --- ログイン処理 ---
+send_user -- "\n--- ステップ2: 自動ログイン処理を開始し、認証URLを取得します ---\n"
+send -- "/login\r"
+
+# "Please visit the following URL" という文字列が現れるのを待つ
+expect "Please visit the following URL"
+
+# URLをキャプチャする
+expect -re {https://[a-zA-Z0-9_#&?=%:./-]+}
+
+# キャプチャしたURLを変数に格納
+set auth_url $expect_out(0,string)
+send_user -- "   => 認証URLの取得成功: $auth_url\n"
+
+
+# 取得したURLをChromeで開く
+send_user -- "\n--- ステップ3: 取得したURLをChromeで自動的に開きます ---\n"
+exec open -a "Google Chrome" $auth_url
+send_user -- "   => ブラウザが起動しました。認証を完了させてください。\n"
+send_user -- "      認証が成功すると、GitHub Secretsの更新が始まります。\n\n"
+
+# "Successfully logged in" が表示されるのを待って終了
+expect "Successfully logged in"
+send_user -- "\n--- ステップ4: 認証成功を検知しました！ ---\n"
+
+# --- 終了処理 ---
+expect ">"
+send -- "/exit\r"
+wait
+
+# 最後の更新スクリプトを実行
+send_user -- "\n--- 最終ステップ: GitHub Secretsを更新します ---\n"
+exec ./.scripts/update_claude_secrets.sh
+send_user -- "\n✅ 全てのプロセスが完了しました！\n" 
