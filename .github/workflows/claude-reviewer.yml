@@ -41,11 +41,11 @@ jobs:
 
       # 3. Claudeアクションを実行
       - name: 'Run Claude Code Review'
-        uses: anthropics/claude-code-action@beta # 公式の正しいアクション
+        uses: anthropics/claude-code-action@beta
         with:
-          github_token: ${{ steps.app-token.outputs.token }} # 生成したトークンを使用
-          use_vertex: "true" # Vertex AI を使用
-          model: "claude-3.5-sonnet@20240620" # 最新モデル
+          github_token: ${{ steps.app-token.outputs.token }}
+          use_vertex: "true"
+          model: "claude-3.5-sonnet@20240620"
           trigger_phrase: '@claude'
         env:
           CLOUD_ML_REGION: "us-east5"
