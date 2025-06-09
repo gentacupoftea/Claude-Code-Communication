@@ -10,7 +10,6 @@ uvicorn[standard]>=0.24.0
 pydantic>=2.4.0
 
 # Logging and monitoring
-python-logging
 
 # Data handling
 dataclasses
