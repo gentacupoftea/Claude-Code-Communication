@@ -1,5 +1,15 @@
 """
 MultiLLM API Server - SSE対応のストリーミングAPIサーバー
+
+このAPIサーバーは複数のLLMプロバイダー（Claude、GPT-4、Gemini、Local LLM）を
+統合的に管理し、リアルタイムチャット、分析、自動化機能を提供します。
+
+主な機能:
+- マルチLLMチャット（ストリーミング対応）
+- ワーカー管理とヘルスチェック
+- 高度なデータ分析とレポート
+- 自動化ルール作成・実行
+- プロメテウス対応メトリクス
 """
 
 import asyncio
@@ -7,11 +17,11 @@ import json
 import logging
 import uuid
 from datetime import datetime
-from typing import Dict, Optional, List, Any
-from fastapi import FastAPI, HTTPException, Request
+from typing import Dict, Optional, List, Any, Union
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -28,23 +38,174 @@ from orchestrator.analyzers.data_analyzer import DataAnalyzer
 from orchestrator.automation.task_automator import TaskAutomator
 from orchestrator.worker_factory import WorkerFactory
 from config.settings import settings
-
-# ログ設定
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+from utils.exceptions import (
+    MultiLLMBaseException, OllamaServerError, OllamaConnectionError, 
+    APIKeyError, ModelNotFoundError, WorkerNotFoundError,
+    GenerationError, ValidationError, exception_to_http_status
 )
-logger = logging.getLogger(__name__)
+from config.logging_config import setup_logging, get_logger, request_context
+import traceback
+
+# ログ設定の初期化
+setup_logging(
+    log_level=settings.LOG_LEVEL,
+    log_file="logs/multillm_api.log",
+    enable_json_format=not settings.DEBUG
+)
+logger = get_logger("multiLLM.api")
 
 # レート制限の設定
 limiter = Limiter(key_func=get_remote_address)
 
-# FastAPIアプリケーション
-app = FastAPI(title="MultiLLM API", version="1.0.0")
+# FastAPIアプリケーション設定
+app = FastAPI(
+    title="Conea MultiLLM Integration API",
+    version="1.0.0",
+    description="""
+    ## Conea MultiLLM統合プラットフォーム API
+
+    複数のLLMプロバイダーを統合し、エンタープライズ向けAI機能を提供するAPIサーバーです。
+
+    ### 主要機能:
+    - **マルチLLMチャット**: Claude、GPT-4、Gemini、Local LLMによるインテリジェントチャット
+    - **ストリーミング対応**: リアルタイムSSEストリーミングレスポンス
+    - **ワーカー管理**: 各LLMプロバイダーの状態監視と動的ルーティング
+    - **分析エンジン**: 会話パターン分析、タスクパフォーマンス測定
+    - **自動化システム**: ルールベース自動化、スケジューリング
+    - **ヘルスチェック**: システム状態監視、メトリクス収集
+
+    ### 対応LLMプロバイダー:
+    - **Anthropic Claude**: 高度な推論、データ分析、複雑なタスク処理
+    - **OpenAI GPT-4**: 汎用的な対話、コード生成、数値計算
+    - **Local LLM**: プライベート環境でのオンプレミス処理（Ollama経由）
+
+    ### 認証・セキュリティ:
+    - レート制限（30リクエスト/分）
+    - CORS対応
+    - エラーハンドリング
+
+    *Powered by Conea AI Platform v1.0.0*
+    """,
+    terms_of_service="https://conea.ai/terms",
+    contact={
+        "name": "Conea Support Team",
+        "url": "https://conea.ai/support",
+        "email": "support@conea.ai",
+    },
+    license_info={
+        "name": "MIT License",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+    openapi_tags=[
+        {
+            "name": "chat",
+            "description": "チャット機能 - LLMとの対話、ストリーミング、会話履歴管理"
+        },
+        {
+            "name": "workers",
+            "description": "ワーカー管理 - LLMプロバイダーの状態確認、モデル情報取得"
+        },
+        {
+            "name": "analytics", 
+            "description": "分析機能 - データ分析、パフォーマンス測定、レポート生成"
+        },
+        {
+            "name": "automation",
+            "description": "自動化機能 - ルール作成、タスク自動実行、スケジューリング"
+        },
+        {
+            "name": "health",
+            "description": "ヘルスチェック - システム状態監視、接続確認"
+        }
+    ]
+)
 
 # レート制限エラーハンドラーを追加
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+# === グローバル例外ハンドラ ===
+
+@app.exception_handler(MultiLLMBaseException)
+async def multillm_exception_handler(request: Request, exc: MultiLLMBaseException):
+    """MultiLLMシステム固有の例外ハンドラ"""
+    status_code = exception_to_http_status(exc)
+    
+    logger.log_error(
+        exc,
+        context={
+            "endpoint": str(request.url),
+            "method": request.method,
+            "status_code": status_code
+        }
+    )
+    
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "success": False,
+            "error": exc.to_dict(),
+            "timestamp": datetime.utcnow().isoformat() + "Z"
+        }
+    )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """HTTP例外の構造化ハンドラ"""
+    logger.logger.warning(
+        f"HTTP {exc.status_code}: {exc.detail}",
+        extra={
+            "event_type": "http_error",
+            "status_code": exc.status_code,
+            "endpoint": str(request.url),
+            "method": request.method
+        }
+    )
+    
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "success": False,
+            "error": {
+                "error_code": f"HTTP_{exc.status_code}",
+                "message": exc.detail,
+                "type": "HTTPException"
+            },
+            "timestamp": datetime.utcnow().isoformat() + "Z"
+        }
+    )
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """一般的な例外の構造化ハンドラ"""
+    logger.log_error(
+        exc,
+        context={
+            "endpoint": str(request.url),
+            "method": request.method,
+            "traceback": traceback.format_exc()
+        }
+    )
+    
+    # デバッグモードの場合は詳細なエラー情報を返す
+    error_detail = str(exc) if settings.DEBUG else "Internal server error"
+    
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "error": {
+                "error_code": "INTERNAL_SERVER_ERROR",
+                "message": error_detail,
+                "type": type(exc).__name__,
+                "traceback": traceback.format_exc() if settings.DEBUG else None
+            },
+            "timestamp": datetime.utcnow().isoformat() + "Z"
+        }
+    )
 
 # CORS設定
 app.add_middleware(
@@ -56,42 +217,188 @@ app.add_middleware(
 )
 
 
+# ============ Pydantic Models (Request/Response Schemas) ============
+
 class ChatRequest(BaseModel):
-    """チャットリクエスト"""
-    message: str
-    conversation_id: Optional[str] = None
-    user_id: str = "default_user"
-    context: Optional[Dict] = None
-    worker_type: Optional[str] = None  # 新規追加: ワーカータイプの指定 (例: 'openai', 'anthropic', 'local_llm')
+    """
+    チャットリクエストスキーマ
+    
+    LLMとの対話を開始するためのリクエストデータ。
+    複数のワーカータイプとストリーミング対応。
+    """
+    message: str = Field(
+        ..., 
+        min_length=1, 
+        max_length=10000,
+        description="ユーザーからのメッセージ内容",
+        example="ECサイトの売上分析を行ってください"
+    )
+    conversation_id: Optional[str] = Field(
+        None,
+        description="既存の会話を継続する場合の会話ID",
+        example="conv_12345-abcde"
+    )
+    user_id: str = Field(
+        default="default_user",
+        description="ユーザー識別子",
+        example="user_123"
+    )
+    context: Optional[Dict[str, Any]] = Field(
+        None,
+        description="追加のコンテキスト情報（プロジェクトデータ、設定など）",
+        example={"project_id": "proj_123", "language": "ja"}
+    )
+    worker_type: Optional[str] = Field(
+        None,
+        description="使用するLLMワーカーのタイプ。指定しない場合は自動選択",
+        example="claude",
+        regex="^(openai|anthropic|claude|local_llm)$"
+    )
+
+
+class ChatResponse(BaseModel):
+    """チャットレスポンススキーマ"""
+    success: bool = Field(description="リクエストが成功したかどうか")
+    response: str = Field(description="LLMからの回答テキスト")
+    conversation_id: str = Field(description="会話ID")
+    worker_type: Optional[str] = Field(description="実際に使用されたワーカータイプ")
+    task_analysis: Optional[Dict[str, Any]] = Field(description="タスク分析結果")
+    fallback_info: Optional[Dict[str, Any]] = Field(description="フォールバック情報")
+    metadata: Optional[Dict[str, Any]] = Field(description="追加のメタデータ")
 
 
 class ConversationDebugRequest(BaseModel):
-    """会話デバッグリクエスト"""
-    conversation_id: str
+    """
+    会話デバッグリクエスト
+    
+    特定の会話の詳細な実行情報を取得するためのリクエスト。
+    """
+    conversation_id: str = Field(
+        ..., 
+        description="デバッグ対象の会話ID",
+        example="conv_12345-abcde"
+    )
 
 
 class AnalysisRequest(BaseModel):
-    """分析リクエスト"""
-    analysis_type: str  # conversation_patterns, task_performance, resource_prediction
-    data: Optional[Dict] = None
-    time_range: Optional[Dict] = None  # {"start": "2024-01-01", "end": "2024-01-31"}
+    """
+    データ分析リクエスト
+    
+    会話パターン、タスクパフォーマンス、リソース予測などの
+    高度なデータ分析を実行するためのリクエスト。
+    """
+    analysis_type: str = Field(
+        ...,
+        description="分析タイプ",
+        example="conversation_patterns",
+        regex="^(conversation_patterns|task_performance|resource_prediction)$"
+    )
+    data: Optional[Dict[str, Any]] = Field(
+        None,
+        description="分析対象のデータ",
+        example={"tasks": [], "conversations": []}
+    )
+    time_range: Optional[Dict[str, str]] = Field(
+        None,
+        description="分析対象の時間範囲",
+        example={"start": "2024-01-01", "end": "2024-01-31"}
+    )
 
 
 class AutomationRuleRequest(BaseModel):
-    """自動化ルールリクエスト"""
-    name: str
-    description: str
-    trigger_type: str  # time_based, event_based, condition_based, pattern_based
-    trigger_config: Dict
-    actions: List[Dict]
-    active: bool = True
+    """
+    自動化ルール作成リクエスト
+    
+    システムの自動化ルールを定義し、スケジューリングや
+    イベント駆動の自動処理を設定するためのリクエスト。
+    """
+    name: str = Field(
+        ...,
+        min_length=1,
+        max_length=100,
+        description="自動化ルールの名前",
+        example="定期売上レポート生成"
+    )
+    description: str = Field(
+        ...,
+        max_length=500,
+        description="ルールの詳細説明",
+        example="毎週月曜日にShopifyの売上データを分析してレポートを生成"
+    )
+    trigger_type: str = Field(
+        ...,
+        description="トリガーのタイプ",
+        example="time_based",
+        regex="^(time_based|event_based|condition_based|pattern_based)$"
+    )
+    trigger_config: Dict[str, Any] = Field(
+        ...,
+        description="トリガーの設定",
+        example={"schedule": "0 9 * * MON", "timezone": "Asia/Tokyo"}
+    )
+    actions: List[Dict[str, Any]] = Field(
+        ...,
+        min_items=1,
+        description="実行するアクションのリスト",
+        example=[{"type": "analysis", "target": "shopify_sales"}]
+    )
+    active: bool = Field(
+        default=True,
+        description="ルールがアクティブかどうか"
+    )
 
 
 class GenerationRequest(BaseModel):
-    """シンプルな生成リクエスト（ワーカー直接呼び出し用）"""
-    prompt: str
-    worker_type: str = Field(default="openai", description="The type of worker to use (e.g., 'openai', 'anthropic', 'local_llm')")
-    model_id: Optional[str] = None
+    """
+    テキスト生成リクエスト
+    
+    指定されたLLMワーカーを使用して直接テキスト生成を行うためのリクエスト。
+    チャット機能よりもシンプルで、単発の生成タスクに適している。
+    """
+    prompt: str = Field(
+        ...,
+        min_length=1,
+        max_length=8000,
+        description="生成プロンプト",
+        example="Pythonでファイル読み込み関数を作成してください"
+    )
+    worker_type: str = Field(
+        default="openai",
+        description="使用するワーカータイプ",
+        example="claude",
+        regex="^(openai|anthropic|claude|local_llm)$"
+    )
+    model_id: Optional[str] = Field(
+        None,
+        description="特定のモデルID（ワーカータイプ内での選択）",
+        example="gpt-4-turbo"
+    )
+
+
+class GenerationResponse(BaseModel):
+    """テキスト生成レスポンス"""
+    success: bool = Field(description="生成が成功したかどうか")
+    response: str = Field(description="生成されたテキスト")
+    worker_type: str = Field(description="使用されたワーカータイプ")
+    model_id: Optional[str] = Field(description="使用されたモデルID")
+    metadata: Optional[Dict[str, Any]] = Field(description="生成メタデータ")
+
+
+class HealthResponse(BaseModel):
+    """ヘルスチェックレスポンス"""
+    status: str = Field(description="システム状態", example="healthy")
+    timestamp: str = Field(description="チェック実行時刻")
+    orchestrator: Optional[Dict[str, Any]] = Field(description="オーケストレーター状態")
+    services: Optional[Dict[str, bool]] = Field(description="各サービスの状態")
+
+
+class ErrorResponse(BaseModel):
+    """エラーレスポンス"""
+    success: bool = Field(default=False, description="常にfalse")
+    error: str = Field(description="エラーメッセージ")
+    error_type: Optional[str] = Field(description="エラータイプ")
+    details: Optional[Dict[str, Any]] = Field(description="エラー詳細情報")
+    timestamp: str = Field(description="エラー発生時刻")
 
 
 # グローバルインスタンス
@@ -138,19 +445,83 @@ async def shutdown_event():
     logger.info("👋 MultiLLM API Server shutdown")
 
 
-@app.get("/")
+@app.get(
+    "/",
+    summary="サービス情報取得",
+    description="MultiLLM APIサービスの基本情報を取得します",
+    response_model=Dict[str, str],
+    tags=["system"]
+)
 async def root():
-    """ルートエンドポイント"""
-    return {
+    """
+    ### サービス情報エンドポイント
+    
+    MultiLLM APIサーバーの基本情報とステータスを返します。
+    
+    **利用例:**
+    ```bash
+    curl http://localhost:8000/
+    ```
+    
+    **レスポンス例:**
+    ```json
+    {
         "service": "MultiLLM API",
-        "version": "1.0.0",
+        "version": "1.0.0", 
         "status": "active"
+    }
+    ```
+    """
+    return {
+        "service": "Conea MultiLLM Integration API",
+        "version": "1.0.0",
+        "status": "active",
+        "docs": "/docs",
+        "redoc": "/redoc"
     }
 
 
-@app.get("/health")
+@app.get(
+    "/health",
+    summary="システムヘルスチェック",
+    description="システム全体の稼働状況を確認します",
+    response_model=HealthResponse,
+    responses={
+        200: {"description": "システム正常稼働"},
+        503: {"description": "システム異常", "model": ErrorResponse}
+    },
+    tags=["health"]
+)
 async def health():
-    """ヘルスチェック"""
+    """
+    ### システムヘルスチェック
+    
+    MultiLLMシステム全体の稼働状況を確認し、各コンポーネントの状態を返します。
+    
+    **チェック項目:**
+    - オーケストレーターの状態
+    - 各LLMワーカーの接続状況
+    - データベース接続
+    - メモリ使用量
+    
+    **利用例:**
+    ```bash
+    curl http://localhost:8000/health
+    ```
+    
+    **正常時のレスポンス:**
+    ```json
+    {
+        "status": "healthy",
+        "timestamp": "2024-01-01T12:00:00",
+        "orchestrator": {
+            "status": "active",
+            "workers": 4,
+            "uptime": 3600
+        }
+    }
+    ```
+    """
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
@@ -194,9 +565,63 @@ async def health_check_ollama():
         )
 
 
-@app.post("/chat")
+@app.post(
+    "/chat",
+    summary="チャット - 通常レスポンス",
+    description="LLMとの対話を行い、完全なレスポンスを一括で返します",
+    response_model=ChatResponse,
+    responses={
+        200: {"description": "チャット成功", "model": ChatResponse},
+        400: {"description": "リクエストエラー", "model": ErrorResponse},
+        500: {"description": "サーバーエラー", "model": ErrorResponse}
+    },
+    tags=["chat"]
+)
 async def chat(request: ChatRequest):
-    """通常のチャットエンドポイント（非ストリーミング）"""
+    """
+    ### 通常チャットエンドポイント（非ストリーミング）
+    
+    指定されたメッセージに対してLLMから完全な回答を取得します。
+    ストリーミングではなく、完成した回答を一括で返します。
+    
+    **主な機能:**
+    - 複数LLMプロバイダーの自動選択または手動指定
+    - 会話の継続（conversation_id指定）
+    - コンテキスト情報の活用
+    - タスクの自動分析と最適なワーカー選択
+    
+    **利用例:**
+    ```bash
+    curl -X POST http://localhost:8000/chat \\
+      -H "Content-Type: application/json" \\
+      -d '{
+        "message": "Shopifyの売上データを分析してください",
+        "worker_type": "claude",
+        "context": {"project_id": "ecommerce_analysis"}
+      }'
+    ```
+    
+    **レスポンス例:**
+    ```json
+    {
+        "success": true,
+        "response": "Shopifyの売上データ分析を開始します...",
+        "conversation_id": "conv_12345-abcde",
+        "worker_type": "claude",
+        "task_analysis": {
+            "task_type": "data_analysis",
+            "complexity": "medium",
+            "estimated_duration": 30
+        }
+    }
+    ```
+    
+    **ワーカータイプ:**
+    - `claude`: 高度な分析、複雑な推論
+    - `openai`: 汎用的な対話、コード生成
+    - `local_llm`: プライベート処理（Ollama）
+    - 未指定: 自動選択（メッセージ内容に基づく）
+    """
     try:
         fallback_info = None
         
