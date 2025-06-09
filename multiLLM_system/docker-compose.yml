@@ -1,0 +1,28 @@
+# multiLLM_system/docker-compose.yml
+
+version: '3.8'
+
+services:
+  # 私たちのMultiLLM APIサーバー
+  multi-llm-api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - ollama-service
+    command: uvicorn api.server:app --host 0.0.0.0 --port 8000 --reload
+
+  # Ollama ローカルLLMサーバー
+  ollama-service:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    
+volumes:
+  ollama-data:

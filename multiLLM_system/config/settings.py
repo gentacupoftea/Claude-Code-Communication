@@ -1,5 +1,6 @@
 # multiLLM_system/config/settings.py
 
+import os
 from pydantic import BaseSettings
 from typing import Optional
 
@@ -16,8 +17,8 @@ class Settings(BaseSettings):
     GOOGLE_CLOUD_PROJECT_ID: Optional[str] = None
     
     # Local LLM settings for Ollama
-    OLLAMA_API_URL: str = "http://localhost:11434"
-    LOCAL_LLM_MODEL: str = "command-r-plus"
+    OLLAMA_API_URL: str = os.getenv("OLLAMA_API_URL", "http://localhost:11434")
+    LOCAL_LLM_MODEL: str = os.getenv("LOCAL_LLM_MODEL", "command-r-plus")
     
     # Health check configuration
     HEALTHCHECK_TIMEOUT: int = 5  # seconds
