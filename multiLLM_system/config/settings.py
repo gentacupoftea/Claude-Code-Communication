@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     COHERE_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
     
+    # Timeout settings
+    LLM_TIMEOUT: int = 120
+    
     # GCP Project ID (if applicable)
     GOOGLE_CLOUD_PROJECT_ID: Optional[str] = None
     
@@ -27,6 +30,10 @@ class Settings(BaseSettings):
     
     # Health check configuration
     HEALTHCHECK_TIMEOUT: int = 5  # seconds
+    
+    # General settings
+    DEBUG: bool = False
+    LOG_LEVEL: str = "INFO"
 
     class Config:
         env_file = '.env'

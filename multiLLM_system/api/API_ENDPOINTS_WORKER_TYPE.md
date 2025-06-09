@@ -161,17 +161,53 @@ print("OpenAI response:", response.json()["response"])
 
 ## エラーハンドリング
 
-### 不明なworker_type
+### エラーレスポンス例
 
-`worker_type`が不明な場合、`/generate`エンドポイントは400エラーを返します：
-
+#### 400 Bad Request (無効なワーカータイプ)
 ```json
 {
-  "detail": "Unsupported worker type: unknown_type"
+  "detail": "Unsupported worker type: 'invalid_worker'. Supported types are: ['openai', 'anthropic', 'claude', 'local_llm']"
 }
 ```
 
-`/chat`および`/chat/stream`エンドポイントは、不明なworker_typeの場合、自動的にOrchestratorにフォールバックします。
+#### 503 Service Unavailable (Ollamaサーバー接続不可)
+```json
+{
+  "status": "error",
+  "message": "Ollama server is unreachable.",
+  "url": "http://localhost:11434",
+  "error_details": "Max retries exceeded with url: / (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x...>: Failed to establish a new connection: [Errno 61] Connection refused'))"
+}
+```
+
+#### 429 Too Many Requests (レート制限)
+```json
+{
+  "detail": "Rate limit exceeded: 30 per 1 minute"
+}
+```
+
+### フォールバック時のレスポンス例
+
+未知の `worker_type` (`custom_gpt`など) を指定した場合、システムは安全にデフォルトのオーケストレーターにフォールバックし、その情報をレスポンスに含めます。
+
+```json
+{
+  "success": true,
+  "response": "こちらが生成されたテキストです...",
+  "conversation_id": "conv_123",
+  "task_analysis": {
+    "type": "general_query",
+    "complexity": "medium",
+    "suggested_workers": ["claude", "openai"]
+  },
+  "fallback_info": {
+    "used": true,
+    "requested_worker": "custom_gpt",
+    "actual_worker": "orchestrator"
+  }
+}
+```
 
 ### ワーカー実行エラー
 
@@ -179,12 +215,25 @@ print("OpenAI response:", response.json()["response"])
 
 ```json
 {
-  "detail": "Error processing task: [エラーメッセージ]"
+  "detail": "Error processing task: Connection timeout to worker service"
 }
 ```
+
+## レート制限
+
+APIエンドポイントには以下のレート制限が適用されています：
+
+- `/generate`: 30リクエスト/分
+- `/chat`: 制限なし（今後実装予定）
+- `/chat/stream`: 制限なし（今後実装予定）
+- `/workers/types`: 制限なし
+
+レート制限を超えた場合、`429 Too Many Requests`エラーが返されます。
 
 ## 注意事項
 
 1. **model_id**: 現在、`model_id`パラメータは`/generate`エンドポイントでのみサポートされています。
 2. **フォールバック**: `/chat`と`/chat/stream`エンドポイントでは、不明なworker_typeが指定された場合、自動的に既存のOrchestratorロジックにフォールバックします。
 3. **ローカルLLM**: `local_llm`を使用する場合、Ollamaなどのローカルサーバーが実行されている必要があります。
+4. **レスポンス構造**: `/chat`エンドポイントは常に`task_analysis`フィールドを含みます。直接ワーカー呼び出しの場合は`null`になります。
+5. **セキュリティ**: すべてのエンドポイントはIPアドレスベースのレート制限を使用しています。
