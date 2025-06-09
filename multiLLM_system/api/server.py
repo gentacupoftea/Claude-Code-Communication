@@ -480,11 +480,20 @@ async def test_claude():
         }
 
 
-@app.post("/generate")
+@app.post("/generate", response_model=Dict[str, Any])
 async def generate(request: GenerationRequest):
     """
-    シンプルな生成エンドポイント（ワーカー直接呼び出し）
-    リクエストで指定されたワーカータイプを使用して、プロンプトに対する応答を生成
+    指定されたワーカータイプを使用してテキストを生成します。
+
+    Args:
+        request (GenerationRequest): プロンプト、ワーカータイプ、モデルIDを含むリクエスト。
+
+    Returns:
+        Dict[str, Any]: 生成されたテキストを含むレスポンス。
+
+    Raises:
+        HTTPException(400): サポートされていないワーカータイプが指定された場合に発生します。
+        HTTPException(500): ワーカーの処理中に内部エラーが発生した場合に発生します。
     """
     try:
         # WorkerFactoryを使用してワーカーを作成
