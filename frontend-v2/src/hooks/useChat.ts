@@ -5,6 +5,7 @@
 
 import { useCallback } from 'react';
 import { useLLMStore, ChatMessage } from '../store/llmStore';
+import { apiClient } from '../lib/apiClient';
 
 /**
  * チャット機能を管理するカスタムフック
@@ -16,7 +17,9 @@ export const useChat = () => {
     isGenerating,
     selectedWorker,
     selectedModel,
-    sendMessage: _sendMessage,
+    addMessage,
+    setIsGenerating,
+    setError,
     clearChatHistory: _clearChatHistory,
     error,
   } = useLLMStore();
@@ -31,8 +34,64 @@ export const useChat = () => {
       throw new Error('AI応答生成中です。しばらくお待ちください');
     }
 
-    await _sendMessage(message);
-  }, [_sendMessage, selectedWorker, selectedModel, isGenerating]);
+    try {
+      // ローディング開始
+      setIsGenerating(true);
+      setError(null);
+
+      // ユーザーのメッセージを履歴に追加
+      const userMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'user',
+        content: message.trim(),
+        timestamp: new Date(),
+      };
+      addMessage(userMessage);
+
+      // APIリクエストを作成（現在の履歴 + 新しいユーザーメッセージ）
+      const messagesForAPI = [...chatHistory, userMessage].map(msg => ({
+        role: msg.role,
+        content: msg.content,
+      }));
+
+      const response = await apiClient.postChatCompletion({
+        messages: messagesForAPI,
+        model: selectedModel,
+        worker_type: selectedWorker,
+      });
+
+      // アシスタントの応答を履歴に追加
+      const assistantMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: response.response || 'エラー: 応答が空です',
+        timestamp: new Date(),
+        worker: response.worker_type || selectedWorker,
+        model: response.model_id || selectedModel,
+      };
+      addMessage(assistantMessage);
+
+    } catch (error) {
+      // エラーメッセージを履歴に追加
+      console.error("Failed to send message:", error);
+      
+      const errorMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: 'エラーが発生しました。もう一度お試しください。',
+        timestamp: new Date(),
+        worker: selectedWorker,
+        model: selectedModel,
+      };
+      addMessage(errorMessage);
+      
+      // エラー状態をセット
+      setError(error instanceof Error ? error.message : 'Unknown error occurred');
+    } finally {
+      // ローディング終了
+      setIsGenerating(false);
+    }
+  }, [chatHistory, selectedWorker, selectedModel, isGenerating, addMessage, setIsGenerating, setError]);
 
   // チャット履歴クリア（確認付き）
   const clearChatHistory = useCallback(() => {

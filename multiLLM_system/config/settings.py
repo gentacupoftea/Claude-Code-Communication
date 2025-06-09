@@ -1,6 +1,7 @@
 # multiLLM_system/config/settings.py
 
-from pydantic import BaseSettings, validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import validator
 from typing import Optional, List
 import os
 
@@ -13,6 +14,13 @@ class Settings(BaseSettings):
     本番環境では必要なAPIキーの検証が行われ、不足している場合は
     起動時にエラーでプロセスが終了します。
     """
+    model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8', extra='ignore')
+    
+    # Server settings
+    APP_ENV: str = "production"
+    CORS_ORIGINS: List[str] = ["http://localhost:3000"]
+    LOG_LEVEL: str = "INFO"
+    
     # Slack API settings
     SLACK_BOT_TOKEN: Optional[str] = None
     SLACK_APP_TOKEN: Optional[str] = None
@@ -38,7 +46,6 @@ class Settings(BaseSettings):
     
     # General settings
     DEBUG: bool = False
-    LOG_LEVEL: str = "INFO"
     
     # 有効なワーカータイプ（環境変数で指定可能）
     ENABLED_WORKERS: str = "anthropic,openai,local_llm"  # カンマ区切りの文字列
@@ -46,10 +53,6 @@ class Settings(BaseSettings):
     # 必須検証を無効にするフラグ（開発・テスト用）
     SKIP_API_KEY_VALIDATION: bool = False
 
-    class Config:
-        env_file = '.env'
-        env_file_encoding = 'utf-8'
-        case_sensitive = False
 
     @validator("ENABLED_WORKERS", pre=True)
     def validate_enabled_workers(cls, v):

@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   skipTrailingSlashRedirect: true,
   
+  // 環境変数をNext.jsアプリケーションに公開
+  env: {
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  },
+  
   // ビルド最適化設定
   experimental: {
     optimizeCss: true,
