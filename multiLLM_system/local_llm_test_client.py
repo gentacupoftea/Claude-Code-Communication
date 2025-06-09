@@ -2,19 +2,22 @@
 
 import requests
 import json
+import os
 
 API_BASE_URL = "http://localhost:8000"
+# 環境変数からモデルを取得、なければデフォルト値を使用
+DEFAULT_MODEL = os.getenv("LOCAL_LLM_MODEL", "command-r-plus")
 
 def test_local_llm_generation(prompt: str):
     """ /generate エンドポイントをテストする """
-    print("--- Testing /generate endpoint with local_llm ---")
+    print(f"--- Testing /generate endpoint with local_llm (model: {DEFAULT_MODEL}) ---")
     try:
         response = requests.post(
             f"{API_BASE_URL}/generate",
             json={
                 "prompt": prompt,
                 "worker_type": "local_llm",
-                "model_id": "llama3"  # テストしたいモデル名
+                "model_id": DEFAULT_MODEL
             }
         )
         response.raise_for_status()
