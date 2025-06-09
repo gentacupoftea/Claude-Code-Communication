@@ -1,11 +1,55 @@
 # Task ID: 45
-# Title: Project Chimera - Task 1: GitHub MCPの実装
-# Status: done
+# Title: ローカルLLM基盤の構築
+# Status: pending
 # Dependencies: None
-# Priority: medium
-# Description: 開発者（げんたさん）が愛用するエディタ（Cursor）から、直接、シームレスにGitHub Issueを起票できる機能を実装する。これは、自動化サイクルの最初のトリガーとなる。
+# Priority: high
+# Description: Phase 1の親タスクとして「ローカルLLM基盤の構築」をTask Master AIに登録します。
 # Details:
-プロンプト作成方針: 1. AIにhttps://github.com/github/github-mcp-serverのリポジトリを深く分析させ、その目的、アーキテクチャ、セットアップ方法を完全に理解させる。 2. ステップ・バイ・ステップの実装指示: git clone、環境構築、ローカルサーバー起動、テスト関数実装。 3. 成果物の明確化: 最終的に、引数を渡せばIssueを作成できる単一の実行可能スクリプト、または関数が成果物となることを明確に指示する。
+
 
 # Test Strategy:
+
+
+# Subtasks:
+## 1. `LocalLLMWorker` の新規作成 [done]
+### Dependencies: None
+### Description: OllamaのOpenAI互換APIと通信するための新しいWorkerクラス `LocalLLMWorker` を作成する。`openai`ライブラリを使用し、Ollamaのエンドポイントに接続するクライアントを初期化し、タスクを処理する`process`メソッドを実装する。ファイルパス: `multiLLM_system/workers/local_llm_worker.py`
+### Details:
+
+
+## 2. Orchestratorに`LocalLLMWorker`を認識させる [pending]
+### Dependencies: 45.1
+### Description: Orchestratorが設定に応じて `LocalLLMWorker` を生成・利用できるように、`multiLLM_system/orchestrator/orchestrator.py` の `_initialize_workers` メソッドを修正する。`worker_config` に `provider: "ollama"` が指定されていた場合に `LocalLLMWorker` をインスタンス化するロジックを追加する。
+### Details:
+
+
+## 3. APIサーバーの設定更新 [pending]
+### Dependencies: 45.2
+### Description: APIサーバー起動時にローカルLLM用のWorkerを定義するため、`multiLLM_system/api/server.py`の`startup_event`内にある`config`辞書を修正する。`local_analyst_worker`という名前で、providerに`ollama`、modelに`qwen2.5:7b`を指定したWorker設定を追加する。
+### Details:
+
+
+## 4. タスクの振り分け設定 [pending]
+### Dependencies: 45.3
+### Description: 特定のキーワード（例：「ローカルで分析して」）がリクエストに含まれている場合に、新しく作成した `local_analyst_worker` にタスクが割り当てられるように、`multiLLM_system/orchestrator/orchestrator.py` の `_analyze_task_type` メソッドを改修する。
+### Details:
+
+
+## 5. LocalLLMWorker の単体テスト作成 [done]
+### Dependencies: None
+### Description: Ollama APIとの通信をモック化し、LocalLLMWorkerが正しく動作することを確認する単体テストを実装します。成功ケースと失敗ケースの両方をカバーします。
+### Details:
+
+
+## 6. multiLLM APIエンドポイントの改修（local_llm対応） [done]
+### Dependencies: None
+### Description: 既存のAPIエンドポイントを改修し、リクエストで`worker_type: 'local_llm'`を指定できるようにします。これにより、外部からローカルLLMを呼び出すことが可能になります。
+### Details:
+
+
+## 7. ローカルLLM環境設定の整備とヘルスチェックエンドポイントの追加 [done]
+### Dependencies: None
+### Description: 開発者がローカルLLMをセットアップするための`.env.example`ファイルを作成し、Ollamaサーバーが正常に起動しているかを確認するためのヘルスチェックAPIエンドポイント `/health/ollama` を追加します。
+### Details:
+
 

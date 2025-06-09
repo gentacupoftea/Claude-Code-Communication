@@ -1505,6 +1505,229 @@
       "dependencies": [],
       "priority": "high",
       "subtasks": []
+    },
+    {
+      "id": 45,
+      "title": "ローカルLLM基盤の構築",
+      "description": "Phase 1の親タスクとして「ローカルLLM基盤の構築」をTask Master AIに登録します。",
+      "details": "",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "`LocalLLMWorker` の新規作成",
+          "description": "OllamaのOpenAI互換APIと通信するための新しいWorkerクラス `LocalLLMWorker` を作成する。`openai`ライブラリを使用し、Ollamaのエンドポイントに接続するクライアントを初期化し、タスクを処理する`process`メソッドを実装する。ファイルパス: `multiLLM_system/workers/local_llm_worker.py`",
+          "details": "",
+          "status": "done",
+          "dependencies": [],
+          "parentTaskId": 45
+        },
+        {
+          "id": 2,
+          "title": "Orchestratorに`LocalLLMWorker`を認識させる",
+          "description": "Orchestratorが設定に応じて `LocalLLMWorker` を生成・利用できるように、`multiLLM_system/orchestrator/orchestrator.py` の `_initialize_workers` メソッドを修正する。`worker_config` に `provider: \"ollama\"` が指定されていた場合に `LocalLLMWorker` をインスタンス化するロジックを追加する。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [
+            "45.1"
+          ],
+          "parentTaskId": 45
+        },
+        {
+          "id": 3,
+          "title": "APIサーバーの設定更新",
+          "description": "APIサーバー起動時にローカルLLM用のWorkerを定義するため、`multiLLM_system/api/server.py`の`startup_event`内にある`config`辞書を修正する。`local_analyst_worker`という名前で、providerに`ollama`、modelに`qwen2.5:7b`を指定したWorker設定を追加する。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [
+            "45.2"
+          ],
+          "parentTaskId": 45
+        },
+        {
+          "id": 4,
+          "title": "タスクの振り分け設定",
+          "description": "特定のキーワード（例：「ローカルで分析して」）がリクエストに含まれている場合に、新しく作成した `local_analyst_worker` にタスクが割り当てられるように、`multiLLM_system/orchestrator/orchestrator.py` の `_analyze_task_type` メソッドを改修する。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [
+            "45.3"
+          ],
+          "parentTaskId": 45
+        },
+        {
+          "id": 5,
+          "title": "LocalLLMWorker の単体テスト作成",
+          "description": "Ollama APIとの通信をモック化し、LocalLLMWorkerが正しく動作することを確認する単体テストを実装します。成功ケースと失敗ケースの両方をカバーします。",
+          "details": "",
+          "status": "done",
+          "dependencies": [],
+          "parentTaskId": 45
+        },
+        {
+          "id": 6,
+          "title": "multiLLM APIエンドポイントの改修（local_llm対応）",
+          "description": "既存のAPIエンドポイントを改修し、リクエストで`worker_type: 'local_llm'`を指定できるようにします。これにより、外部からローカルLLMを呼び出すことが可能になります。",
+          "details": "",
+          "status": "done",
+          "dependencies": [],
+          "parentTaskId": 45
+        },
+        {
+          "id": 7,
+          "title": "ローカルLLM環境設定の整備とヘルスチェックエンドポイントの追加",
+          "description": "開発者がローカルLLMをセットアップするための`.env.example`ファイルを作成し、Ollamaサーバーが正常に起動しているかを確認するためのヘルスチェックAPIエンドポイント `/health/ollama` を追加します。",
+          "details": "",
+          "status": "done",
+          "dependencies": [],
+          "parentTaskId": 45
+        }
+      ]
+    },
+    {
+      "id": 46,
+      "title": "ローカルLLM高度活用システムの構築 - Phase 2",
+      "description": "Mac Studioなどの高性能マシンを活用し、CrewAIによるマルチエージェント連携、完全ローカルRAGシステム、フロントエンドでのローカルLLMサポート強化を実装する。",
+      "details": "このタスクでは、Phase 1で構築したローカルLLM基盤を拡張し、より高度な機能を実装します。\n\n1. **CrewAIによるマルチエージェント連携**\n   - CrewAIフレームワークをプロジェクトに統合\n   - 複数の特化型エージェントを定義（リサーチャー、コーダー、レビュワーなど）\n   - エージェント間の協調作業フローを設計・実装\n   - タスク分割と結果統合のメカニズムを構築\n\n2. **完全ローカルRAGシステムの構築**\n   - ローカルベクトルデータベース（Chroma、Qdrant等）の設定\n   - 効率的なドキュメント処理パイプラインの実装\n   - 埋め込みモデルの最適化（ONNX変換、量子化など）\n   - クエリ最適化とコンテキスト管理の実装\n   - ローカルRAGのパフォーマンス測定と調整\n\n3. **フロントエンドでのローカルLLMサポート強化**\n   - WebUIからのローカルモデル選択・切替機能\n   - モデルパラメータ（温度、トップK/P等）の動的調整インターフェース\n   - ストリーミング出力のUI実装\n   - フロントエンドでのコンテキスト管理と会話履歴の保存\n\n4. **パフォーマンス最適化**\n   - Mac Studioのハードウェア（M1/M2チップ）に最適化\n   - メモリ使用量の監視と制御\n   - 並列処理の実装によるスループット向上\n   - モデル量子化とキャッシュ戦略の実装\n\n5. **システム統合**\n   - 各コンポーネント間のAPIインターフェース設計\n   - エラーハンドリングと回復メカニズムの実装\n   - ログ記録と診断機能の追加\n   - 設定管理システムの構築",
+      "testStrategy": "1. **機能テスト**\n   - CrewAIマルチエージェントシステム\n     - 複数エージェントが正しく初期化されることを確認\n     - エージェント間の通信が期待通りに機能するか検証\n     - 複雑なタスクを分割して処理できることを確認\n     - 結果の統合が正確に行われるかテスト\n\n   - ローカルRAGシステム\n     - ドキュメント取り込みの正確性を検証\n     - 検索精度の評価（関連性スコアの測定）\n     - 回答生成の品質評価（人間評価を含む）\n     - 大規模データセットでのスケーラビリティテスト\n\n   - フロントエンドサポート\n     - 異なるモデル間の切り替えテスト\n     - パラメータ調整の効果を検証\n     - ストリーミング出力の遅延測定\n     - UIの応答性と使いやすさの評価\n\n2. **パフォーマンステスト**\n   - 処理速度の測定（トークン/秒）\n   - メモリ使用量のプロファイリング\n   - 並列処理の効率性評価\n   - 長時間実行時の安定性テスト\n\n3. **統合テスト**\n   - エンドツーエンドのユースケースシナリオテスト\n   - エラー条件下での動作検証\n   - 設定変更の反映テスト\n   - システム全体のリソース使用状況モニタリング\n\n4. **ユーザー受け入れテスト**\n   - 実際のユーザーによる機能評価\n   - 使いやすさと直感性の評価\n   - パフォーマンスに関するフィードバック収集\n   - 改善点の特定と優先順位付け",
+      "status": "pending",
+      "dependencies": [
+        45
+      ],
+      "priority": "medium",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "CrewAI連携Workerの作成",
+          "description": "複数のローカルLLMエージェントを協調させて複雑なタスクを処理するため、`multiLLM_system/workers/crewai_worker.py` を新規作成する。`crewai`と`langchain_community`を利用し、タスク内容に応じて動的にエージェントとタスクを定義し、Crewを実行するロジックを実装する。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 46
+        },
+        {
+          "id": 2,
+          "title": "ローカル完結型RAGへの拡張",
+          "description": "既存のRAGシステムを、埋め込み生成も含めて完全にローカルで実行できるように拡張する。`multiLLM_system/services/rag_system/embeddings/embedding_service.py` を修正し、HuggingFaceの代わりにOllama経由でローカルの埋め込みモデル（例: `nomic-embed-text`）を呼び出すロジックを追加する。これにより、機密文書のオフラインでの取り扱いを可能にする。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 46
+        },
+        {
+          "id": 3,
+          "title": "フロントエンドでのローカルLLM対応",
+          "description": "UIからローカルLLMの稼働状況を確認し、直接タスクを指示できるようにする。`multiLLM_system/ui/src/pages/Workers.tsx`にローカルWorkerのステータス表示を追加し、`multiLLM_system/ui/src/components/ImprovedChat/ImprovedChatInterface.tsx`に「ローカルモード」を実装する。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 46
+        }
+      ]
+    },
+    {
+      "id": 47,
+      "title": "ローカルLLM選定と役割定義：multiLLM_systemへの統合計画",
+      "description": "提供された性能・コスト情報を基に、multiLLM_systemに統合するローカルLLMの選定と役割定義を行い、M2 MacとMac Studio環境それぞれに最適なモデル配置とクラウドAIとの連携戦略を設計する。",
+      "details": "このタスクでは、multiLLM_systemにおけるローカルLLMの効果的な活用戦略を具体化します。\n\n1. **ローカルLLMの選定基準の確立**\n   - 性能指標の定義：推論速度、メモリ使用量、トークン処理能力、精度\n   - コスト指標の定義：計算リソース要件、ライセンス条件、運用コスト\n   - 互換性要件：llama.cpp、GGUF、ONNX等のフォーマット対応\n   - 特化機能評価：コード生成、多言語対応、長文脈処理能力など\n\n2. **M2 Mac環境向けモデル選定と設定**\n   - 8-10Bパラメータクラスの軽量モデル評価（Phi-3, Mistral, Llama3等）\n   - 量子化レベル（4-bit, 5-bit等）の最適化実験\n   - メモリ使用量とレイテンシのトレードオフ分析\n   - 具体的なモデル候補と設定パラメータの文書化\n\n3. **Mac Studio環境向けモデル選定と設定**\n   - 高性能モデル（13B-70Bクラス）の評価\n   - マルチGPUデプロイメント設定の最適化\n   - バッチ処理とスループット最大化の設定\n   - 具体的なモデル候補と設定パラメータの文書化\n\n4. **Worker役割定義と割り当て計画**\n   - 各Workerの責任領域の明確化（コード生成、文書要約、データ分析等）\n   - Workerごとの最適モデル割り当て\n   - 負荷分散とフェイルオーバー戦略\n   - スケーリング方針の策定\n\n5. **クラウドAI・ローカルLLM動的切替戦略**\n   - 切替判断基準の定義（タスク複雑性、レイテンシ要件、コスト制約等）\n   - フォールバックメカニズムの設計\n   - ユーザー設定可能な優先度コントロール\n   - APIの統一インターフェース設計\n\n6. **統合アーキテクチャ設計**\n   - モデルローディング戦略（事前ロード vs オンデマンド）\n   - キャッシュ戦略とメモリ管理\n   - 並列処理とリソース割り当て\n   - モニタリングと自動最適化の仕組み\n\n7. **実装ロードマップの作成**\n   - Phase 1（M2 Mac対応）の実装ステップ\n   - Phase 2（Mac Studio対応）への移行計画\n   - 段階的デプロイと検証のマイルストーン",
+      "testStrategy": "1. **モデル選定評価テスト**\n   - 候補モデルごとに標準ベンチマークを実行（推論速度、メモリ使用量、精度）\n   - 実際のM2 Mac環境での起動時間、推論レイテンシ、最大コンテキスト長を測定\n   - Mac Studio環境でのスケーラビリティテスト（複数モデル同時実行時のパフォーマンス）\n   - 各モデルの特化タスク（コード生成、要約等）の品質評価\n\n2. **Worker割り当てテスト**\n   - 定義された各Workerロールに対して、選定モデルの適合性を検証\n   - 複数Workerの並行動作時のシステムリソース使用状況を監視\n   - 負荷テストによるボトルネック特定と最適化\n\n3. **動的切替機能テスト**\n   - 定義された切替条件ごとにローカル/クラウド切替が正しく動作することを確認\n   - エッジケース（ネットワーク切断、モデルロード失敗等）での適切なフォールバック動作確認\n   - ユーザー設定による優先度変更が正しく反映されることを確認\n\n4. **統合テスト**\n   - multiLLM_systemの既存コンポーネントとの連携テスト\n   - エンドツーエンドのユーザーフロー検証（UI操作からモデル実行まで）\n   - 長時間安定性テスト（メモリリーク、パフォーマンス低下がないか）\n\n5. **ドキュメント検証**\n   - 選定モデルと設定の詳細ドキュメントのレビュー\n   - 環境構築手順の実機での再現性確認\n   - トラブルシューティングガイドの網羅性確認\n\n6. **パフォーマンス比較検証**\n   - クラウドAPIとローカルLLMのレイテンシ、コスト、品質の比較データ収集\n   - 実際のユースケースでの体感パフォーマンス評価\n   - 最適な切替閾値の検証と調整",
+      "status": "pending",
+      "dependencies": [
+        45,
+        46
+      ],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Phase 1 (M2 Mac)向け 軽量LLM選定と性能評価",
+          "description": "現在のM2 MacBook Air (24GB)環境で現実的に動作する軽量ローカルLLMを選定し、性能を評価する。候補モデル（例: deepseek-coder-v2:16b, llama3:8b, qwen2:7b）について、レスポンス速度、メモリ使用量、タスク品質を評価し、M2 Mac環境での最適モデル構成レポートを作成する。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 47
+        },
+        {
+          "id": 2,
+          "title": "Phase 2 (Mac Studio)向け 高性能LLM役割定義",
+          "description": "Mac Studio (M4 Ultra, 192GB想定)の性能を最大限に活かすため、フルスペックのローカルLLM（例: deepseek-r1:70b, qwen3:70b, llama3.3:70b）を各Workerに割り当てる最終構成を定義する。分析、コード生成、レビューといった役割ごとに最適なモデルを選定し、設計書としてまとめる。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [
+            "47.1"
+          ],
+          "parentTaskId": 47
+        },
+        {
+          "id": 3,
+          "title": "動的LLM切り替え戦略の設計",
+          "description": "タスク内容に応じてクラウドAIとローカルLLMを自動で使い分けるインテリジェントなルーティング機能を設計する。キーワードベース、コストベース、性能ベースのルーティングルールと、UIからのモード指定を組み合わせたハイブリッド戦略を検討し、Orchestratorの具体的な改修設計案を作成する。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [
+            "47.1"
+          ],
+          "parentTaskId": 47
+        }
+      ]
+    },
+    {
+      "id": 48,
+      "title": "フロントエンド統合実現可能性検証：frontend-v2とローカルLLM Web UIの統合",
+      "description": "frontend-v2の既存ダッシュボード機能とOllamaなどのローカルLLM Web UIを統合し、CONEAの設計思想に基づいた新しいWebアプリケーション「frontend_webapp」の実現可能性を検証する。",
+      "details": "この実現可能性検証は、既存のフロントエンドシステムとローカルLLM Web UIの統合に向けた包括的な分析と設計を行います。\n\n1. **frontend-v2のアーキテクチャ分析**\n   - コンポーネント構造とデータフロー図の作成\n   - 使用技術スタック（フレームワーク、ライブラリ、API）の詳細調査\n   - 既存ダッシュボード機能の特定と機能分解\n   - 拡張ポイントと制約の特定\n   - コードベースの品質と保守性の評価\n\n2. **ローカルLLM Web UIの機能分析**\n   - Ollama Web UI、LM Studio、Text Generation WebUIなど主要なローカルLLM UIの比較分析\n   - 各UIの主要機能、UXパターン、技術スタックの調査\n   - APIインターフェースとデータモデルの分析\n   - パフォーマンス特性と拡張性の評価\n   - オープンソースライセンスの確認と互換性検証\n\n3. **統合設計案の作成**\n   - アーキテクチャ統合の複数アプローチ案（完全統合、部分統合、APIブリッジなど）\n   - 技術スタックの互換性評価と最適な統合技術の選定\n   - データフロー設計と状態管理戦略\n   - UIコンポーネント再利用と新規開発の範囲定義\n   - multiLLM_systemとの連携インターフェース設計\n   - CONEAの設計思想を反映したUX設計原則の策定\n\n4. **PoC（概念実証）計画の策定**\n   - 検証すべき主要仮説と成功基準の定義\n   - 最小実装範囲の特定と工数見積もり\n   - 技術的リスクと軽減策の特定\n   - 開発環境とツールチェーンの準備計画\n   - 段階的な実装アプローチと評価ポイントの設定\n   - リソース要件（人員、時間、インフラ）の見積もり\n\n5. **統合における課題と解決策の検討**\n   - 異なるフレームワーク間の統合課題\n   - ローカルLLMとのリアルタイム通信の最適化\n   - 認証・認可システムの統合アプローチ\n   - 多様なデバイス環境（M2 Mac、Mac Studio）でのパフォーマンス最適化戦略\n   - オフライン動作とクラウドAIフォールバックの実装方針",
+      "testStrategy": "実現可能性検証の完了を確認するための検証ステップ：\n\n1. **ドキュメント検証**\n   - アーキテクチャ分析レポートの完全性と正確性を確認\n   - 統合設計案が全ての要件と制約を考慮しているか検証\n   - PoCプランが具体的で実行可能かレビュー\n   - 技術的リスクと解決策が適切に文書化されているか確認\n\n2. **技術的実現可能性の検証**\n   - 提案された統合アプローチの技術的な実現可能性を専門家レビューで評価\n   - 主要な技術的課題に対する解決策の妥当性を検証\n   - 必要に応じて、クリティカルな統合ポイントの小規模プロトタイプを作成してテスト\n\n3. **リソース要件の妥当性確認**\n   - 工数見積もりの現実性を複数の開発者の視点から検証\n   - 必要なスキルセットと利用可能なリソースのギャップ分析\n   - インフラ要件と既存環境の互換性確認\n\n4. **ビジネス価値の検証**\n   - 統合によって得られる具体的なユーザー価値の明確化\n   - 開発コストと期待される効果のバランス評価\n   - CONEAの設計思想との整合性確認\n\n5. **Go/No-Go判断基準の確認**\n   - 実現可能性検証の結果に基づく明確な判断基準が設定されているか\n   - 技術的、リソース的、ビジネス的観点からの総合評価が完了しているか\n   - 次のステップ（実装フェーズまたは代替アプローチの検討）への明確な推奨事項が提示されているか\n\n6. **レビューミーティングの実施**\n   - 主要ステークホルダーを集めた検証結果のレビューミーティングを開催\n   - 技術チーム、製品管理者、ビジネス意思決定者からのフィードバック収集\n   - 最終的な実現可能性判断と次のステップの合意形成",
+      "status": "pending",
+      "dependencies": [
+        47
+      ],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "`frontend-v2`アーキテクチャと機能の分析",
+          "description": "`frontend-v2`のコードベースをレビューし、そのアーキテクチャ（フレームワーク、ディレクトリ構造）、主要コンポーネント（UIライブラリ、状態管理）、およびダッシュボードやAPI連携などのコア機能を文書化する。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 48
+        },
+        {
+          "id": 2,
+          "title": "ローカルLLM Web UIの機能分析",
+          "description": "代表的なローカルLLM向けWeb UI（例: Open WebUI, LM Studio）の機能、技術スタック、カスタマイズ性を調査する。特に、チャットUI、モデル管理機能、API互換性、外部アプリケーションへの埋め込みやコンポーネント流用の可能性について分析する。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [],
+          "parentTaskId": 48
+        },
+        {
+          "id": 3,
+          "title": "`frontend_webapp`統合設計案の作成",
+          "description": "タスク48.1と48.2の分析結果に基づき、`frontend_webapp`の統合設計案を作成する。これには、技術スタックの選定、コンポーネントの再利用計画、新しいディレクトリ構造の提案、そして主要画面（統合ダッシュボード、マルチLLMチャット画面など）のワイヤーフレームまたはUIモックアップを含む。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [
+            "48.1",
+            "48.2"
+          ],
+          "parentTaskId": 48
+        },
+        {
+          "id": 4,
+          "title": "PoC（概念実証）計画の策定",
+          "description": "統合設計案（タスク48.3）が技術的に実現可能かを検証するための、PoC（概念実証）の具体的な計画を策定する。PoCのスコープ（例: `frontend-v2`のダッシュボードコンポーネントを流用し、`multiLLM_system`経由でローカルLLMと会話する単一ページを作成）、実装ステップ、期間、そして成功基準を定義する。",
+          "details": "",
+          "status": "pending",
+          "dependencies": [
+            "48.3"
+          ],
+          "parentTaskId": 48
+        }
+      ]
     }
   ]
 }

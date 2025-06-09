@@ -11,9 +11,10 @@ from typing import Dict, Optional, List
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import sys
 import os
+import requests
 
 # 親ディレクトリをパスに追加
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -22,6 +23,8 @@ from orchestrator.orchestrator import MultiLLMOrchestrator
 from orchestrator.response_formatter import ResponseFormatter, MessageProcessor
 from orchestrator.analyzers.data_analyzer import DataAnalyzer
 from orchestrator.automation.task_automator import TaskAutomator
+from orchestrator.worker_factory import WorkerFactory
+from config.settings import settings
 
 # ログ設定
 logging.basicConfig(
@@ -49,6 +52,7 @@ class ChatRequest(BaseModel):
     conversation_id: Optional[str] = None
     user_id: str = "default_user"
     context: Optional[Dict] = None
+    worker_type: Optional[str] = None  # 新規追加: ワーカータイプの指定 (例: 'openai', 'anthropic', 'local_llm')
 
 
 class ConversationDebugRequest(BaseModel):
@@ -71,6 +75,13 @@ class AutomationRuleRequest(BaseModel):
     trigger_config: Dict
     actions: List[Dict]
     active: bool = True
+
+
+class GenerationRequest(BaseModel):
+    """シンプルな生成リクエスト（ワーカー直接呼び出し用）"""
+    prompt: str
+    worker_type: str = Field(default="openai", description="The type of worker to use (e.g., 'openai', 'anthropic', 'local_llm')")
+    model_id: Optional[str] = None
 
 
 # グローバルインスタンス
@@ -137,10 +148,63 @@ async def health():
     }
 
 
+@app.get("/health/ollama", tags=["Health Checks"])
+async def health_check_ollama():
+    """
+    Checks the health and connectivity of the configured Ollama server.
+    """
+    try:
+        # A simple GET request to the Ollama base URL should be enough
+        # to verify that the server is running and reachable.
+        response = requests.get(settings.OLLAMA_API_URL, timeout=5)  # 5 second timeout
+        response.raise_for_status()
+        
+        # If the request is successful, the service is considered healthy.
+        return {
+            "status": "ok",
+            "message": "Ollama server is reachable.",
+            "url": settings.OLLAMA_API_URL
+        }
+    except requests.exceptions.RequestException as e:
+        # If the request fails for any reason (timeout, connection error, etc.)
+        raise HTTPException(
+            status_code=503,  # Service Unavailable
+            detail={
+                "status": "error",
+                "message": "Ollama server is unreachable.",
+                "url": settings.OLLAMA_API_URL,
+                "error_details": str(e)
+            }
+        )
+
+
 @app.post("/chat")
 async def chat(request: ChatRequest):
     """通常のチャットエンドポイント（非ストリーミング）"""
     try:
+        # worker_typeが指定されている場合は、直接ワーカーを使用
+        if request.worker_type:
+            try:
+                # WorkerFactoryを使用してワーカーを作成
+                worker = WorkerFactory.create_worker(
+                    worker_type=request.worker_type,
+                    model_id=None  # model_idはGenerationRequestでのみサポート
+                )
+                
+                # ワーカーでタスクを処理
+                response = await worker.process_task(request.message)
+                
+                return JSONResponse({
+                    "success": True,
+                    "response": response,
+                    "conversation_id": request.conversation_id,
+                    "worker_type": request.worker_type
+                })
+            except ValueError as e:
+                # 不明なworker_typeの場合はOrchestratorにフォールバック
+                logger.warning(f"Unknown worker_type '{request.worker_type}', falling back to orchestrator: {e}")
+        
+        # worker_typeが指定されていない、または不明な場合は既存のOrchestratorロジックを使用
         result = await orchestrator.process_user_request(
             request=request.message,
             user_id=request.user_id,
@@ -197,30 +261,58 @@ async def chat_stream(request: ChatRequest):
             # メッセージ処理のタスクタイプを判定
             message_lower = request.message.lower()
             
-            # 処理前のステータス送信
-            if any(kw in message_lower for kw in ['思い出して', '記憶', 'メモリ']):
-                await process_callback(formatter.create_thinking_message("メモリを検索中..."))
-                await process_callback(formatter.create_response_message(
-                    "メモリを検索します。少々お待ちください...",
-                    intermediate=True
-                ))
-                await process_callback(formatter.create_tool_message("OpenMemory", "search"))
-            elif any(kw in message_lower for kw in ['実装', 'コード', '作成']):
-                await process_callback(formatter.create_thinking_message("コード生成の準備中..."))
-            else:
-                await process_callback(formatter.create_thinking_message("リクエストを分析中..."))
+            # worker_typeが指定されている場合は、直接ワーカーを使用
+            if request.worker_type:
+                try:
+                    # WorkerFactoryを使用してワーカーを作成
+                    worker = WorkerFactory.create_worker(
+                        worker_type=request.worker_type,
+                        model_id=None
+                    )
+                    
+                    await process_callback(formatter.create_thinking_message(f"{request.worker_type}ワーカーで処理中..."))
+                    
+                    # ワーカーでタスクを処理（非同期）
+                    async def worker_process():
+                        response = await worker.process_task(request.message)
+                        return {
+                            'response': response,
+                            'worker_type': request.worker_type
+                        }
+                    
+                    process_task = asyncio.create_task(worker_process())
+                    
+                except ValueError as e:
+                    # 不明なworker_typeの場合はOrchestratorにフォールバック
+                    logger.warning(f"Unknown worker_type '{request.worker_type}', falling back to orchestrator: {e}")
+                    request.worker_type = None  # フォールバックのためリセット
             
-            # Orchestratorでリクエスト処理（非同期）
-            logger.info(f"Starting orchestrator processing for conversation {conversation_id}")
-            process_task = asyncio.create_task(
-                orchestrator.process_user_request(
-                    request=request.message,
-                    user_id=request.user_id,
-                    context=request.context,
-                    conversation_id=conversation_id,
-                    stream_handler=stream_handler
+            # worker_typeが指定されていない、または無効な場合は既存のロジックを使用
+            if not request.worker_type:
+                # 処理前のステータス送信
+                if any(kw in message_lower for kw in ['思い出して', '記憶', 'メモリ']):
+                    await process_callback(formatter.create_thinking_message("メモリを検索中..."))
+                    await process_callback(formatter.create_response_message(
+                        "メモリを検索します。少々お待ちください...",
+                        intermediate=True
+                    ))
+                    await process_callback(formatter.create_tool_message("OpenMemory", "search"))
+                elif any(kw in message_lower for kw in ['実装', 'コード', '作成']):
+                    await process_callback(formatter.create_thinking_message("コード生成の準備中..."))
+                else:
+                    await process_callback(formatter.create_thinking_message("リクエストを分析中..."))
+                
+                # Orchestratorでリクエスト処理（非同期）
+                logger.info(f"Starting orchestrator processing for conversation {conversation_id}")
+                process_task = asyncio.create_task(
+                    orchestrator.process_user_request(
+                        request=request.message,
+                        user_id=request.user_id,
+                        context=request.context,
+                        conversation_id=conversation_id,
+                        stream_handler=stream_handler
+                    )
                 )
-            )
             
             # ストリーミング処理
             while True:
@@ -380,6 +472,56 @@ async def test_claude():
             "error": str(e),
             "api_status": "error"
         }
+
+
+@app.post("/generate")
+async def generate(request: GenerationRequest):
+    """
+    シンプルな生成エンドポイント（ワーカー直接呼び出し）
+    リクエストで指定されたワーカータイプを使用して、プロンプトに対する応答を生成
+    """
+    try:
+        # WorkerFactoryを使用してワーカーを作成
+        worker = WorkerFactory.create_worker(
+            worker_type=request.worker_type, 
+            model_id=request.model_id
+        )
+    except ValueError as e:
+        # WorkerFactoryが不明なworker_typeに対してValueErrorを発生させることを想定
+        raise HTTPException(status_code=400, detail=str(e))
+
+    try:
+        # ワーカーでタスクを処理
+        # BaseWorkerのprocess_taskメソッドを呼び出す
+        response = await worker.process_task(request.prompt)
+        
+        return {
+            "success": True,
+            "response": response,
+            "worker_type": request.worker_type,
+            "model_id": request.model_id
+        }
+    except Exception as e:
+        # ワーカー実行中の一般的なエラーを捕捉
+        logger.error(f"Worker execution error: {e}")
+        raise HTTPException(status_code=500, detail=f"Error processing task: {e}")
+
+
+@app.get("/workers/types")
+async def get_worker_types():
+    """
+    サポートされているワーカータイプの一覧を取得
+    """
+    return {
+        "success": True,
+        "worker_types": WorkerFactory.get_supported_worker_types(),
+        "description": {
+            "anthropic": "Claude AI by Anthropic",
+            "claude": "Claude AI by Anthropic (alias)",
+            "openai": "OpenAI GPT models",
+            "local_llm": "Local LLM models (Ollama, etc.)"
+        }
+    }
 
 
 # ========== Analytics Endpoints ==========
