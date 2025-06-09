@@ -3,7 +3,15 @@
  * バックエンドAPIとの通信を担当するクライアント
  */
 
-import { ChatCompletionRequest, ChatCompletionResponse, ApiErrorResponse } from '../types/api';
+import { 
+  ChatCompletionRequest, 
+  ChatCompletionResponse, 
+  ApiErrorResponse,
+  LocalLLMProvider,
+  AddProviderRequest,
+  ProvidersResponse,
+  HealthCheckResponse
+} from '../types/api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
@@ -101,6 +109,33 @@ class ApiClient {
    */
   public async getWorkerModels(workerType: string): Promise<{ worker_type: string; models: string[] }> {
     return this.request<{ worker_type: string; models: string[] }>(`/workers/${workerType}/models`);
+  }
+
+  /**
+   * ローカルLLMプロバイダ一覧取得API
+   * GET /local-llm/providers
+   */
+  public async getLocalLLMProviders(): Promise<ProvidersResponse> {
+    return this.request<ProvidersResponse>('/local-llm/providers');
+  }
+
+  /**
+   * ローカルLLMプロバイダ追加API
+   * POST /local-llm/providers
+   */
+  public async addLocalLLMProvider(data: AddProviderRequest): Promise<{ success: boolean; message: string; provider: LocalLLMProvider }> {
+    return this.request<{ success: boolean; message: string; provider: LocalLLMProvider }>('/local-llm/providers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
+   * ローカルLLMプロバイダヘルスチェックAPI
+   * GET /local-llm/providers/health
+   */
+  public async checkLocalLLMProvidersHealth(): Promise<HealthCheckResponse> {
+    return this.request<HealthCheckResponse>('/local-llm/providers/health');
   }
 }
 

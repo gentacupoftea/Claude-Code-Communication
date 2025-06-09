@@ -8,11 +8,99 @@ multiLLM APIが拡張され、リクエストで`worker_type`を指定するこ�
 
 - `openai` - OpenAI GPT models
 - `anthropic` / `claude` - Claude AI by Anthropic
-- `local_llm` - Local LLM models (Ollama, etc.)
+- `local_llm` - Local LLM models (Ollama, Deepseek, etc.)
+
+### ローカルLLMプロバイダ
+
+`local_llm`ワーカータイプでは、以下のプロバイダがサポートされています：
+
+- **Ollama**: ローカルでLLMを実行するためのツール
+  - デフォルトURL: `http://localhost:11434`
+  - 対応モデル: llama2, codellama, command-r-plus, etc.
+  
+- **Deepseek**: DeepseekのAPI（OpenAI互換）
+  - デフォルトURL: `https://api.deepseek.com/v1`
+  - APIキーが必要
+  - 対応モデル: deepseek-chat, deepseek-coder, etc.
 
 ## APIエンドポイント
 
-### 1. ワーカータイプ一覧の取得
+### 1. ローカルLLMプロバイダ管理
+
+#### 1.1 プロバイダ一覧取得
+
+```bash
+GET /local-llm/providers
+```
+
+**レスポンス例:**
+```json
+{
+  "success": true,
+  "providers": [
+    {
+      "name": "ollama-local",
+      "type": "ollama",
+      "api_base": "http://localhost:11434",
+      "status": "healthy"
+    },
+    {
+      "name": "deepseek-api", 
+      "type": "deepseek",
+      "api_base": "https://api.deepseek.com/v1",
+      "status": "healthy"
+    }
+  ]
+}
+```
+
+#### 1.2 プロバイダ追加
+
+```bash
+POST /local-llm/providers
+```
+
+**リクエストボディ:**
+```json
+{
+  "name": "my-ollama",
+  "provider_type": "ollama",
+  "api_base": "http://localhost:11434",
+  "timeout": 300
+}
+```
+
+**レスポンス例:**
+```json
+{
+  "success": true,
+  "message": "Provider added successfully",
+  "provider": {
+    "name": "my-ollama",
+    "type": "ollama",
+    "status": "healthy"
+  }
+}
+```
+
+#### 1.3 プロバイダヘルスチェック
+
+```bash
+GET /local-llm/providers/health
+```
+
+**レスポンス例:**
+```json
+{
+  "success": true,
+  "health_status": {
+    "ollama-local": true,
+    "deepseek-api": false
+  }
+}
+```
+
+### 2. ワーカータイプ一覧の取得
 
 ```bash
 GET /workers/types
