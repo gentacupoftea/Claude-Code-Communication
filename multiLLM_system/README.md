@@ -2,6 +2,41 @@
 
 複数のLLMを統合管理し、Slackを通じて対話的なサポートを提供するシステム
 
+## MultiLLM System ローカル実行ガイド
+
+### 起動方法
+`multiLLM_system`ディレクトリで `docker-compose up --build` を実行します。
+
+### 詳細セットアップ（初回のみ）
+
+1. **前提条件**
+   - Docker と Docker Compose がインストールされていること
+   - Python 3.11以上（ローカルテスト用）
+
+2. **環境変数の設定**
+   ```bash
+   cp .env.example .env
+   # .envファイルを編集してAPIキーを設定
+   ```
+
+3. **Dockerコンテナの起動**
+   ```bash
+   docker-compose up --build
+   ```
+   
+   これにより以下が起動します：
+   - MultiLLM APIサーバー（http://localhost:8000）
+   - Ollamaサーバー（http://localhost:11434）
+
+4. **動作確認**
+   ```bash
+   # APIの確認
+   curl http://localhost:8000/workers/types
+   
+   # ローカルLLMのモデル一覧
+   curl http://localhost:8000/local_llm/models
+   ```
+
 ## アーキテクチャ
 
 - **Orchestrator**: タスクの振り分けと管理

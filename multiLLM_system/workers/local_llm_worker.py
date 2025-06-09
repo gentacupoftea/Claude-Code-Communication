@@ -143,6 +143,49 @@ class LocalLLMWorker(BaseWorker):
         For now, it's just the one configured model.
         """
         return [self.model_id]
+    
+    async def list_models(self) -> List[str]:
+        """
+        利用可能なモデルのリストを返す
+        Ollama APIから動的に取得
+        
+        Returns:
+            List[str]: 利用可能なモデルIDのリスト
+        """
+        try:
+            # Ollama APIのモデルリストを取得
+            loop = asyncio.get_event_loop()
+            
+            def fetch_models():
+                try:
+                    response = requests.get(
+                        f"{settings.OLLAMA_API_URL}/api/tags",
+                        timeout=settings.LLM_TIMEOUT
+                    )
+                    response.raise_for_status()
+                    return response.json()
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"Failed to fetch models from Ollama: {e}")
+                    raise
+            
+            models_info = await loop.run_in_executor(None, fetch_models)
+            
+            # モデル名のリストを抽出
+            available_models = []
+            for model in models_info.get('models', []):
+                model_name = model.get('name')
+                if model_name:
+                    # タグを削除してベースモデル名のみを取得
+                    base_name = model_name.split(':')[0]
+                    if base_name not in available_models:
+                        available_models.append(base_name)
+            
+            return available_models
+            
+        except Exception as e:
+            logger.error(f"Error listing Ollama models: {str(e)}")
+            # エラー時は設定されたデフォルトモデルのみを返す
+            return [self.model_id]
 
     async def health_check(self) -> Dict[str, Any]:
         """

@@ -1,35 +1,43 @@
 # multiLLM_system/config/settings.py
 
-import os
 from pydantic import BaseSettings
 from typing import Optional
 
 class Settings(BaseSettings):
     """
-    Application settings with environment variable support
+    環境変数から設定を読み込むためのクラス。
+    大文字小文字を区別せず、環境変数を自動的にマッピングします。
     """
-    # API Key settings - required from environment
-    ANTHROPIC_API_KEY: str = os.environ["ANTHROPIC_API_KEY"]
-    OPENAI_API_KEY: str = os.environ["OPENAI_API_KEY"]
+    # Slack API settings
+    SLACK_BOT_TOKEN: Optional[str] = None
+    SLACK_APP_TOKEN: Optional[str] = None
+
+    # LLM Provider API keys
+    ANTHROPIC_API_KEY: Optional[str] = None
+    OPENAI_API_KEY: Optional[str] = None
+    COHERE_API_KEY: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = None
+    
+    # Timeout settings
     LLM_TIMEOUT: int = 120
     
-    # Google settings (if exists)
+    # GCP Project ID (if applicable)
     GOOGLE_CLOUD_PROJECT_ID: Optional[str] = None
     
     # Local LLM settings for Ollama
-    OLLAMA_API_URL: str = "http://localhost:11434"
+    OLLAMA_API_URL: str = "http://host.docker.internal:11434"
     LOCAL_LLM_MODEL: str = "command-r-plus"
     
     # Health check configuration
-    HEALTHCHECK_TIMEOUT: int = int(os.getenv("HEALTHCHECK_TIMEOUT", 5))  # seconds
+    HEALTHCHECK_TIMEOUT: int = 5  # seconds
     
     # General settings
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
-    
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
-# Create global settings instance
+    class Config:
+        env_file = '.env'
+        env_file_encoding = 'utf-8'
+        case_sensitive = False
+
 settings = Settings()

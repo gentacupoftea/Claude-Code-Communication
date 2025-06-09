@@ -7,7 +7,7 @@ import os
 import json
 import logging
 import asyncio
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from base_worker import BaseWorker, WorkerCapability
 import openai
 from openai import AsyncOpenAI
@@ -164,6 +164,24 @@ class OpenAIWorker(BaseWorker):
             prompt += f"\n現在のタスク: {context['task_name']}"
         
         return prompt
+    
+    async def list_models(self) -> List[str]:
+        """
+        利用可能なモデルのリストを返す
+        OpenAIが公式に提供しているモデルリストをハードコードで返却
+        
+        Returns:
+            List[str]: 利用可能なモデルIDのリスト
+        """
+        # OpenAI GPT models (as of 2024)
+        return [
+            "gpt-4-turbo-preview",
+            "gpt-4-turbo",
+            "gpt-4",
+            "gpt-3.5-turbo",
+            "gpt-3.5-turbo-16k",
+            "gpt-4-32k"
+        ]
 
 async def main():
     """Main function to run the worker"""

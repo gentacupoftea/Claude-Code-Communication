@@ -565,6 +565,46 @@ async def get_worker_types():
     }
 
 
+@app.get("/workers")
+async def get_workers():
+    """
+    利用可能なワーカー一覧を取得するAPI
+    
+    Returns:
+        dict: ワーカータイプのリストを含むレスポンス
+    """
+    return {
+        "workers": WorkerFactory.list_worker_types()
+    }
+
+
+@app.get("/workers/{worker_type}/models")
+async def get_worker_models(worker_type: str):
+    """
+    特定ワーカーの利用可能なモデル一覧を取得するAPI
+    
+    Args:
+        worker_type: ワーカータイプ ('anthropic', 'openai', 'local_llm' など)
+    
+    Returns:
+        dict: ワーカータイプとモデルリストを含むレスポンス
+    
+    Raises:
+        HTTPException: サポートされていないワーカータイプの場合
+    """
+    try:
+        models = await WorkerFactory.get_available_models(worker_type)
+        return {
+            "worker_type": worker_type,
+            "models": models
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error getting models for {worker_type}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve models")
+
+
 # ========== Analytics Endpoints ==========
 
 @app.post("/api/analytics/analyze")

@@ -7,7 +7,7 @@ import os
 import json
 import logging
 import asyncio
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from base_worker import BaseWorker, WorkerCapability
 import anthropic
 from anthropic import AsyncAnthropic
@@ -165,6 +165,24 @@ class ClaudeWorker(BaseWorker):
         prompt += "\n\n日本語で応答してください。コードやテクニカルな用語は英語のままで構いません。"
         
         return prompt
+    
+    async def list_models(self) -> List[str]:
+        """
+        利用可能なモデルのリストを返す
+        Anthropicが公式に提供しているモデルリストをハードコードで返却
+        
+        Returns:
+            List[str]: 利用可能なモデルIDのリスト
+        """
+        # Anthropic Claude models (as of 2024)
+        return [
+            "claude-3-opus-20240229",
+            "claude-3-sonnet-20240229",
+            "claude-3-haiku-20240307",
+            "claude-2.1",
+            "claude-2.0",
+            "claude-instant-1.2"
+        ]
 
 async def main():
     """Main function to run the worker"""
