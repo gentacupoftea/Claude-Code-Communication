@@ -2,35 +2,40 @@
 
 複数のLLMを統合管理し、Slackを通じて対話的なサポートを提供するシステム
 
-## ローカルLLM実行環境
+## MultiLLM System ローカル実行ガイド
 
-このシステムはDockerを使って、ローカルLLM（Ollama）を含んだ開発環境を簡単に構築できます。
+### 起動方法
+`multiLLM_system`ディレクトリで `docker-compose up --build` を実行します。
 
-### 1. 前提条件
-- Docker と Docker Compose がインストールされていること。
-- Ollamaで利用したいモデルがローカルにダウンロードされていること。（初回起動時に自動でダウンロードされます）
+### 詳細セットアップ（初回のみ）
 
-### 2. セットアップ手順
-1.  リポジトリのルートで、環境変数ファイルを作成します。
-    ```bash
-    cp multiLLM_system/.env.example multiLLM_system/.env
-    ```
-2.  必要に応じて、`.env`ファイル内の`ANTHROPIC_API_KEY`などを設定してください。
+1. **前提条件**
+   - Docker と Docker Compose がインストールされていること
+   - Python 3.11以上（ローカルテスト用）
 
-### 3. 起動方法
-`multiLLM_system`ディレクトリに移動し、以下のコマンドを実行します。
-```bash
-cd multiLLM_system
-docker-compose up --build
-```
-初回起動時はOllamaイメージのダウンロードなどで時間がかかることがあります。
+2. **環境変数の設定**
+   ```bash
+   cp .env.example .env
+   # .envファイルを編集してAPIキーを設定
+   ```
 
-### 4. テスト方法
-環境が起動したら、別のターミナルを開き、以下のテストクライアントを実行します。
-```bash
-python multiLLM_system/local_llm_test_client.py
-```
-コンソールに「✅ Success!」とJSONレスポンスが表示されれば成功です。
+3. **Dockerコンテナの起動**
+   ```bash
+   docker-compose up --build
+   ```
+   
+   これにより以下が起動します：
+   - MultiLLM APIサーバー（http://localhost:8000）
+   - Ollamaサーバー（http://localhost:11434）
+
+4. **動作確認**
+   ```bash
+   # APIの確認
+   curl http://localhost:8000/workers/types
+   
+   # ローカルLLMのモデル一覧
+   curl http://localhost:8000/local_llm/models
+   ```
 
 ## アーキテクチャ
 
