@@ -151,12 +151,18 @@ async def health():
 @app.get("/health/ollama", tags=["Health Checks"])
 async def health_check_ollama():
     """
-    Checks the health and connectivity of the configured Ollama server.
+    Ollamaサーバーのヘルスチェックと接続性を確認します。
+
+    Returns:
+        dict: サーバーの状態を示すJSONレスポンス
+            - status: "ok" (正常) または "error" (異常)
+            - message: 状態の説明
+            - url: チェックしたOllamaサーバーのURL
     """
     try:
         # A simple GET request to the Ollama base URL should be enough
         # to verify that the server is running and reachable.
-        response = requests.get(settings.OLLAMA_API_URL, timeout=5)  # 5 second timeout
+        response = requests.get(settings.OLLAMA_API_URL, timeout=settings.HEALTHCHECK_TIMEOUT)
         response.raise_for_status()
         
         # If the request is successful, the service is considered healthy.
@@ -167,9 +173,9 @@ async def health_check_ollama():
         }
     except requests.exceptions.RequestException as e:
         # If the request fails for any reason (timeout, connection error, etc.)
-        raise HTTPException(
+        return JSONResponse(
             status_code=503,  # Service Unavailable
-            detail={
+            content={
                 "status": "error",
                 "message": "Ollama server is unreachable.",
                 "url": settings.OLLAMA_API_URL,

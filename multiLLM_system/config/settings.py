@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     OLLAMA_API_URL: str = "http://localhost:11434"
     LOCAL_LLM_MODEL: str = "command-r-plus"
     
+    # Health check configuration
+    HEALTHCHECK_TIMEOUT: int = 5  # seconds
+    
     # General settings
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
