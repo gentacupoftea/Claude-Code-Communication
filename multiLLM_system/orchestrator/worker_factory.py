@@ -67,6 +67,42 @@ class WorkerFactory:
         return ["anthropic", "claude", "openai", "local_llm"]
     
     @staticmethod
+    def list_worker_types() -> List[str]:
+        """
+        現在システムに登録されているすべてのLLMワーカーの種別を一覧で返す
+        
+        Returns:
+            List[str]: 利用可能なワーカータイプのリスト
+        """
+        return WorkerFactory.get_supported_worker_types()
+    
+    @staticmethod
+    async def get_available_models(worker_type: str) -> List[str]:
+        """
+        指定されたワーカータイプの利用可能なモデル一覧を取得
+        
+        Args:
+            worker_type: ワーカータイプ ('anthropic', 'openai', 'local_llm' など)
+            
+        Returns:
+            List[str]: 利用可能なモデルIDのリスト
+            
+        Raises:
+            ValueError: サポートされていないワーカータイプの場合
+        """
+        # 一時的にワーカーインスタンスを作成
+        try:
+            worker = WorkerFactory.create_worker(worker_type)
+            # list_modelsメソッドを呼び出し
+            models = await worker.list_models()
+            return models
+        except ValueError:
+            raise
+        except Exception as e:
+            logger.error(f"Error getting models for {worker_type}: {str(e)}")
+            return []
+    
+    @staticmethod
     def create_worker_pool(worker_configs: Dict[str, Dict[str, Any]]) -> Dict[str, BaseWorker]:
         """
         Create multiple workers based on configuration

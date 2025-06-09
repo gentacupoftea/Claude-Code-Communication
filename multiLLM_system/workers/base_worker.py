@@ -178,6 +178,17 @@ class BaseWorker(ABC):
         """
         pass
     
+    @abstractmethod
+    async def list_models(self) -> List[str]:
+        """
+        利用可能なモデルのリストを返す
+        サブクラスで必ず実装する
+        
+        Returns:
+            List[str]: 利用可能なモデルIDのリスト
+        """
+        pass
+    
     async def generate_llm_response(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         """LLMを使用してレスポンスを生成"""
         if not self.llm_client:

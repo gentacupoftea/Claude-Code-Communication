@@ -7,11 +7,14 @@ import json
 import logging
 import uuid
 from datetime import datetime
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Any
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel, Field
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import sys
 import os
 import requests
@@ -33,8 +36,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# レート制限の設定
+limiter = Limiter(key_func=get_remote_address)
+
 # FastAPIアプリケーション
 app = FastAPI(title="MultiLLM API", version="1.0.0")
+
+# レート制限エラーハンドラーを追加
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS設定
 app.add_middleware(
@@ -188,6 +198,8 @@ async def health_check_ollama():
 async def chat(request: ChatRequest):
     """通常のチャットエンドポイント（非ストリーミング）"""
     try:
+        fallback_info = None
+        
         # worker_typeが指定されている場合は、直接ワーカーを使用
         if request.worker_type:
             try:
@@ -204,11 +216,17 @@ async def chat(request: ChatRequest):
                     "success": True,
                     "response": response,
                     "conversation_id": request.conversation_id,
-                    "worker_type": request.worker_type
+                    "worker_type": request.worker_type,
+                    "task_analysis": None  # 直接ワーカー呼び出しの場合はタスク分析なし
                 })
             except ValueError as e:
                 # 不明なworker_typeの場合はOrchestratorにフォールバック
                 logger.warning(f"Unknown worker_type '{request.worker_type}', falling back to orchestrator: {e}")
+                fallback_info = {
+                    "used": True,
+                    "requested_worker": request.worker_type,
+                    "actual_worker": "orchestrator"
+                }
         
         # worker_typeが指定されていない、または不明な場合は既存のOrchestratorロジックを使用
         result = await orchestrator.process_user_request(
@@ -218,12 +236,18 @@ async def chat(request: ChatRequest):
             conversation_id=request.conversation_id
         )
         
-        return JSONResponse({
+        response_data = {
             "success": True,
             "response": result.get('response'),
             "conversation_id": result.get('conversation_log', {}).get('conversation_id'),
-            "task_analysis": result.get('task_analysis')
-        })
+            "task_analysis": result.get('task_analysis') or {}  # 常にtask_analysisを含める
+        }
+        
+        # フォールバック情報を追加（もしあれば）
+        if fallback_info:
+            response_data["fallback_info"] = fallback_info
+        
+        return JSONResponse(response_data)
         
     except Exception as e:
         logger.error(f"Chat error: {e}")
@@ -480,17 +504,28 @@ async def test_claude():
         }
 
 
-@app.post("/generate")
-async def generate(request: GenerationRequest):
+@app.post("/generate", response_model=Dict[str, Any])
+@limiter.limit("30/minute")
+async def generate(request: Request, generation_request: GenerationRequest):
     """
-    シンプルな生成エンドポイント（ワーカー直接呼び出し）
-    リクエストで指定されたワーカータイプを使用して、プロンプトに対する応答を生成
+    指定されたワーカータイプを使用してテキストを生成します。
+
+    Args:
+        request (Request): FastAPIのリクエストオブジェクト（レート制限用）。
+        generation_request (GenerationRequest): プロンプト、ワーカータイプ、モデルIDを含むリクエスト。
+
+    Returns:
+        Dict[str, Any]: 生成されたテキストを含むレスポンス。
+
+    Raises:
+        HTTPException(400): サポートされていないワーカータイプが指定された場合に発生します。
+        HTTPException(500): ワーカーの処理中に内部エラーが発生した場合に発生します。
     """
     try:
         # WorkerFactoryを使用してワーカーを作成
         worker = WorkerFactory.create_worker(
-            worker_type=request.worker_type, 
-            model_id=request.model_id
+            worker_type=generation_request.worker_type, 
+            model_id=generation_request.model_id
         )
     except ValueError as e:
         # WorkerFactoryが不明なworker_typeに対してValueErrorを発生させることを想定
@@ -499,13 +534,13 @@ async def generate(request: GenerationRequest):
     try:
         # ワーカーでタスクを処理
         # BaseWorkerのprocess_taskメソッドを呼び出す
-        response = await worker.process_task(request.prompt)
+        response = await worker.process_task(generation_request.prompt)
         
         return {
             "success": True,
             "response": response,
-            "worker_type": request.worker_type,
-            "model_id": request.model_id
+            "worker_type": generation_request.worker_type,
+            "model_id": generation_request.model_id
         }
     except Exception as e:
         # ワーカー実行中の一般的なエラーを捕捉
@@ -528,6 +563,46 @@ async def get_worker_types():
             "local_llm": "Local LLM models (Ollama, etc.)"
         }
     }
+
+
+@app.get("/workers")
+async def get_workers():
+    """
+    利用可能なワーカー一覧を取得するAPI
+    
+    Returns:
+        dict: ワーカータイプのリストを含むレスポンス
+    """
+    return {
+        "workers": WorkerFactory.list_worker_types()
+    }
+
+
+@app.get("/workers/{worker_type}/models")
+async def get_worker_models(worker_type: str):
+    """
+    特定ワーカーの利用可能なモデル一覧を取得するAPI
+    
+    Args:
+        worker_type: ワーカータイプ ('anthropic', 'openai', 'local_llm' など)
+    
+    Returns:
+        dict: ワーカータイプとモデルリストを含むレスポンス
+    
+    Raises:
+        HTTPException: サポートされていないワーカータイプの場合
+    """
+    try:
+        models = await WorkerFactory.get_available_models(worker_type)
+        return {
+            "worker_type": worker_type,
+            "models": models
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error getting models for {worker_type}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve models")
 
 
 # ========== Analytics Endpoints ==========
