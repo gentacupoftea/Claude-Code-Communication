@@ -6,6 +6,8 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { fetchWorkers, fetchModels, generateResponse, checkApiHealth } from '../lib/backendApi';
+import { apiClient } from '../lib/apiClient';
+import { ThinkingStep, ChatCompletionRequest } from '../types/api';
 
 // チャットメッセージの型定義
 export interface ChatMessage {
@@ -29,6 +31,10 @@ interface LLMStore {
   chatHistory: ChatMessage[];
   apiHealthy: boolean;
   error: string | null;
+  
+  // 思考ストリーム関連の状態
+  thinkingSteps: ThinkingStep[];
+  isThinking: boolean;
 
   // アクション
   loadWorkers: () => Promise<void>;
@@ -38,6 +44,13 @@ interface LLMStore {
   clearChatHistory: () => void;
   checkHealth: () => Promise<void>;
   clearError: () => void;
+  
+  // 思考ストリーム関連のアクション
+  addThinkingStep: (step: ThinkingStep) => void;
+  clearThinkingSteps: () => void;
+  startThinking: () => void;
+  stopThinking: () => void;
+  sendMessageWithStream: (message: string) => Promise<void>;
 }
 
 // Zustandストアの作成
@@ -54,6 +67,10 @@ export const useLLMStore = create<LLMStore>()(
       chatHistory: [],
       apiHealthy: false,
       error: null,
+      
+      // 思考ストリーム関連の初期状態
+      thinkingSteps: [],
+      isThinking: false,
 
       // ワーカー一覧を読み込む
       loadWorkers: async () => {
@@ -172,6 +189,98 @@ export const useLLMStore = create<LLMStore>()(
       // エラーをクリア
       clearError: () => {
         set({ error: null });
+      },
+
+      // 思考ストリーム関連のアクション実装
+      addThinkingStep: (step: ThinkingStep) => {
+        const { thinkingSteps } = get();
+        set({ thinkingSteps: [...thinkingSteps, step] });
+      },
+
+      clearThinkingSteps: () => {
+        set({ thinkingSteps: [] });
+      },
+
+      startThinking: () => {
+        set({ isThinking: true });
+      },
+
+      stopThinking: () => {
+        set({ isThinking: false });
+      },
+
+      // ストリーミング対応のメッセージ送信
+      sendMessageWithStream: async (message: string) => {
+        const { selectedWorker, selectedModel, chatHistory } = get();
+        
+        if (!selectedWorker || !selectedModel) {
+          set({ error: 'ワーカーとモデルを選択してください' });
+          return;
+        }
+
+        try {
+          set({ isGenerating: true, error: null });
+          get().clearThinkingSteps();
+          get().startThinking();
+
+          // ユーザーメッセージをチャット履歴に追加
+          const userMessage: ChatMessage = {
+            id: `user-${Date.now()}`,
+            role: 'user',
+            content: message,
+            timestamp: new Date(),
+          };
+
+          set({ 
+            chatHistory: [...chatHistory, userMessage] 
+          });
+
+          // ストリーミングリクエストの準備
+          const request: ChatCompletionRequest = {
+            messages: [
+              { role: 'user', content: message }
+            ],
+            model: selectedModel,
+            worker_type: selectedWorker,
+            stream: true,
+          };
+
+          let finalResponse = '';
+
+          // ストリームからThinkingStepを受信
+          for await (const thinkingStep of apiClient.chatStream(request)) {
+            get().addThinkingStep(thinkingStep);
+            
+            // 最終的な応答を抽出
+            if (thinkingStep.type === 'response') {
+              finalResponse = thinkingStep.content;
+            }
+          }
+
+          // アシスタントメッセージをチャット履歴に追加
+          const assistantMessage: ChatMessage = {
+            id: `assistant-${Date.now()}`,
+            role: 'assistant',
+            content: finalResponse || '応答を取得できませんでした',
+            timestamp: new Date(),
+            worker: selectedWorker,
+            model: selectedModel,
+          };
+
+          set({ 
+            chatHistory: [...get().chatHistory, assistantMessage],
+            isGenerating: false 
+          });
+
+          get().stopThinking();
+        } catch (error) {
+          console.error('Failed to send message with stream:', error);
+          set({ 
+            error: error instanceof Error ? error.message : 'ストリーミングメッセージの送信に失敗しました',
+            isGenerating: false 
+          });
+          get().stopThinking();
+        }
       },
     }),
     {

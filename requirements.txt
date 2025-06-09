@@ -22,7 +22,7 @@ toml==0.10.2
 python-jose==3.3.0
 
 # Monitoring and Logging
-psutil==5.9.8
+psutil==6.0.0
 watchdog==4.0.0
 prometheus-client==0.20.0
 

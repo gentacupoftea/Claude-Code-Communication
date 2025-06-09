@@ -28,7 +28,9 @@
     "test:e2e:comprehensive": "cypress run --spec 'cypress/e2e/**/*.cy.ts' --browser chrome",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
-    "cypress:verify": "cypress verify"
+    "cypress:verify": "cypress verify",
+    "cy:open": "cypress open",
+    "cy:run": "cypress run"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.53.0",
