@@ -10,7 +10,9 @@ import {
   LocalLLMProvider,
   AddProviderRequest,
   ProvidersResponse,
-  HealthCheckResponse
+  HealthCheckResponse,
+  ThinkingStep,
+  ThinkingStreamEvent
 } from '../types/api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
@@ -136,6 +138,85 @@ class ApiClient {
    */
   public async checkLocalLLMProvidersHealth(): Promise<HealthCheckResponse> {
     return this.request<HealthCheckResponse>('/local-llm/providers/health');
+  }
+
+  /**
+   * チャット補完のストリーミング版（思考ストリーム対応）
+   * POST /chat/stream
+   */
+  public async* chatStream(data: ChatCompletionRequest): AsyncGenerator<ThinkingStep, void, unknown> {
+    const url = `${API_BASE_URL}/chat/stream`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new ApiError(response.status, errorData);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('Response body is not readable');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            break;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          
+          // 最後の不完全な行はバッファに残す
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmedLine = line.trim();
+            
+            // Server-Sent Events形式の解析
+            if (trimmedLine.startsWith('data: ')) {
+              const jsonData = trimmedLine.slice(6); // 'data: ' を除去
+              
+              if (jsonData === '[DONE]') {
+                return;
+              }
+
+              try {
+                const event: ThinkingStreamEvent = JSON.parse(jsonData);
+                
+                if (event.type === 'step' && event.data) {
+                  yield event.data;
+                } else if (event.type === 'error') {
+                  throw new Error(event.error || 'Stream error occurred');
+                }
+              } catch (parseError) {
+                console.warn('Failed to parse stream data:', jsonData, parseError);
+              }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new Error(`Stream error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 }
 

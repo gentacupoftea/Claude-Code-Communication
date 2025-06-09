@@ -96,3 +96,28 @@ export interface HealthCheckResponse {
   success: boolean;
   health_status: Record<string, boolean>;
 }
+
+/**
+ * AIの思考ステップ（思考ストリーム用）
+ */
+export interface ThinkingStep {
+  id: string;
+  type: 'thinking' | 'analysis' | 'task_planning' | 'tool_use' | 'response' | 'error' | 'complete';
+  content: string;
+  metadata?: {
+    tool?: string;
+    duration?: number;
+    progress?: number;
+    [key: string]: any;
+  };
+  timestamp: string;
+}
+
+/**
+ * 思考ストリームのレスポンス（Server-Sent Events）
+ */
+export interface ThinkingStreamEvent {
+  type: 'start' | 'step' | 'end' | 'error';
+  data?: ThinkingStep;
+  error?: string;
+}

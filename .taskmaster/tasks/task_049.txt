@@ -1,0 +1,11 @@
+# Task ID: 49
+# Title: Refactor WorkerFactory to enforce Single Responsibility Principle
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: AI-1が`WorkerFactory`に`LocalLLMManager`の責務を統合してしまい、単一責任の原則(SRP)に違反する技術的負債が生まれた。このタスクは、`WorkerFactory`からLLM管理機能を分離し、独立した`LocalLLMManager`クラスにリファクタリングすることで、この負債を返済し、コードベースの健全性を取り戻すことを目的とする。
+# Details:
+1. `multiLLM_system/orchestrator`内に、新しい`LocalLLMManager`クラスを作成する。\n2. `WorkerFactory`から、`initialize_local_llm_manager`, `add_local_llm_provider`, `get_local_llm_manager`, `get_local_llm_providers`, `health_check_local_llm_providers`, `get_supported_local_llm_providers`, `shutdown_local_llm_manager`といった静的メソッドを全て新しい`LocalLLMManager`クラスに移動させる。\n3. `WorkerFactory`は、純粋にワーカーインスタンス（`ClaudeWorker`, `OpenAIWorker`, `LocalLLMWorker`）を作成する責務だけを持つように修正する。\n4. アプリケーションの起動時やAPIエンドポイントで、`WorkerFactory`と新しい`LocalLLMManager`が、それぞれ独立したサービスとして利用されるように、関連箇所を全て修正する。
+
+# Test Strategy:
+

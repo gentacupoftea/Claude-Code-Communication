@@ -41,7 +41,7 @@ async def custom_exception_handler(request: Request, exc: BaseCustomException):
     )
 
 # Sprint 3でAI-2が追加したかったルーター
-app.include_router(chat_v1.router, prefix="/api/v1/chat", tags=["v1_chat"])
+app.include_router(chat_v1.router, prefix="/api/v1", tags=["v1_chat"])
 
 @app.get("/")
 async def root():
