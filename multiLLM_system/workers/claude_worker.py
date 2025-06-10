@@ -8,7 +8,7 @@ import json
 import logging
 import asyncio
 from typing import Dict, Any, Optional, List
-from base_worker import BaseWorker, WorkerCapability
+from .base_worker import BaseWorker, WorkerTask
 import anthropic
 from anthropic import AsyncAnthropic
 
@@ -16,130 +16,80 @@ logger = logging.getLogger(__name__)
 
 class ClaudeWorker(BaseWorker):
     """Worker that uses Anthropic's Claude models for various tasks"""
-    
-    def __init__(self, worker_id: str = "claude-worker-001"):
-        super().__init__(
-            worker_id=worker_id,
-            worker_type="claude",
-            capabilities=[
-                WorkerCapability.CODE_GENERATION,
-                WorkerCapability.TEXT_GENERATION,
-                WorkerCapability.DOCUMENTATION,
-                WorkerCapability.ANALYSIS,
-                WorkerCapability.GENERAL,
-                WorkerCapability.PR_REVIEW,
-            ]
-        )
-        
+
+    def __init__(self, name: str = "claude-worker", config: Optional[Dict[str, Any]] = None):
+        """
+        Initializes the ClaudeWorker.
+
+        Args:
+            name: The name of the worker
+            config: Configuration dictionary for the worker
+        """
+        if config is None:
+            config = {
+                'model': os.getenv("ANTHROPIC_MODEL", "claude-3-opus-20240229"),
+                'specialization': [
+                    "code_generation",
+                    "text_generation",
+                    "documentation",
+                    "analysis",
+                    "general_coding"
+                ],
+                'maxConcurrentTasks': 3,
+                'temperature': 0.7
+            }
+        super().__init__(name=name, config=config)
+
         # Initialize Anthropic client
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
             raise ValueError("ANTHROPIC_API_KEY environment variable is required")
         
         self.client = AsyncAnthropic(api_key=api_key)
-        self.model = os.getenv("CLAUDE_MODEL", "claude-3-opus-20240229")
-        
-    async def _process_task_internal(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Process task using Claude API"""
+        self.model_id = self.model
+
+    async def process(self, task: WorkerTask) -> Dict[str, Any]:
+        """Process task using Anthropic's Claude API"""
         try:
-            content = task.get("content", "")
-            context = task.get("context", {})
-            task_type = task.get("task_type", "GENERAL")
-            
-            # Update thinking process
-            await self.update_thinking(task["id"], {
-                "type": {"icon": "🤖", "label": "Claude"},
-                "stage": "タスクを分析中",
-                "steps": [{
-                    "description": f"タスクタイプ: {task_type}",
-                    "detail": f"モデル: {self.model}",
-                }]
-            })
+            content = task.description
+            context = task.context
+            task_type = task.type
             
             # Build system prompt based on task type
             system_prompt = self._build_system_prompt(task_type, context)
             
-            # Build messages for Claude
-            messages = []
+            # Create messages
+            messages = [{"role": "user", "content": content}]
             
-            # Add context messages if available
-            if context.get("previous_messages"):
-                for msg in context["previous_messages"][-5:]:  # Last 5 messages
-                    messages.append({
-                        "role": msg.get("role", "user"),
-                        "content": msg.get("content", "")
-                    })
-            
-            # Add current message
-            messages.append({"role": "user", "content": content})
-            
-            # Update thinking
-            await self.update_thinking(task["id"], {
-                "type": {"icon": "💭", "label": "生成中"},
-                "stage": "Claude APIを呼び出し中",
-                "steps": [{
-                    "description": "応答を生成しています...",
-                    "detail": f"トークン数: ~{len(content.split()) * 1.3:.0f}",
-                }]
-            })
-            
-            # Call Claude API with streaming
-            response_content = ""
-            chunk_count = 0
-            
-            async with self.client.messages.stream(
-                model=self.model,
-                messages=messages,
+            # Call Anthropic API
+            response = await self.client.messages.create(
+                model=self.model_id,
                 system=system_prompt,
-                max_tokens=2000,
-                temperature=0.7,
-            ) as stream:
-                async for text in stream.text_stream:
-                    response_content += text
-                    chunk_count += 1
-                    
-                    # Send streaming update every 10 chunks
-                    if chunk_count % 10 == 0:
-                        await self.send_streaming_update(task["id"], response_content)
+                messages=messages,
+                max_tokens=4000,
+                temperature=self.temperature,
+            )
             
-            # Final update
-            await self.send_streaming_update(task["id"], response_content, is_complete=True)
-            
-            # Update thinking
-            await self.update_thinking(task["id"], {
-                "type": {"icon": "✅", "label": "完了"},
-                "stage": "応答生成完了",
-                "steps": [{
-                    "description": "応答の生成が完了しました",
-                    "detail": f"文字数: {len(response_content)}",
-                }]
-            })
+            response_content = response.content[0].text
             
             return {
                 "content": response_content,
-                "model": self.model,
+                "model": self.model_id,
                 "usage": {
-                    "prompt_tokens": len(str(messages)) // 4,  # Rough estimate
-                    "completion_tokens": len(response_content) // 4,
+                    "prompt_tokens": response.usage.input_tokens,
+                    "completion_tokens": response.usage.output_tokens,
                 },
                 "metadata": {
-                    "worker_id": self.worker_id,
+                    "worker_id": self.name,
                     "task_type": task_type,
+                    "stop_reason": response.stop_reason
                 }
             }
             
         except Exception as e:
             logger.error(f"Error processing task: {str(e)}")
-            await self.update_thinking(task["id"], {
-                "type": {"icon": "❌", "label": "エラー"},
-                "stage": "エラーが発生しました",
-                "steps": [{
-                    "description": f"エラー: {str(e)}",
-                    "detail": "タスクの処理中にエラーが発生しました",
-                }]
-            })
             raise
-    
+
     def _build_system_prompt(self, task_type: str, context: Dict[str, Any]) -> str:
         """Build system prompt based on task type"""
         base_prompt = "あなたは高度なAIアシスタントのClaudeです。"
@@ -188,7 +138,7 @@ async def main():
     """Main function to run the worker"""
     try:
         worker = ClaudeWorker()
-        logger.info(f"Starting Claude Worker: {worker.worker_id}")
+        logger.info(f"Starting Claude Worker: {worker.name}")
         await worker.start()
     except KeyboardInterrupt:
         logger.info("Shutting down worker...")

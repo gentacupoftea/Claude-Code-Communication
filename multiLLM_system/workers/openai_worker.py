@@ -8,7 +8,7 @@ import json
 import logging
 import asyncio
 from typing import Dict, Any, Optional, List
-from base_worker import BaseWorker, WorkerCapability
+from .base_worker import BaseWorker, WorkerTask
 import openai
 from openai import AsyncOpenAI
 
@@ -17,18 +17,29 @@ logger = logging.getLogger(__name__)
 class OpenAIWorker(BaseWorker):
     """Worker that uses OpenAI's GPT models for various tasks"""
     
-    def __init__(self, worker_id: str = "openai-worker-001"):
-        super().__init__(
-            worker_id=worker_id,
-            worker_type="openai",
-            capabilities=[
-                WorkerCapability.CODE_GENERATION,
-                WorkerCapability.TEXT_GENERATION,
-                WorkerCapability.DOCUMENTATION,
-                WorkerCapability.ANALYSIS,
-                WorkerCapability.GENERAL,
-            ]
-        )
+    def __init__(self, name: str = "openai-worker", config: Optional[Dict[str, Any]] = None):
+        """
+        Initializes the OpenAIWorker.
+
+        Args:
+            name: The name of the worker
+            config: Configuration dictionary for the worker
+        """
+        if config is None:
+            config = {
+                'model': os.getenv("OPENAI_MODEL", "gpt-4-turbo-preview"),
+                'specialization': [
+                    "code_generation",
+                    "text_generation",
+                    "documentation",
+                    "analysis",
+                    "general"
+                ],
+                'maxConcurrentTasks': 3,
+                'temperature': 0.7
+            }
+        
+        super().__init__(name=name, config=config)
         
         # Initialize OpenAI client
         api_key = os.getenv("OPENAI_API_KEY")
@@ -36,24 +47,14 @@ class OpenAIWorker(BaseWorker):
             raise ValueError("OPENAI_API_KEY environment variable is required")
         
         self.client = AsyncOpenAI(api_key=api_key)
-        self.model = os.getenv("OPENAI_MODEL", "gpt-4-turbo-preview")
+        self.model_id = self.model
         
-    async def _process_task_internal(self, task: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, task: WorkerTask) -> Dict[str, Any]:
         """Process task using OpenAI API"""
         try:
-            content = task.get("content", "")
-            context = task.get("context", {})
-            task_type = task.get("task_type", "GENERAL")
-            
-            # Update thinking process
-            await self.update_thinking(task["id"], {
-                "type": {"icon": "🤖", "label": "OpenAI GPT"},
-                "stage": "タスクを分析中",
-                "steps": [{
-                    "description": f"タスクタイプ: {task_type}",
-                    "detail": f"モデル: {self.model}",
-                }]
-            })
+            content = task.description
+            context = task.context
+            task_type = task.type
             
             # Build system prompt based on task type
             system_prompt = self._build_system_prompt(task_type, context)
@@ -64,82 +65,31 @@ class OpenAIWorker(BaseWorker):
                 {"role": "user", "content": content}
             ]
             
-            # Add context if available
-            if context.get("previous_messages"):
-                for msg in context["previous_messages"][-5:]:  # Last 5 messages
-                    messages.append({
-                        "role": msg.get("role", "user"),
-                        "content": msg.get("content", "")
-                    })
-            
-            # Update thinking
-            await self.update_thinking(task["id"], {
-                "type": {"icon": "💭", "label": "生成中"},
-                "stage": "OpenAI APIを呼び出し中",
-                "steps": [{
-                    "description": "応答を生成しています...",
-                    "detail": f"トークン数: ~{len(content.split()) * 1.3:.0f}",
-                }]
-            })
-            
-            # Call OpenAI API with streaming
-            response_content = ""
-            chunk_count = 0
-            
-            stream = await self.client.chat.completions.create(
-                model=self.model,
+            # Call OpenAI API
+            response = await self.client.chat.completions.create(
+                model=self.model_id,
                 messages=messages,
-                temperature=0.7,
+                temperature=self.temperature,
                 max_tokens=2000,
-                stream=True
             )
             
-            async for chunk in stream:
-                if chunk.choices[0].delta.content:
-                    chunk_content = chunk.choices[0].delta.content
-                    response_content += chunk_content
-                    chunk_count += 1
-                    
-                    # Send streaming update every 10 chunks
-                    if chunk_count % 10 == 0:
-                        await self.send_streaming_update(task["id"], response_content)
-            
-            # Final update
-            await self.send_streaming_update(task["id"], response_content, is_complete=True)
-            
-            # Update thinking
-            await self.update_thinking(task["id"], {
-                "type": {"icon": "✅", "label": "完了"},
-                "stage": "応答生成完了",
-                "steps": [{
-                    "description": "応答の生成が完了しました",
-                    "detail": f"文字数: {len(response_content)}",
-                }]
-            })
+            response_content = response.choices[0].message.content
             
             return {
                 "content": response_content,
-                "model": self.model,
+                "model": self.model_id,
                 "usage": {
-                    "prompt_tokens": len(str(messages)) // 4,  # Rough estimate
-                    "completion_tokens": len(response_content) // 4,
+                    "prompt_tokens": response.usage.prompt_tokens,
+                    "completion_tokens": response.usage.completion_tokens,
                 },
                 "metadata": {
-                    "worker_id": self.worker_id,
+                    "worker_id": self.name,
                     "task_type": task_type,
                 }
             }
             
         except Exception as e:
             logger.error(f"Error processing task: {str(e)}")
-            await self.update_thinking(task["id"], {
-                "type": {"icon": "❌", "label": "エラー"},
-                "stage": "エラーが発生しました",
-                "steps": [{
-                    "description": f"エラー: {str(e)}",
-                    "detail": "タスクの処理中にエラーが発生しました",
-                }]
-            })
             raise
     
     def _build_system_prompt(self, task_type: str, context: Dict[str, Any]) -> str:
@@ -187,7 +137,7 @@ async def main():
     """Main function to run the worker"""
     try:
         worker = OpenAIWorker()
-        logger.info(f"Starting OpenAI Worker: {worker.worker_id}")
+        logger.info(f"Starting OpenAI Worker: {worker.name}")
         await worker.start()
     except KeyboardInterrupt:
         logger.info("Shutting down worker...")

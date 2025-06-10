@@ -13,6 +13,10 @@ import redis.asyncio as redis
 import asyncpg
 from dataclasses import asdict
 import pickle
+from urllib.parse import urlparse
+
+# settingsをインポートして環境変数を取得
+from multiLLM_system.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -25,27 +29,58 @@ class PersistenceManager:
         self.redis_client: Optional[redis.Redis] = None
         self.pg_pool: Optional[asyncpg.Pool] = None
         
-        # Redis設定
-        self.redis_config = config.get('redis', {
-            'host': os.getenv('REDIS_HOST', 'localhost'),
-            'port': int(os.getenv('REDIS_PORT', 6379)),
-            'db': int(os.getenv('REDIS_DB', 0)),
-            'password': os.getenv('REDIS_PASSWORD')
-        })
+        # Redis設定 - settingsから取得
+        redis_url = settings.REDIS_URL or 'redis://localhost:6379'
+        if redis_url.startswith('redis://'):
+            # RedisのURLをパース
+            redis_parsed = urlparse(redis_url)
+            self.redis_config = config.get('redis', {
+                'host': redis_parsed.hostname or 'localhost',
+                'port': redis_parsed.port or 6379,
+                'db': 0,
+                'password': redis_parsed.password
+            })
+        else:
+            self.redis_config = config.get('redis', {
+                'host': 'localhost',
+                'port': 6379,
+                'db': 0,
+                'password': None
+            })
         
         # PostgreSQL設定
-        self.pg_config = {
-            'host': os.getenv('PG_HOST', 'localhost'),
-            'port': int(os.getenv('PG_PORT', 5432)),
-            'database': os.getenv('PG_DATABASE', 'multillm'),
-            'user': os.getenv('PG_USER', 'postgres'),
-            'password': os.getenv('PG_PASSWORD', 'postgres')
-        }
+        self.pg_config = self._parse_database_url()
         
         # キャッシュ設定
         self.cache_ttl = config.get('cache_ttl', 3600)  # 1時間
         self.max_retries = 3
         self.retry_delay = 1.0
+    
+    def _parse_database_url(self) -> Dict:
+        """DATABASE_URLからPostgreSQL接続設定をパースする"""
+        # settingsから確実にDATABASE_URLを取得
+        database_url = settings.DATABASE_URL
+        if database_url:
+            try:
+                url = urlparse(database_url)
+                return {
+                    'host': url.hostname,
+                    'port': url.port or 5432,
+                    'database': url.path.lstrip('/'),
+                    'user': url.username,
+                    'password': url.password
+                }
+            except Exception as e:
+                logger.warning(f"DATABASE_URLのパースに失敗しました: {e}。個別の環境変数をフォールバックします。")
+
+        # フォールバック - settingsから取得
+        return {
+            'host': 'localhost',
+            'port': 5432,
+            'database': settings.POSTGRES_DB or 'conea',
+            'user': settings.POSTGRES_USER or 'conea',
+            'password': settings.POSTGRES_PASSWORD or 'conea123'
+        }
     
     async def initialize(self):
         """接続の初期化"""

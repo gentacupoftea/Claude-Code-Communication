@@ -12,12 +12,14 @@ from enum import Enum
 import json
 import uuid
 import random
-# from .llm_client import ClaudeClient, TaskAnalysis, LLMMessage
-from .enhanced_llm_client import EnhancedClaudeClient as ClaudeClient, TaskAnalysis, LLMMessage
+from multiLLM_system.config.settings import settings
+from multiLLM_system.utils.exceptions import MultiLLMBaseException, WorkerNotFoundError
+from .llm_client import ClaudeClient, TaskAnalysis, LLMMessage
 from .response_formatter import ResponseFormatter, MessageProcessor
 from .persistence import PersistenceManager
 import time
 import os
+from .worker_factory import WorkerFactory
 
 logger = logging.getLogger(__name__)
 
@@ -341,203 +343,146 @@ class MultiLLMOrchestrator:
     
     async def process_user_request(self, request: str, user_id: str, context: Dict = None, conversation_id: str = None, stream_handler=None) -> Dict:
         """
-        ユーザーリクエストを処理
-        1. リクエストを分析
-        2. サブタスクに分解
-        3. 各Workerに振り分け
-        4. 結果を統合して返す
+        ユーザーからのリクエストを処理し、適切なワーカーにタスクを割り当てる
         """
-        logger.info(f"📥 Processing user request: {request[:100]}...")
         start_time = time.time()
         
-        # 会話IDの生成または取得
         if not conversation_id:
-            conversation_id = f"conv_{uuid.uuid4()}"
+            conversation_id = str(uuid.uuid4())
+            logger.info(f"🚀 New conversation started: {conversation_id}")
+            self.conversations[conversation_id] = ConversationLog(
+                conversation_id=conversation_id,
+                messages=[],
+                llm_responses=[],
+                mcp_connections=[],
+                total_tokens=0,
+                start_time=datetime.now()
+            )
         
-        # 会話ログの初期化または取得（永続化ストアからのロード含む）
-        if conversation_id not in self.conversations:
-            # まず永続化ストアから取得を試みる
-            loaded_conversation = await self._load_conversation_from_persistence(conversation_id)
-            if loaded_conversation:
-                self.conversations[conversation_id] = loaded_conversation
-                logger.info(f"📥 Loaded conversation from persistence: {conversation_id}")
-            else:
-                # 新規作成
-                self.conversations[conversation_id] = ConversationLog(
-                    conversation_id=conversation_id,
-                    messages=[],
-                    llm_responses=[],
-                    mcp_connections=[],
-                    total_tokens=0,
-                    start_time=datetime.now()
-                )
-        
-        conversation = self.conversations[conversation_id]
-        
-        # ストリームハンドラーの登録
+        conversation = self.conversations.get(conversation_id)
+        if not conversation:
+            # このケースは基本的には起こらないはずだが、念のため
+            raise MultiLLMBaseException(
+                f"Conversation with ID '{conversation_id}' not found.",
+                error_code="CONVERSATION_NOT_FOUND"
+            )
+
+        # 思考プロセスの開始をストリーミング
         if stream_handler:
             self.stream_handlers[conversation_id] = stream_handler
-        
-        # ユーザーメッセージを記録
-        conversation.messages.append({
-            'role': 'user',
-            'content': request,
-            'timestamp': datetime.now().isoformat()
-        })
-        
-        # Claude-4による知的タスク分析
-        analysis_start = time.time()
-        
-        # ストリーミングイベント: 分析開始
-        if stream_handler:
-            await stream_handler(json.dumps({
-                'type': 'analysis',
-                'content': 'タスクを分析中...',
-                'timestamp': datetime.now().isoformat()
-            }) + '\n')
-        
-        task_analysis = await self.claude_client.analyze_task(request, context)
-        analysis_duration = time.time() - analysis_start
-        logger.info(f"🧠 Task analysis: {task_analysis.task_type} - {task_analysis.reasoning}")
-        
-        # ストリーミングイベント: 分析完了
-        if stream_handler:
-            await stream_handler(json.dumps({
-                'type': 'analysis',
-                'content': f'タスクタイプ: {task_analysis.task_type}',
-                'details': {
-                    'task_type': task_analysis.task_type,
-                    'priority': task_analysis.priority,
-                    'complexity': task_analysis.complexity,
-                    'reasoning': task_analysis.reasoning
-                },
-                'timestamp': datetime.now().isoformat()
-            }) + '\n')
-        
-        # タスク分析をLLM応答として記録
-        analysis_response = LLMResponse(
-            id=str(uuid.uuid4()),
-            provider='anthropic',
-            model='claude-3.5-sonnet',
-            content=f"Task Type: {task_analysis.task_type}\nReasoning: {task_analysis.reasoning}",
-            tokens={'prompt': 0, 'completion': 0, 'total': 0},  # デモモードでは0
-            metadata={'task': 'analysis'},
-            timestamp=datetime.now(),
-            duration=analysis_duration
-        )
-        conversation.llm_responses.append(analysis_response)
-        
-        # タスクタイプを設定
+            await stream_handler.send_json({
+                "type": "thinking_start",
+                "conversationId": conversation_id
+            })
+
         try:
-            task_type = TaskType(task_analysis.task_type.lower())
-        except ValueError:
-            task_type = TaskType.GENERAL
-        
-        # 「思い出して」キーワードがある場合は、直接レスポンスを生成
-        if '思い出して' in request:
-            # LLMクライアントで直接処理
-            messages = [LLMMessage(role='user', content=request)]
-            response = await self.claude_client.generate_response(
-                messages=messages,
-                context=context,
-                stream_callback=stream_handler
-            )
-            
-            # 会話ログに記録
+            # ユーザーのリクエストを会話ログに追加
             conversation.messages.append({
-                'role': 'assistant',
-                'content': response,
-                'timestamp': datetime.now().isoformat(),
-                'provider': 'claude-4.0'
+                "role": "user", 
+                "content": request, 
+                "timestamp": datetime.now().isoformat()
             })
             
-            return {
-                'response': response,
-                'conversation_log': asdict(conversation),
-                'task_analysis': asdict(task_analysis)
-            }
-        
-        # タスクを作成
-        task = Task(
-            id=str(uuid.uuid4()),
-            type=task_type,
-            description=request,
-            priority=TaskPriority[task_analysis.priority] if task_analysis.priority in TaskPriority.__members__ else TaskPriority.MEDIUM,
-            user_id=user_id,
-            created_at=datetime.now(),
-            metadata=context or {}
-        )
-        
-        # タスクを永続化
-        if self.persistence_manager:
-            try:
-                await self.persistence_manager.save_task(task)
-                logger.debug(f"Task {task.id} saved to persistence")
-            except Exception as e:
-                logger.error(f"Failed to save task {task.id}: {e}")
-        
-        # 複雑度に応じた処理分岐
-        if task_analysis.complexity == "complex":
-            # 複数のサブタスクに分解して並列処理
-            subtasks = []
-            for i, subtask_desc in enumerate(task_analysis.subtasks):
-                subtask = Task(
-                    id=f"{task.id}_sub_{i}",
-                    type=task.type,
-                    description=subtask_desc,
-                    priority=task.priority,
-                    user_id=user_id,
-                    created_at=datetime.now(),
-                    metadata={"parent_task": task.id, "worker": task_analysis.assigned_workers[i] if i < len(task_analysis.assigned_workers) else "backend_worker"}
-                )
-                subtasks.append(subtask)
-                
-                # サブタスクも永続化
-                if self.persistence_manager:
-                    try:
-                        await self.persistence_manager.save_task(subtask)
-                    except Exception as e:
-                        logger.error(f"Failed to save subtask {subtask.id}: {e}")
+            # タスクタイプの分析
+            task_type = self._analyze_task_type(request)
             
-            results = await self._process_parallel_tasks(subtasks, conversation)
-            final_result = await self._integrate_results(results)
-        else:
-            # 単一タスクとして処理
-            preferred_worker = task_analysis.assigned_workers[0] if task_analysis.assigned_workers else None
-            final_result = await self._process_single_task(task, preferred_worker, conversation)
-        
-        # アシスタントメッセージを記録
-        conversation.messages.append({
-            'role': 'assistant',
-            'content': final_result.get('result', final_result.get('summary', 'Task completed')),
-            'timestamp': datetime.now().isoformat(),
-            'provider': 'claude-4.0',
-            'connections': [asdict(conn) for conn in conversation.mcp_connections[-5:]]  # 最新5件のMCP接続を含める
-        })
-        
-        # 会話終了時刻を記録
-        conversation.end_time = datetime.now()
-        
-        # ストリームハンドラーのクリーンアップ
-        if conversation_id in self.stream_handlers:
-            del self.stream_handlers[conversation_id]
-        
-        # 会話ログを永続化
-        if self.persistence_manager:
-            try:
+            # 思考プロセス：タスク分析
+            if stream_handler:
+                await stream_handler.send_json({
+                    "type": "thinking_step", 
+                    "step": "タスクタイプを分析",
+                    "result": f"'{task_type.value}'と判断しました。"
+                })
+
+            # 記憶操作タスクの処理
+            if task_type == TaskType.MEMORY_OPERATION:
+                memory_response_content = await self._generate_memory_response(request, conversation)
+                final_response = self.formatter.format_memory_response(
+                    request, 
+                    memory_response_content
+                )
+                
+                # AIの応答を会話ログに追加
+                conversation.messages.append({
+                    "role": "assistant",
+                    "content": memory_response_content,
+                    "timestamp": datetime.now().isoformat()
+                })
+                
+                return final_response
+
+            # 通常のタスク処理
+            priority = self._determine_priority(request)
+            
+            # 思考プロセス：優先度判断
+            if stream_handler:
+                await stream_handler.send_json({
+                    "type": "thinking_step",
+                    "step": "タスクの優先度を判断",
+                    "result": f"'{priority.name}'と判断しました。"
+                })
+
+            task = Task(
+                id=str(uuid.uuid4()),
+                type=task_type,
+                description=request,
+                priority=priority,
+                user_id=user_id,
+                created_at=datetime.now()
+            )
+
+            if self._is_complex_task(request):
+                # 思考プロセス：複雑タスクの分解
+                if stream_handler:
+                    await stream_handler.send_json({
+                        "type": "thinking_step",
+                        "step": "複雑なタスクを検知",
+                        "result": "タスクをサブタスクに分解します。"
+                    })
+                sub_tasks = await self._decompose_task(task)
+                results = await self._process_parallel_tasks(sub_tasks, conversation)
+                integrated_result = await self._integrate_results(results)
+            else:
+                integrated_result = await self._process_single_task(task, conversation=conversation)
+            
+            final_response = self.formatter.format_final_response(integrated_result)
+            
+            # AIの応答を会話ログに追加
+            conversation.messages.append({
+                "role": "assistant",
+                "content": final_response['content'],
+                "timestamp": datetime.now().isoformat()
+            })
+            
+            return final_response
+
+        except Exception as e:
+            logger.error(f"Error processing user request: {e}", exc_info=True)
+            # 思考プロセス：エラー
+            if stream_handler:
+                await stream_handler.send_json({
+                    "type": "thinking_error",
+                    "error": str(e)
+                })
+            # エラーレスポンスを返す
+            raise e
+        finally:
+            # 思考プロセスの終了をストリーミング
+            if stream_handler:
+                await stream_handler.send_json({
+                    "type": "thinking_end"
+                })
+                # ハンドラーを削除
+                if conversation_id in self.stream_handlers:
+                    del self.stream_handlers[conversation_id]
+            
+            # 会話ログの永続化
+            if self.persistence_manager:
+                conversation.end_time = datetime.now()
                 await self.persistence_manager.save_conversation(conversation)
-                logger.debug(f"Conversation {conversation_id} saved to persistence")
-            except Exception as e:
-                logger.error(f"Failed to save conversation {conversation_id}: {e}")
-        
-        return {
-            'response': final_result.get('result', final_result.get('summary', 'Task completed')),
-            'conversation_log': asdict(conversation),
-            'task_analysis': asdict(task_analysis)
-        }
-    
+
     def _analyze_task_type(self, request: str) -> TaskType:
-        """リクエスト内容からタスクタイプを判定"""
+        """ユーザーリクエストからタスクタイプを分析"""
         request_lower = request.lower()
         scores = {}
         

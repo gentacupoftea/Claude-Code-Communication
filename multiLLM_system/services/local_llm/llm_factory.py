@@ -249,16 +249,33 @@ class LocalLLMManager:
             List[str]: プロバイダ名のリスト
         """
         return list(self._providers.keys())
-    
+
+    async def get_all_models(self) -> Dict[str, List[str]]:
+        """
+        登録されている全プロバイダから利用可能なモデルを全て取得
+        
+        Returns:
+            Dict[str, List[str]]: プロバイダ名とモデルリストの辞書
+        """
+        all_models = {}
+        for name, provider in self._providers.items():
+            try:
+                models = await provider.get_available_models()
+                all_models[name] = models
+            except Exception as e:
+                logger.error(f"Failed to get models from {name}: {e}")
+                all_models[name] = []
+        
+        return all_models
+
     async def health_check_all(self) -> Dict[str, bool]:
         """
-        全プロバイダのヘルスチェック
+        全プロバイダのヘルスチェックを実行
         
         Returns:
             Dict[str, bool]: プロバイダ名とヘルスチェック結果のマップ
         """
         results = {}
-        
         for name, provider in self._providers.items():
             try:
                 is_healthy = await provider.health_check()
@@ -266,20 +283,14 @@ class LocalLLMManager:
             except Exception as e:
                 logger.error(f"Health check failed for {name}: {e}")
                 results[name] = False
-        
         return results
-    
+
     async def shutdown_all(self) -> None:
-        """
-        全プロバイダをシャットダウン
-        """
+        """全プロバイダのクリーンアップ処理を実行"""
         for name, provider in self._providers.items():
             try:
                 if hasattr(provider, '__aexit__'):
                     await provider.__aexit__(None, None, None)
-                logger.info(f"Shutdown provider: {name}")
+                logger.info(f"Provider {name} shut down successfully.")
             except Exception as e:
-                logger.error(f"Failed to shutdown provider {name}: {e}")
-        
-        self._providers.clear()
-        self._active_provider = None
+                logger.error(f"Error shutting down provider {name}: {e}")

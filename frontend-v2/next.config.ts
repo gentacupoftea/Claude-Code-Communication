@@ -1,7 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'export', // スタティックエクスポート用
+  // dev時のみ有効なリライト設定を追加
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://127.0.0.1:8000/api/:path*',
+      },
+    ];
+  },
+
+  // output: 'export', // スタティックエクスポート用（一時的にコメントアウト）
   images: {
     unoptimized: true
   },
@@ -27,7 +37,6 @@ const nextConfig: NextConfig = {
   },
   
   // パフォーマンス最適化
-  swcMinify: true,
   
   // 静的ファイル最適化
   assetPrefix: process.env.NODE_ENV === 'production' ? '' : '',

@@ -17,34 +17,31 @@ import json
 import logging
 import uuid
 from datetime import datetime
+import os
 from typing import Dict, Optional, List, Any, Union
-from fastapi import FastAPI, HTTPException, Request, status
+import contextlib
+from fastapi import FastAPI, HTTPException, Request, status, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel, Field, validator
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-import sys
-import os
 import requests
+import traceback
 
-# 親ディレクトリをパスに追加
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from orchestrator.orchestrator import MultiLLMOrchestrator
-from orchestrator.response_formatter import ResponseFormatter, MessageProcessor
-from orchestrator.analyzers.data_analyzer import DataAnalyzer
-from orchestrator.automation.task_automator import TaskAutomator
-from orchestrator.worker_factory import WorkerFactory
-from config.settings import settings
-from utils.exceptions import (
+from multiLLM_system.orchestrator.orchestrator import MultiLLMOrchestrator
+from multiLLM_system.orchestrator.response_formatter import ResponseFormatter, MessageProcessor
+from multiLLM_system.orchestrator.analyzers.data_analyzer import DataAnalyzer
+from multiLLM_system.orchestrator.automation.task_automator import TaskAutomator
+from multiLLM_system.orchestrator.worker_factory import WorkerFactory
+from multiLLM_system.config.settings import settings
+from multiLLM_system.utils.exceptions import (
     MultiLLMBaseException, OllamaServerError, OllamaConnectionError, 
     APIKeyError, ModelNotFoundError, WorkerNotFoundError,
     GenerationError, ValidationError, exception_to_http_status
 )
-from config.logging_config import setup_logging, get_logger, request_context
-import traceback
+from multiLLM_system.config.logging_config import setup_logging, get_logger, request_context
 
 # ログ設定の初期化
 setup_logging(
@@ -56,6 +53,66 @@ logger = get_logger("multiLLM.api")
 
 # レート制限の設定
 limiter = Limiter(key_func=get_remote_address)
+
+# Lifespan コンテキストマネージャー
+@contextlib.asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    アプリケーションのライフサイクル管理
+    起動時と終了時の処理を管理します
+    """
+    # === 起動時の処理 ===
+    global orchestrator, data_analyzer, task_automator, message_processor
+    
+    # ログ出力
+    logger.logger.info("🚀 MultiLLM API Server is starting up...")
+    
+    # 環境変数のデバッグログ
+    logger.logger.info(f"📋 Environment configuration:")
+    logger.logger.info(f"  - DATABASE_URL: {settings.DATABASE_URL}")
+    logger.logger.info(f"  - API_PORT: {settings.API_PORT}")
+    logger.logger.info(f"  - DEBUG: {settings.DEBUG}")
+    logger.logger.info(f"  - LOG_LEVEL: {settings.LOG_LEVEL}")
+    
+    try:
+        # オーケストレーターの初期化
+        config = {
+            "workers": {
+                "backend_worker": {"model": "claude-3.5-sonnet"},
+                "frontend_worker": {"model": "claude-3.5-sonnet"},
+                "review_worker": {"model": "claude-3.5-sonnet"},
+                "analytics_worker": {"model": "claude-3.5-sonnet"},
+                "documentation_worker": {"model": "claude-3.5-sonnet"},
+                "mcp_worker": {"model": "claude-3.5-sonnet"}
+            },
+            "memory": {
+                "syncInterval": 300
+            }
+        }
+        
+        orchestrator = MultiLLMOrchestrator(config)
+        await orchestrator.initialize()
+
+        # その他のコンポーネントを初期化
+        data_analyzer = DataAnalyzer()
+        task_automator = TaskAutomator(orchestrator)
+        message_processor = MessageProcessor()
+
+        logger.logger.info("✅ MultiLLM Orchestrator and components initialized successfully.")
+        
+    except Exception as e:
+        logger.log_error(e, context={"stage": "startup"})
+        raise RuntimeError(f"FATAL: Application startup failed: {e}") from e
+    
+    # アプリケーションの実行
+    yield
+    
+    # === 終了時の処理 ===
+    logger.logger.info("🛑 MultiLLM API Server is shutting down...")
+    if orchestrator:
+        await orchestrator.shutdown()
+    logger.logger.info("✅ Shutdown complete.")
+
 
 # FastAPIアプリケーション設定
 app = FastAPI(
@@ -117,7 +174,8 @@ app = FastAPI(
             "name": "health",
             "description": "ヘルスチェック - システム状態監視、接続確認"
         }
-    ]
+    ],
+    lifespan=lifespan  # lifespanコンテキストマネージャーを設定
 )
 
 # レート制限エラーハンドラーを追加
@@ -210,7 +268,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 # CORS設定
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:3500", "*"],
+    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:3003", "http://localhost:3500", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -252,7 +310,7 @@ class ChatRequest(BaseModel):
         None,
         description="使用するLLMワーカーのタイプ。指定しない場合は自動選択",
         example="claude",
-        regex="^(openai|anthropic|claude|local_llm)$"
+        pattern="^(openai|anthropic|claude|local_llm)$"
     )
 
 
@@ -291,7 +349,7 @@ class AnalysisRequest(BaseModel):
         ...,
         description="分析タイプ",
         example="conversation_patterns",
-        regex="^(conversation_patterns|task_performance|resource_prediction)$"
+        pattern="^(conversation_patterns|task_performance|resource_prediction)$"
     )
     data: Optional[Dict[str, Any]] = Field(
         None,
@@ -329,7 +387,7 @@ class AutomationRuleRequest(BaseModel):
         ...,
         description="トリガーのタイプ",
         example="time_based",
-        regex="^(time_based|event_based|condition_based|pattern_based)$"
+        pattern="^(time_based|event_based|condition_based|pattern_based)$"
     )
     trigger_config: Dict[str, Any] = Field(
         ...,
@@ -366,7 +424,7 @@ class GenerationRequest(BaseModel):
         default="openai",
         description="使用するワーカータイプ",
         example="claude",
-        regex="^(openai|anthropic|claude|local_llm)$"
+        pattern="^(openai|anthropic|claude|local_llm)$"
     )
     model_id: Optional[str] = Field(
         None,
@@ -405,44 +463,7 @@ class ErrorResponse(BaseModel):
 orchestrator = None
 data_analyzer = None
 task_automator = None
-
-
-@app.on_event("startup")
-async def startup_event():
-    """サーバー起動時の初期化"""
-    global orchestrator, data_analyzer, task_automator
-    
-    config = {
-        "workers": {
-            "backend_worker": {"model": "claude-3.5-sonnet"},
-            "frontend_worker": {"model": "claude-3.5-sonnet"},
-            "review_worker": {"model": "claude-3.5-sonnet"},
-            "analytics_worker": {"model": "claude-3.5-sonnet"},
-            "documentation_worker": {"model": "claude-3.5-sonnet"},
-            "mcp_worker": {"model": "claude-3.5-sonnet"}
-        },
-        "memory": {
-            "syncInterval": 300
-        }
-    }
-    
-    orchestrator = MultiLLMOrchestrator(config)
-    await orchestrator.initialize()
-    
-    # 分析エンジンと自動化エンジンを初期化
-    data_analyzer = DataAnalyzer()
-    task_automator = TaskAutomator(orchestrator)
-    
-    logger.info("✅ MultiLLM API Server started with Advanced Analytics")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """サーバー終了時のクリーンアップ"""
-    global orchestrator
-    if orchestrator:
-        await orchestrator.shutdown()
-    logger.info("👋 MultiLLM API Server shutdown")
+message_processor = None
 
 
 @app.get(
@@ -482,7 +503,7 @@ async def root():
 
 
 @app.get(
-    "/health",
+    "/api/health",
     summary="システムヘルスチェック",
     description="システム全体の稼働状況を確認します",
     response_model=HealthResponse,
@@ -563,6 +584,71 @@ async def health_check_ollama():
                 "error_details": str(e)
             }
         )
+
+
+@app.get(
+    "/api/models",
+    summary="利用可能なモデル一覧を取得",
+    description="システムで利用可能なAIモデルの一覧を返します",
+    tags=["models"]
+)
+async def get_models():
+    """
+    ### 利用可能なAIモデル一覧
+    
+    現在システムで利用可能なAIモデルの情報を返します。
+    
+    **レスポンス例:**
+    ```json
+    [
+        {
+            "id": "claude-3-opus-20240229",
+            "name": "Claude 3 Opus",
+            "provider": "Anthropic"
+        },
+        {
+            "id": "gpt-4-turbo",
+            "name": "GPT-4 Turbo",
+            "provider": "OpenAI"
+        }
+    ]
+    ```
+    """
+    models = [
+        {"id": "claude-3-opus-20240229", "name": "Claude 3 Opus", "provider": "Anthropic"},
+        {"id": "claude-3-sonnet-20240229", "name": "Claude 3 Sonnet", "provider": "Anthropic"},
+        {"id": "gpt-4-turbo", "name": "GPT-4 Turbo", "provider": "OpenAI"},
+        {"id": "gpt-4", "name": "GPT-4", "provider": "OpenAI"},
+        {"id": "gpt-3.5-turbo", "name": "GPT-3.5 Turbo", "provider": "OpenAI"},
+        {"id": "gemini-pro", "name": "Gemini Pro", "provider": "Google"},
+        {"id": "llama-2-70b", "name": "Llama 2 70B", "provider": "Local"},
+    ]
+    
+    # 実際に利用可能なワーカーに基づいてフィルタリング
+    available_workers = orchestrator.get_available_workers() if orchestrator else []
+    available_providers = {worker.get('worker_type', '').lower() for worker in available_workers}
+    
+    # プロバイダーマッピング
+    provider_map = {
+        'anthropic': ['claude'],
+        'openai': ['gpt'],
+        'google': ['gemini'],
+        'local_llm': ['llama']
+    }
+    
+    # 利用可能なモデルのみをフィルタリング
+    available_models = []
+    for model in models:
+        provider_lower = model['provider'].lower()
+        model_id_lower = model['id'].lower()
+        
+        for worker_type, prefixes in provider_map.items():
+            if worker_type in available_providers:
+                if any(prefix in model_id_lower for prefix in prefixes):
+                    available_models.append(model)
+                    break
+    
+    return available_models
 
 
 @app.post(
@@ -1134,7 +1220,7 @@ async def create_automation_rule(request: AutomationRuleRequest):
         }
         
         # AutomationRuleオブジェクトに変換
-        from orchestrator.automation.task_automator import AutomationRule, AutomationTrigger
+        from multiLLM_system.orchestrator.automation.task_automator import AutomationRule, AutomationTrigger
         
         automation_rule = AutomationRule(
             id=rule["id"],
@@ -1250,7 +1336,9 @@ async def suggest_automations():
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 9000))
+    # settingsからポートを取得（デフォルト8000）
+    port = settings.API_PORT or 8000
+    logger.info(f"🚀 Starting server on port {port}")
     uvicorn.run(
         app,
         host="0.0.0.0",

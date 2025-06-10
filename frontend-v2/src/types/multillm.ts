@@ -27,12 +27,15 @@ export interface LLMResponse {
 }
 
 export interface MultiLLMRequest {
-  prompt: string;
-  models: string[];
+  prompt?: string;
+  models?: string[];
+  messages?: ChatMessage[];
+  model?: string;
   temperature?: number;
   maxTokens?: number;
   systemPrompt?: string;
   streamResponse?: boolean;
+  stream?: boolean;
 }
 
 export interface ModelComparison {
@@ -44,4 +47,9 @@ export interface ModelComparison {
     error?: string;
   }[];
   timestamp: string;
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
 }

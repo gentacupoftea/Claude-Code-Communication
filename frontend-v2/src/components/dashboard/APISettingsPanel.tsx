@@ -136,7 +136,7 @@ export const APISettingsPanel: React.FC<APISettingsPanelProps> = ({
         <div className="relative">
           <input
             type={isSecret && !isVisible ? 'password' : 'text'}
-            value={(localSettings[api] as any)[key] || ''}
+            value={localSettings?.[api]?.[key as keyof typeof localSettings[typeof api]] || ''}
             onChange={(e) => handleSettingChange(api, key, e.target.value)}
             className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1ABC9C] backdrop-blur-lg pr-10"
             placeholder={placeholder}
