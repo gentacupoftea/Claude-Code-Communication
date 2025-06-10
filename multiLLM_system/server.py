@@ -11,6 +11,7 @@ from .config.settings import settings
 
 # Sprint 3でAI-2が追加すべきだったモジュール
 from .api.v1 import chat as chat_v1
+from .api.v1 import models as models_v1
 
 # ログ設定を適用
 setup_logging()
@@ -42,9 +43,10 @@ async def custom_exception_handler(request: Request, exc: BaseCustomException):
 
 # Sprint 3でAI-2が追加したかったルーター
 app.include_router(chat_v1.router, prefix="/api/v1", tags=["v1_chat"])
+app.include_router(models_v1.router, prefix="/api/v1", tags=["v1_models"])
 
 @app.get("/")
-async def root():
+async def root(request: Request):
     logger.info("Root endpoint was hit from IP: %s", request.client.host)
     return {"message": "MultiLLM System API is running"}
 

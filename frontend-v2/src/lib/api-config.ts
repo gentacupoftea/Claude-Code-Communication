@@ -1,7 +1,8 @@
 // API設定ファイル
 // 環境変数とAPIエンドポイントの設定
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Next.jsのプロキシを使うため、空文字列に設定
+const API_BASE_URL = '';
 
 export const API_ENDPOINTS = {
   // 認証関連
@@ -22,7 +23,7 @@ export const API_ENDPOINTS = {
 
   // Multi-LLM関連
   MULTILLM: {
-    MODELS: '/api/multillm/models',
+    MODELS: '/api/models',
     COMPARE: '/api/multillm/compare',
     GENERATE: '/api/multillm/generate',
   },

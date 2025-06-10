@@ -18,7 +18,8 @@ import {
   Maximize2,
   Minimize2
 } from 'lucide-react';
-import { multiLLMAPI, AgentConfig, defaultAgentConfig } from '@/src/lib/api';
+import { multiLLMService } from '@/src/services/multillm.service';
+import { AgentConfig, defaultAgentConfig } from '@/src/lib/api';
 import { APISettingsPanel } from './APISettingsPanel';
 import { APISettings, defaultAPISettings } from '@/src/types/api-settings';
 import { WidgetLibrary } from './WidgetLibrary';
@@ -71,10 +72,18 @@ export const EditPanel: React.FC<EditPanelProps> = ({
     const fetchModels = async () => {
       setIsLoadingModels(true);
       try {
-        const models = await multiLLMAPI.getAvailableModels();
-        setAvailableModels(models);
+        const models = await multiLLMService.getAvailableModels();
+        // 取得したデータをUIで使える形式に変換
+        const formattedModels = models.map((model: any) => ({
+          id: model.id || model.model,
+          name: model.name || model.display_name || model.model,
+          description: model.description || '',
+          provider: model.provider || 'openai'
+        }));
+        setAvailableModels(formattedModels);
       } catch (error) {
         console.error('Failed to fetch models:', error);
+        setAvailableModels([]);
       } finally {
         setIsLoadingModels(false);
       }

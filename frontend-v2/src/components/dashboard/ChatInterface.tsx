@@ -3,8 +3,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Bot, User, Loader2, AlertCircle, RefreshCcw, Paperclip, Search, Settings as SettingsIcon } from 'lucide-react';
-import { MultiLLMService } from '@/src/services/multillm.service';
-import { LLMResponse, MultiLLMRequest } from '@/src/types/multillm';
+import { multiLLMService } from '@/src/services/multillm.service';
+import { MultiLLMRequest, ChatMessage } from '@/src/types/multillm';
 import { API_ENDPOINTS, createApiUrl } from '@/src/lib/api-config';
 
 interface Message {
@@ -63,6 +63,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [searchEnabled, setSearchEnabled] = useState(enableSearch);
+  const [isMounted, setIsMounted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -74,13 +75,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     scrollToBottom();
   }, [messages]);
 
+  // クライアントサイドマウント検知
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // API接続テスト
   useEffect(() => {
     const testConnection = async () => {
       setConnectionStatus('checking');
       try {
-        const multiLLMService = MultiLLMService.getInstance();
-        const models = multiLLMService.getAvailableModels();
+        // multiLLMServiceは既にインポート済みのインスタンスを使用
+        const models = await fetch(`${createApiUrl('')}/api/models`)
+          .then(res => res.ok ? res.json() : [])
+          .catch(() => []);
         setConnectionStatus(models.length > 0 ? 'connected' : 'disconnected');
       } catch (error) {
         setConnectionStatus('disconnected');
@@ -115,35 +123,82 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setIsLoading(true);
 
     try {
-      const multiLLMService = MultiLLMService.getInstance();
+      // multiLLMServiceは既にインポート済みのインスタンスを使用
       
-      // MultiLLMRequest形式でリクエストを作成
+      // ChatMessage形式でリクエストを作成
+      const chatMessages: ChatMessage[] = [
+        ...(agentConfig.system_prompt ? [{ 
+          id: 'system',
+          role: 'system' as const, 
+          content: agentConfig.system_prompt,
+          timestamp: new Date()
+        }] : []),
+        ...messages.filter(m => m.sender !== 'ai' || m.error !== true).map(m => ({
+          id: m.id,
+          role: m.sender === 'user' ? 'user' as const : 'assistant' as const,
+          content: m.text,
+          timestamp: m.timestamp
+        })),
+        { 
+          id: Date.now().toString(),
+          role: 'user' as const, 
+          content: messageText,
+          timestamp: new Date()
+        }
+      ];
+      
       const request: MultiLLMRequest = {
-        prompt: messageText,
-        models: [agentConfig.model || 'gpt-4o'],
+        messages: chatMessages,
+        model: agentConfig.model || 'gpt-4o',
         temperature: agentConfig.temperature || 0.7,
         maxTokens: agentConfig.max_tokens || 1000,
-        systemPrompt: agentConfig.system_prompt,
-        streamResponse: false
+        stream: true
       };
 
-      // API呼び出し
-      const responses = await multiLLMService.generateResponses(request);
-      
-      if (responses.length > 0) {
-        const response = responses[0];
-        const aiMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          text: response.response.content,
-          sender: 'ai',
-          timestamp: new Date(),
-          model: response.model
-        };
-
-        setMessages(prev => [...prev, aiMessage]);
-      }
-      
-      setConnectionStatus('connected');
+      // ストリーミングAPI呼び出し
+      let fullResponse = '';
+      await multiLLMService.streamChat(
+        request,
+        (chunk) => {
+          fullResponse += chunk;
+          // 一時的なメッセージを更新
+          setMessages(prev => {
+            const newMessages = [...prev];
+            if (newMessages[newMessages.length - 1]?.sender === 'ai' && !newMessages[newMessages.length - 1]?.error) {
+              newMessages[newMessages.length - 1] = {
+                ...newMessages[newMessages.length - 1],
+                text: fullResponse
+              };
+            } else {
+              newMessages.push({
+                id: (Date.now() + 1).toString(),
+                text: fullResponse,
+                sender: 'ai',
+                timestamp: new Date(),
+                model: agentConfig.model
+              });
+            }
+            return newMessages;
+          });
+        },
+        () => {
+          setConnectionStatus('connected');
+        },
+        (error) => {
+          console.error('Streaming error:', error);
+          setMessages(prev => [
+            ...prev,
+            {
+              id: (Date.now() + 1).toString(),
+              text: `エラーが発生しました: ${error.message}`,
+              sender: 'ai',
+              timestamp: new Date(),
+              error: true
+            }
+          ]);
+          setConnectionStatus('disconnected');
+        }
+      );
     } catch (error) {
       console.error('Failed to send message:', error);
       
@@ -170,8 +225,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleRetryConnection = async () => {
     setConnectionStatus('checking');
     try {
-      const multiLLMService = MultiLLMService.getInstance();
-      const models = multiLLMService.getAvailableModels();
+      // multiLLMServiceは既にインポート済みのインスタンスを使用
+      const models = await fetch(`${createApiUrl('')}/api/models`)
+        .then(res => res.ok ? res.json() : [])
+        .catch(() => []);
       setConnectionStatus(models.length > 0 ? 'connected' : 'disconnected');
     } catch (error) {
       setConnectionStatus('disconnected');
@@ -296,9 +353,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     : 'bg-white/10 text-white backdrop-blur-lg'
                 }`}>
                   <p className="text-sm">{message.text}</p>
-                  <p className="text-xs opacity-70 mt-1">
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
+                  {isMounted && (
+                    <p className="text-xs opacity-70 mt-1">
+                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  )}
                 </div>
               </div>
             </motion.div>

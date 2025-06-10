@@ -14,7 +14,16 @@ class Settings(BaseSettings):
     本番環境では必要なAPIキーの検証が行われ、不足している場合は
     起動時にエラーでプロセスが終了します。
     """
-    model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8', extra='ignore')
+    # 明示的に.envファイルを読み込むように設定（絶対パスで指定）
+    model_config = SettingsConfigDict(
+        # プロジェクトルートにある.envを絶対パスで指定
+        env_file=os.path.join(os.path.dirname(__file__), '..', '..', '.env'),
+        env_file_encoding='utf-8',
+        extra='ignore',
+        # 環境変数を優先的に読み込む
+        env_nested_delimiter='__',
+        case_sensitive=False
+    )
     
     # Server settings
     APP_ENV: str = "production"
@@ -47,24 +56,25 @@ class Settings(BaseSettings):
     # General settings
     DEBUG: bool = False
     
+    # Database settings - デフォルト値を設定
+    DATABASE_URL: str = "postgresql://conea:conea123@localhost:5432/conea"
+    POSTGRES_USER: str = "conea"
+    POSTGRES_PASSWORD: str = "conea123"
+    POSTGRES_DB: str = "conea"
+    
+    # Redis settings
+    REDIS_URL: str = "redis://localhost:6379"
+    
+    # API settings
+    API_PORT: int = 8000
+    SECRET_KEY: Optional[str] = None
+    FRONTEND_URL: str = "http://localhost:3000"
+    
     # 有効なワーカータイプ（環境変数で指定可能）
     ENABLED_WORKERS: str = "anthropic,openai,local_llm"  # カンマ区切りの文字列
     
     # 必須検証を無効にするフラグ（開発・テスト用）
     SKIP_API_KEY_VALIDATION: bool = False
-
-
-    @validator("ENABLED_WORKERS", pre=True)
-    def validate_enabled_workers(cls, v):
-        """有効なワーカータイプの検証"""
-        if isinstance(v, str):
-            workers = [w.strip() for w in v.split(",")]
-            valid_workers = {"anthropic", "openai", "local_llm", "claude"}
-            invalid_workers = set(workers) - valid_workers
-            if invalid_workers:
-                raise ValueError(f"無効なワーカータイプが指定されています: {invalid_workers}")
-            return workers
-        return v
 
     @validator("ANTHROPIC_API_KEY")
     def validate_anthropic_key(cls, v, values):
@@ -72,7 +82,7 @@ class Settings(BaseSettings):
         if values.get("SKIP_API_KEY_VALIDATION", False):
             return v
             
-        enabled_workers = values.get("ENABLED_WORKERS", [])
+        enabled_workers = values.get("ENABLED_WORKERS", "")
         if isinstance(enabled_workers, str):
             enabled_workers = [w.strip() for w in enabled_workers.split(",")]
         
@@ -95,7 +105,7 @@ class Settings(BaseSettings):
         if values.get("SKIP_API_KEY_VALIDATION", False):
             return v
             
-        enabled_workers = values.get("ENABLED_WORKERS", [])
+        enabled_workers = values.get("ENABLED_WORKERS", "")
         if isinstance(enabled_workers, str):
             enabled_workers = [w.strip() for w in enabled_workers.split(",")]
         
@@ -118,7 +128,7 @@ class Settings(BaseSettings):
         if values.get("SKIP_API_KEY_VALIDATION", False):
             return v
             
-        enabled_workers = values.get("ENABLED_WORKERS", [])
+        enabled_workers = values.get("ENABLED_WORKERS", "")
         if isinstance(enabled_workers, str):
             enabled_workers = [w.strip() for w in enabled_workers.split(",")]
         

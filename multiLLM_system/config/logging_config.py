@@ -98,6 +98,28 @@ class StructuredLogger:
     def __init__(self, name: str):
         self.logger = logging.getLogger(name)
     
+    # ===== 汎用ログメソッドを追加 =====
+    def debug(self, msg, *args, **kwargs):
+        """DEBUGレベルのログを出力"""
+        self.logger.debug(msg, *args, **kwargs)
+
+    def info(self, msg, *args, **kwargs):
+        """INFOレベルのログを出力"""
+        self.logger.info(msg, *args, **kwargs)
+
+    def warning(self, msg, *args, **kwargs):
+        """WARNINGレベルのログを出力"""
+        self.logger.warning(msg, *args, **kwargs)
+
+    def error(self, msg, *args, **kwargs):
+        """ERRORレベルのログを出力"""
+        self.logger.error(msg, *args, **kwargs)
+
+    def critical(self, msg, *args, **kwargs):
+        """CRITICALレベルのログを出力"""
+        self.logger.critical(msg, *args, **kwargs)
+    # ===== ここまで追加 =====
+    
     def log_api_request(
         self, 
         method: str, 

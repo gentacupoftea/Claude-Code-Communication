@@ -9,7 +9,8 @@ class BackendAPI {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = process.env.NEXT_PUBLIC_MULTILLM_API_URL || 'http://localhost:8000';
+    // Next.jsのプロキシを使うため、空文字列に設定
+    this.baseURL = '';
   }
 
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {

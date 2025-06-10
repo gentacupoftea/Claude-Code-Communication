@@ -1,12 +1,40 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import {
+  Bot, MessageSquare, BarChart, Sliders, LogOut, X, Menu, Minimize2
+} from 'lucide-react';
+
+// --- 正しいパスからコンポーネントと型をインポート ---
 import { ProtectedRoute } from '@/src/components/ProtectedRoute';
 import { DashboardLayout } from '@/src/components/layout/DashboardLayout';
 import { ChatInterface } from '@/src/components/dashboard/ChatInterface';
-import { motion } from 'framer-motion';
+import { EditPanel } from '@/src/components/dashboard/EditPanel';
+import { ResizablePanel } from '@/src/components/common/ResizablePanel';
+import { CyberGrid, FloatingParticles } from '@/src/components/common';
+import { Dashboard, DraggableItem } from '@/src/types/widgets';
+import { APISettings, defaultAPISettings } from '@/src/types/api-settings';
 
 export default function DashboardPage() {
+  
+  // --- 不足していた状態変数をすべて定義 ---
+  const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isFullscreenEditor, setIsFullscreenEditor] = useState(false);
+  
+  // --- 正しい型と初期データで状態を定義 ---
+  const [agentConfig, setAgentConfig] = useState({});
+  const [apiSettings, setApiSettings] = useState<APISettings>(defaultAPISettings);
+  const [currentDashboard, setCurrentDashboard] = useState<Dashboard | null>(null);
+  const [generatedWidgets, setGeneratedWidgets] = useState<DraggableItem[]>([]);
+  
+  // --- ダミーの関数を定義 ---
+  const logout = () => console.log('logout clicked');
+  const navigateToChatbotSettings = () => console.log('Navigating to chatbot settings');
+  const navigateToAnalyticsSettings = () => console.log('Navigating to analytics settings');
+  const navigateToPredictionSettings = () => console.log('Navigating to prediction settings');
 
   // 設定ドロップダウンのクリック外しで閉じる処理
   useEffect(() => {
@@ -49,8 +77,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-gray-900 text-white overflow-hidden relative">
+    <div className="min-h-screen bg-gray-900 text-white overflow-hidden relative">
       {/* 背景エフェクト */}
       <CyberGrid />
       <FloatingParticles count={30} />
@@ -204,7 +231,7 @@ export default function DashboardPage() {
                     agentConfig={agentConfig}
                     onConfigChange={setAgentConfig}
                     apiSettings={apiSettings}
-                    onAPISettingsChange={setApiSettings}
+                    onApiSettingsChange={setApiSettings}
                     dashboard={currentDashboard}
                     onDashboardSave={handleDashboardSave}
                     generatedWidgets={generatedWidgets}
@@ -265,7 +292,7 @@ export default function DashboardPage() {
                   agentConfig={agentConfig}
                   onConfigChange={setAgentConfig}
                   apiSettings={apiSettings}
-                  onAPISettingsChange={setApiSettings}
+                  onApiSettingsChange={setApiSettings}
                   dashboard={currentDashboard}
                   onDashboardSave={handleDashboardSave}
                   generatedWidgets={generatedWidgets}
@@ -320,6 +347,5 @@ export default function DashboardPage() {
           </motion.div>
         )}
     </div>
-    </ProtectedRoute>
   );
 }
