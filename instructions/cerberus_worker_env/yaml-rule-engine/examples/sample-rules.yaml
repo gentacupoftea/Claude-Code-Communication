@@ -1,0 +1,133 @@
+version: "1.0"
+name: "Cerberus AI Decision Rules"
+globalContext:
+  systemName: "Cerberus"
+  aiModel: "multi-llm"
+  
+neuralConfig:
+  parallelismLevel: 8
+  layerDepth: 3
+  activationThreshold: 0.6
+  learningEnabled: true
+
+rules:
+  - id: "security-threat-detection"
+    name: "セキュリティ脅威検出"
+    description: "異常なアクセスパターンを検出"
+    priority: 95
+    metadata:
+      version: "1.0"
+      neuralWeight: 0.7
+      learningRate: 0.1
+    conditions:
+      - type: "contains"
+        field: "request.path"
+        value: "/admin"
+      - type: "llm_evaluate"
+        field: "request.headers"
+        operator: "AND"
+        llmPrompt: "このリクエストヘッダーは悪意のある攻撃パターンを示していますか？: {{request.headers}}"
+    actions:
+      - type: "set"
+        target: "security.threatLevel"
+        value: "high"
+      - type: "llm_generate"
+        target: "security.analysis"
+        prompt: "このセキュリティ脅威の詳細な分析を提供してください: {{request}}"
+      - type: "trigger"
+        functionName: "alertSecurityTeam"
+
+  - id: "performance-optimization"
+    name: "パフォーマンス最適化"
+    description: "システムパフォーマンスの自動最適化"
+    priority: 80
+    metadata:
+      version: "1.0"
+      neuralWeight: 0.5
+    conditions:
+      - type: "custom"
+        field: "metrics.responseTime"
+        value: 1000
+      - type: "regex"
+        field: "metrics.endpoint"
+        value: "^/api/.*"
+        operator: "AND"
+    actions:
+      - type: "transform"
+        target: "cache.strategy"
+        value: "aggressive"
+      - type: "append"
+        target: "optimizations.applied"
+        value: 
+          type: "caching"
+          timestamp: "{{_metadata.timestamp}}"
+
+  - id: "user-behavior-analysis"
+    name: "ユーザー行動分析"
+    description: "ユーザーの行動パターンを分析して最適な応答を生成"
+    priority: 70
+    metadata:
+      version: "1.0"
+      neuralWeight: 0.8
+      learningRate: 0.2
+    conditions:
+      - type: "llm_evaluate"
+        field: "user.sessionData"
+        llmPrompt: "このユーザーセッションデータは、支援が必要なユーザーを示していますか？分析してください: {{user.sessionData}}"
+    actions:
+      - type: "llm_generate"
+        target: "response.suggestion"
+        prompt: "このユーザーの行動履歴に基づいて、最適な支援メッセージを生成してください: {{user}}"
+      - type: "set"
+        target: "user.needsAssistance"
+        value: true
+
+  - id: "ai-model-selection"
+    name: "AIモデル選択"
+    description: "タスクに最適なAIモデルを動的に選択"
+    priority: 90
+    metadata:
+      version: "1.0"
+      neuralWeight: 0.9
+    conditions:
+      - type: "equals"
+        field: "task.type"
+        value: "analysis"
+      - type: "llm_evaluate"
+        field: "task.complexity"
+        operator: "OR"
+        llmPrompt: "このタスクは高度な推論能力を必要としますか？: {{task}}"
+    actions:
+      - type: "set"
+        target: "routing.model"
+        value: "claude-3-opus"
+      - type: "set"
+        target: "routing.temperature"
+        value: 0.2
+
+  - id: "error-recovery"
+    name: "エラー回復"
+    description: "エラー発生時の自動回復処理"
+    priority: 100
+    metadata:
+      version: "1.0"
+      neuralWeight: 0.3
+    conditions:
+      - type: "equals"
+        field: "status.code"
+        value: 500
+      - type: "contains"
+        field: "error.message"
+        value: "timeout"
+        operator: "OR"
+    actions:
+      - type: "trigger"
+        functionName: "retryWithBackoff"
+      - type: "llm_generate"
+        target: "recovery.strategy"
+        prompt: "このエラーから回復するための最適な戦略を提案してください: {{error}}"
+      - type: "append"
+        target: "logs.recovery"
+        value:
+          timestamp: "{{_metadata.timestamp}}"
+          action: "auto_recovery_initiated"

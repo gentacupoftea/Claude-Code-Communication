@@ -1,0 +1,55 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # YAMLルールエンジンのメトリクス
+  - job_name: 'yaml-rule-engine'
+    static_configs:
+      - targets: ['yaml-rule-engine:3456']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+    honor_labels: true
+
+  # ワーカー3のPrometheusとの統合
+  - job_name: 'worker3-prometheus'
+    static_configs:
+      - targets: ['worker3-simulator:9100']
+    scrape_interval: 10s
+
+  # システムメトリクス
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['worker3-simulator:9100']
+
+  # Prometheus自体のメトリクス
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Grafanaのメトリクス
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+    metrics_path: '/metrics'
+
+# アラートルールの設定
+remote_write:
+  - url: "http://grafana:3000/api/prom/push"
+    headers:
+      Authorization: "Bearer grafana_api_key"
+
+# 保持期間の設定
+storage:
+  tsdb:
+    retention.time: 15d
+    retention.size: 10GB

@@ -1,0 +1,261 @@
+# API Service Configuration Schema
+# Version: 1.0.0
+# Description: 統一APIサービス設定のJSONスキーマ定義
+
+$schema: http://json-schema.org/draft-07/schema#
+title: API Service Configuration
+type: object
+required:
+  - service
+  - auth
+  - endpoints
+
+properties:
+  service:
+    type: object
+    description: サービス基本情報
+    required:
+      - name
+      - version
+    properties:
+      name:
+        type: string
+        description: サービス名（小文字、ハイフン区切り）
+        pattern: '^[a-z0-9-]+$'
+        minLength: 3
+        maxLength: 50
+        examples:
+          - shopify-api
+          - smaregi-pos
+          - weather-api
+      version:
+        type: string
+        description: セマンティックバージョン
+        pattern: '^\d+\.\d+\.\d+$'
+        examples:
+          - 1.0.0
+          - 2.1.3
+      description:
+        type: string
+        description: サービスの説明
+        maxLength: 200
+
+  auth:
+    type: object
+    description: 認証設定
+    required:
+      - type
+    properties:
+      type:
+        type: string
+        description: 認証タイプ
+        enum:
+          - api_key
+          - oauth2
+          - basic
+          - custom
+      credentials:
+        type: object
+        description: 認証情報（環境変数参照推奨）
+        additionalProperties: true
+        examples:
+          - apiKey: ${API_KEY}
+            apiSecret: ${API_SECRET}
+          - clientId: ${CLIENT_ID}
+            clientSecret: ${CLIENT_SECRET}
+            refreshToken: ${REFRESH_TOKEN}
+
+  endpoints:
+    type: object
+    description: エンドポイント設定
+    required:
+      - base
+    properties:
+      base:
+        type: string
+        description: ベースURL
+        format: uri
+        pattern: '^https?://'
+      timeout:
+        type: integer
+        description: タイムアウト時間（ミリ秒）
+        minimum: 1000
+        maximum: 60000
+        default: 30000
+      retryPolicy:
+        type: object
+        description: リトライポリシー
+        properties:
+          maxRetries:
+            type: integer
+            description: 最大リトライ回数
+            minimum: 0
+            maximum: 5
+            default: 3
+          backoffMultiplier:
+            type: number
+            description: バックオフ乗数
+            minimum: 1
+            maximum: 5
+            default: 2
+          initialDelay:
+            type: integer
+            description: 初回リトライまでの遅延（ミリ秒）
+            minimum: 100
+            maximum: 5000
+            default: 1000
+
+  rateLimit:
+    type: object
+    description: レート制限設定
+    properties:
+      requests:
+        type: integer
+        description: ウィンドウ内の最大リクエスト数
+        minimum: 1
+        maximum: 10000
+      window:
+        type: integer
+        description: ウィンドウサイズ（ミリ秒）
+        minimum: 1000
+        maximum: 3600000
+      strategy:
+        type: string
+        description: レート制限戦略
+        enum:
+          - fixed_window
+          - sliding_window
+          - token_bucket
+        default: sliding_window
+
+  logging:
+    type: object
+    description: ロギング設定
+    properties:
+      level:
+        type: string
+        description: ログレベル
+        enum:
+          - debug
+          - info
+          - warn
+          - error
+        default: info
+      format:
+        type: string
+        description: ログフォーマット
+        enum:
+          - json
+          - text
+        default: json
+      destinations:
+        type: array
+        description: ログ出力先
+        items:
+          type: string
+          enum:
+            - console
+            - file
+            - syslog
+            - cloudwatch
+        default:
+          - console
+
+  features:
+    type: array
+    description: 有効化する機能
+    items:
+      type: string
+    uniqueItems: true
+    examples:
+      - [products, orders, customers]
+      - [transactions, inventory, reports]
+
+  cache:
+    type: object
+    description: キャッシュ設定
+    properties:
+      enabled:
+        type: boolean
+        description: キャッシュ有効化
+        default: false
+      ttl:
+        type: integer
+        description: キャッシュ有効期限（秒）
+        minimum: 1
+        maximum: 86400
+        default: 300
+      strategy:
+        type: string
+        description: キャッシュ戦略
+        enum:
+          - memory
+          - redis
+          - memcached
+        default: memory
+
+  security:
+    type: object
+    description: セキュリティ設定
+    properties:
+      encryption:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            default: true
+          algorithm:
+            type: string
+            enum:
+              - aes-256-gcm
+              - aes-256-cbc
+            default: aes-256-gcm
+      ipWhitelist:
+        type: array
+        description: 許可IPアドレスリスト
+        items:
+          type: string
+          format: ipv4
+      requestSigning:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            default: false
+          algorithm:
+            type: string
+            enum:
+              - hmac-sha256
+              - rsa-sha256
+            default: hmac-sha256
+
+  monitoring:
+    type: object
+    description: モニタリング設定
+    properties:
+      metrics:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            default: true
+          interval:
+            type: integer
+            description: メトリクス収集間隔（秒）
+            minimum: 10
+            maximum: 300
+            default: 60
+      tracing:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            default: true
+          samplingRate:
+            type: number
+            description: サンプリングレート（0-1）
+            minimum: 0
+            maximum: 1
+            default: 0.1
+
+additionalProperties: false
