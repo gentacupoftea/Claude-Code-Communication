@@ -1,85 +1,150 @@
-#!/bin/bash
-# agent-send.sh - Script to send commands to Chimera agents (v2.0 - ID-Only Communication)
+#!/usr/bin/env bash
+
+# 🚀 Chimera Agent間メッセージ送信スクリプト (v2 - Title-Based Targeting)
 
 SESSION_NAME="chimera"
-NUM_WORKERS=6 # Total number of workers
 
-# --- List Agents ---
-if [ "$1" == "--list" ]; then
-    echo "📋 Chimeraエージェント構成:"
-    echo "=========================="
-    echo "  0: President"
-    for i in $(seq 1 $NUM_WORKERS); do
-        echo "  $i: Worker $i"
-    done
-    echo "--------------------------"
-    echo "  all_workers → 全ワーカー(1-$NUM_WORKERS)に一括送信します"
-    exit 0
-fi
+# エージェント名から動的にPane IDを取得する
+get_pane_id_by_agent_name() {
+    local agent_name="$1"
+    local target_title=""
 
-# --- Input Validation ---
-if [ "$#" -lt 2 ]; then
-    echo "Usage: $0 <pane_id|all_workers> \"<message>\""
-    echo "       pane_id: 0 for President, 1-$NUM_WORKERS for Workers"
-    echo "       $0 --list"
-    exit 1
-fi
-
-AGENT_TARGET=$1
-MESSAGE=$2
-
-# --- Pre-flight Check ---
-if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-    echo "❌ エラー: Chimeraセッション '$SESSION_NAME' が見つかりません。" >&2
-    exit 1
-fi
-
-# --- Message Sending Function ---
-send_message_to_pane() {
-    local pane_id=$1
-    local msg=$2
-    local agent_name=$3
-
-    local target_pane="${SESSION_NAME}:0.${pane_id}"
-
-    # Check if pane exists before sending
-    if ! tmux list-panes -t "$SESSION_NAME:0" -F "#{pane_index}" | grep -q "^${pane_id}$"; then
-        echo "❌ エラー: Pane ID '$pane_id' (${agent_name}) は存在しません。" >&2
+    # agent_name (e.g., "worker1") を Pane Title (e.g., "Worker 1") に変換
+    if [[ "$agent_name" == "president" ]]; then
+        target_title="President"
+    elif [[ "$agent_name" =~ ^worker([1-6])$ ]]; then
+        local worker_num="${BASH_REMATCH[1]}"
+        target_title="Worker $worker_num"
+    else
+        # 不明なエージェント名
+        echo ""
         return 1
     fi
 
-    # This is the most reliable method found after many trials.
-    tmux load-buffer -b tmp_agent_send_buffer - <<< "$msg"
-    tmux paste-buffer -b tmp_agent_send_buffer -t "$target_pane"
-    sleep 0.1 # Reduced sleep time for faster execution
-    tmux send-keys -t "$target_pane" C-m
-    tmux delete-buffer -b tmp_agent_send_buffer
+    # tmuxからPane Titleに一致するPane IDを検索
+    local pane_id
+    pane_id=$(tmux list-panes -s -t "$SESSION_NAME" -F '#{pane_id} #{pane_title}' 2>/dev/null | grep -wF "$target_title" | awk '{print $1}')
+
+    if [[ -z "$pane_id" ]]; then
+        # Paneが見つからない
+        echo ""
+        return 1
+    fi
     
-    truncated_msg=$(echo "$msg" | cut -c 1-40)
-    echo "📤 送信完了: ${agent_name} (pane ${pane_id}) ← '${truncated_msg}...'."
+    echo "$pane_id"
+    return 0
 }
 
-# --- Target Resolution and Message Delivery ---
-if [ "$AGENT_TARGET" == "all_workers" ]; then
-    echo "📢 全ワーカーにタスクを送信します..."
-    for i in $(seq 1 $NUM_WORKERS); do
-        send_message_to_pane "$i" "$MESSAGE" "Worker $i"
+
+show_usage() {
+    cat << EOF
+🤖 Chimera Agent間メッセージ送信
+
+使用方法:
+  $0 [エージェント名] [メッセージ]
+  $0 --list
+
+利用可能エージェント:
+  president
+  worker1, worker2, worker3, worker4, worker5, worker6
+
+使用例:
+  $0 president "全ワーカーに進捗報告を要求せよ"
+  $0 worker1 "タスク完了。API接続に成功しました"
+EOF
+}
+
+# エージェント一覧表示
+show_agents() {
+    echo "📋 Chimeraチーム 利用可能エージェント:"
+    echo "======================================"
+    echo "  • president"
+    for i in {1..6}; do
+        echo "  • worker$i"
     done
-    echo "✅ 全ワーカーへの送信が完了しました。"
-elif [[ $AGENT_TARGET =~ ^[0-9]+$ ]]; then
-    PANE_ID=$AGENT_TARGET
-    AGENT_NAME="Unknown"
-    if [ "$PANE_ID" -eq 0 ]; then
-        AGENT_NAME="President"
-    elif [ "$PANE_ID" -ge 1 ] && [ "$PANE_ID" -le $NUM_WORKERS ]; then
-        AGENT_NAME="Worker $PANE_ID"
-    else
-        echo "❌ エラー: Pane ID '$PANE_ID' は範囲外です (0-$NUM_WORKERS)。" >&2
+    echo "--------------------------------------"
+    echo "Note: 送信先はPaneのタイトルを元に動的に決定されるため、クラッシュ後の手動再起動にも対応しています。"
+}
+
+# ログ記録
+log_send() {
+    local agent="$1"
+    local message="$2"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    
+    # スクリプト自身のディレクトリを基準にlogsディレクトリを作成
+    local script_dir
+    script_dir=$(dirname "$(realpath "$0")")
+    mkdir -p "$script_dir/logs"
+    echo "[$timestamp] $agent: SENT - \"$message\"" >> "$script_dir/logs/send_log.txt"
+}
+
+# メッセージ送信
+send_message() {
+    local pane_id="$1"
+    local message="$2"
+    
+    echo "📤 送信中: Pane($pane_id) ← '$message'"
+    
+    # Claude Codeのプロンプトを一度クリア (Ctrl+C)
+    tmux send-keys -t "$pane_id" C-c
+    sleep 0.2
+    
+    # メッセージをペースト (-l オプションでリテラル送信)
+    tmux send-keys -l -t "$pane_id" "$message"
+    sleep 0.1
+    
+    # エンター押下で実行
+    tmux send-keys -t "$pane_id" C-m
+}
+
+# ターゲットセッション存在確認
+check_session() {
+    if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+        echo "❌ エラー: Chimeraセッション '$SESSION_NAME' が見つかりません。"
+        echo "start-chimera.sh を実行してチームを起動してください。"
+        return 1
+    fi
+    return 0
+}
+
+# メイン処理
+main() {
+    if [[ "$1" == "--list" || "$1" == "-l" ]]; then
+        show_agents
+        exit 0
+    fi
+    
+    if [[ $# -lt 2 ]]; then
+        show_usage
         exit 1
     fi
-    send_message_to_pane "$PANE_ID" "$MESSAGE" "$AGENT_NAME"
-else
-    echo "❌ エラー: 不明なターゲット '$AGENT_TARGET'。Pane ID (数字) を使用してください。" >&2
-    echo "利用可能なIDは '$0 --list' で確認してください。" >&2
-    exit 1
-fi 
+    
+    if ! check_session; then
+        exit 1
+    fi
+    
+    local agent_name="$1"
+    shift # 最初の引数（エージェント名）を消費
+    local message="$*" # 残りの引数全てをメッセージとして結合
+    
+    # エージェントターゲット取得
+    local pane_id
+    pane_id=$(get_pane_id_by_agent_name "$agent_name")
+    
+    if [[ -z "$pane_id" ]]; then
+        echo "❌ エラー: エージェント '$agent_name' が見つかりません。アクティブな Chimera セッション内に正しいタイトルを持つPaneが存在するか確認してください。"
+        echo "利用可能なエージェント名については '$0 --list' を実行してください。"
+        exit 1
+    fi
+    
+    # メッセージ送信
+    send_message "$pane_id" "$message"
+    
+    # ログ記録
+    log_send "$agent_name" "$message"
+    
+    echo "✅ 送信完了: $agent_name (Pane: $pane_id) へメッセージを送信しました。"
+}
+
+main "$@" 

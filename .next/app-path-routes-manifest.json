@@ -1,0 +1,18 @@
+{
+  "/api/auth/login/route": "/api/auth/login",
+  "/api/auth/profile/route": "/api/auth/profile",
+  "/api/multillm/generate/route": "/api/multillm/generate",
+  "/api/chat/message/route": "/api/chat/message",
+  "/favicon.ico/route": "/favicon.ico",
+  "/_not-found/page": "/_not-found",
+  "/analytics/page": "/analytics",
+  "/create/page": "/create",
+  "/dashboard/page": "/dashboard",
+  "/projects/[id]/page": "/projects/[id]",
+  "/projects/chatbot/page": "/projects/chatbot",
+  "/projects/prediction/page": "/projects/prediction",
+  "/settings/page": "/settings",
+  "/login/page": "/login",
+  "/projects/analytics/page": "/projects/analytics",
+  "/page": "/"
+}

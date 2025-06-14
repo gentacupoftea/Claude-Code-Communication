@@ -1,0 +1,18 @@
+{
+  "/api/auth/login/route": "app/api/auth/login/route.js",
+  "/api/auth/profile/route": "app/api/auth/profile/route.js",
+  "/api/multillm/generate/route": "app/api/multillm/generate/route.js",
+  "/api/chat/message/route": "app/api/chat/message/route.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/analytics/page": "app/analytics/page.js",
+  "/create/page": "app/create/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/projects/[id]/page": "app/projects/[id]/page.js",
+  "/projects/chatbot/page": "app/projects/chatbot/page.js",
+  "/projects/prediction/page": "app/projects/prediction/page.js",
+  "/settings/page": "app/settings/page.js",
+  "/login/page": "app/login/page.js",
+  "/projects/analytics/page": "app/projects/analytics/page.js",
+  "/page": "app/page.js"
+}
