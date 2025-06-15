@@ -22,7 +22,7 @@ import {
 class ShopifyAPIService implements APIService {
   private config: APIConfig;
   private logger: Logger;
-  private client: any; // Shopify APIクライアント
+  private client: Record<string, unknown>; // Shopify APIクライアント
 
   constructor(logger: Logger) {
     this.logger = logger;
@@ -126,7 +126,7 @@ class ShopifyAPIService implements APIService {
   }
 
   // Private methods
-  private async checkConnectivity(): Promise<any> {
+  private async checkConnectivity(): Promise<{ name: string; healthy: boolean; message: string; duration?: number }> {
     // 実装省略
     return {
       name: 'connectivity',
@@ -136,7 +136,7 @@ class ShopifyAPIService implements APIService {
     };
   }
 
-  private async checkAuthentication(): Promise<any> {
+  private async checkAuthentication(): Promise<{ name: string; healthy: boolean; message: string; duration?: number }> {
     // 実装省略
     return {
       name: 'authentication',
@@ -146,7 +146,7 @@ class ShopifyAPIService implements APIService {
     };
   }
 
-  private async checkRateLimit(): Promise<any> {
+  private async checkRateLimit(): Promise<{ name: string; healthy: boolean; message: string; duration?: number }> {
     // 実装省略
     return {
       name: 'rate_limit',
@@ -162,7 +162,7 @@ class ShopifyAPIService implements APIService {
     }
   }
 
-  private async callAPI(request: APIRequest): Promise<any> {
+  private async callAPI(request: APIRequest): Promise<unknown> {
     // 実際のAPI呼び出し実装
     // ここでは例として固定のレスポンスを返す
     switch (request.endpoint) {
@@ -197,7 +197,7 @@ class ShopifyAPIService implements APIService {
     return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  private handleError(error: any, requestId: string, startTime: number): APIResponse {
+  private handleError(error: Error, requestId: string, startTime: number): APIResponse {
     this.logger.error('API request failed', {
       error: error.message,
       requestId
@@ -395,7 +395,7 @@ export class ShopifyPlugin implements Plugin {
     };
   }
 
-  private async handleConfigUpdate(event: any): Promise<void> {
+  private async handleConfigUpdate(event: { type: string; config: Record<string, unknown> }): Promise<void> {
     if (event.plugin === this.metadata.id && this.isActive) {
       this.context.logger.info('Configuration updated, reloading plugin');
       

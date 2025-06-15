@@ -1,0 +1,18 @@
+{
+  "name": "kerberos_send_message",
+  "description": "指定したケルベロスエージェントのペインインデックス番号にメッセージを送信します。番号は 0 (President), 1 (Athena), 2 (Apollo), 3 (Hephaestus), 4-9 (Workers) です。-1を指定すると全Workerに一斉送信します。",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "recipient_index": {
+        "type": "number",
+        "description": "メッセージの宛先ペインインデックス番号。President:0, Athena:1, Apollo:2, Hephaestus:3, Workers:4-9, 全Worker:-1"
+      },
+      "message": {
+        "type": "string",
+        "description": "送信するメッセージの本文。"
+      }
+    },
+    "required": ["recipient_index", "message"]
+  }
+} 

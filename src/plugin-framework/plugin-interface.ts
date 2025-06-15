@@ -56,16 +56,16 @@ export interface PluginContext {
 
 // ロガーインターフェース
 export interface Logger {
-  debug(message: string, meta?: any): void;
-  info(message: string, meta?: any): void;
-  warn(message: string, meta?: any): void;
-  error(message: string, meta?: any): void;
+  debug(message: string, meta?: Record<string, unknown>): void;
+  info(message: string, meta?: Record<string, unknown>): void;
+  warn(message: string, meta?: Record<string, unknown>): void;
+  error(message: string, meta?: Record<string, unknown>): void;
 }
 
 // 設定管理インターフェース
 export interface ConfigManager {
-  get<T = any>(key: string): T;
-  set(key: string, value: any): void;
+  get<T = unknown>(key: string): T;
+  set(key: string, value: unknown): void;
   has(key: string): boolean;
   delete(key: string): void;
 }
@@ -74,14 +74,14 @@ export interface ConfigManager {
 export interface EventEmitter {
   on(event: string, handler: Function): void;
   off(event: string, handler: Function): void;
-  emit(event: string, ...args: any[]): void;
+  emit(event: string, ...args: unknown[]): void;
   once(event: string, handler: Function): void;
 }
 
 // ストレージアダプター
 export interface StorageAdapter {
-  get<T = any>(key: string): Promise<T | null>;
-  set(key: string, value: any, ttl?: number): Promise<void>;
+  get<T = unknown>(key: string): Promise<T | null>;
+  set(key: string, value: unknown, ttl?: number): Promise<void>;
   delete(key: string): Promise<void>;
   has(key: string): Promise<boolean>;
   clear(): Promise<void>;
@@ -97,8 +97,8 @@ export interface MetricsCollector {
 
 // フィーチャーフラグ
 export interface FeatureFlags {
-  isEnabled(flag: string, context?: any): boolean;
-  getVariation<T = any>(flag: string, defaultValue: T, context?: any): T;
+  isEnabled(flag: string, context?: Record<string, unknown>): boolean;
+  getVariation<T = unknown>(flag: string, defaultValue: T, context?: Record<string, unknown>): T;
   getAllFlags(): Record<string, boolean>;
 }
 
@@ -119,7 +119,7 @@ export interface APIConfig {
   };
   auth: {
     type: 'api_key' | 'oauth2' | 'basic' | 'custom';
-    credentials: Record<string, any>;
+    credentials: Record<string, unknown>;
   };
   endpoints: {
     base: string;
@@ -159,13 +159,13 @@ export interface HealthCheck {
 export interface APIRequest {
   method: string;
   endpoint: string;
-  params?: Record<string, any>;
-  data?: any;
+  params?: Record<string, unknown>;
+  data?: unknown;
   headers?: Record<string, string>;
 }
 
 // APIレスポンス
-export interface APIResponse<T = any> {
+export interface APIResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: APIError;
@@ -177,7 +177,7 @@ export interface APIResponse<T = any> {
 export interface APIError {
   code: string | number;
   message: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   timestamp: string;
   traceId: string;
   service: string;
@@ -289,7 +289,7 @@ export interface FeatureFlag {
 // ロールアウト戦略
 export interface RolloutStrategy {
   type: 'all' | 'percentage' | 'user_list' | 'gradual';
-  value: any;
+  value: unknown;
   schedule?: {
     start: Date;
     end: Date;
@@ -307,7 +307,7 @@ export interface RolloutStep {
 export interface FlagCondition {
   type: 'user' | 'group' | 'time' | 'custom';
   operator: 'equals' | 'contains' | 'greater_than' | 'less_than';
-  value: any;
+  value: unknown;
 }
 
 // バリデーション結果
